@@ -1,0 +1,13 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "elf": {
+      "type": "local",
+      "command": ["npx", "-y", "elf-tokens@1.0.0-beta.1", "mcp", "--project", "/Users/macintoshhd/Work/ent-feedback"],
+      "environment": {
+        "ELF_MCP_PORT": "8766"
+      },
+      "enabled": true
+    }
+  }
+}

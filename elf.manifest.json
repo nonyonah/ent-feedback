@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "components": {},
+  "tokens": {
+    "radius": {
+      "figmaVariableId": "VariableID:16:164",
+      "valueHash": "a01f84e7b94424ec",
+      "remoteHash": "92c55504dd046434"
+    },
+    "status-open-bg": {
+      "figmaVariableId": "VariableID:16:167",
+      "valueHash": "04bdf8a76073a25d",
+      "remoteHash": "39046614390554a0"
+    },
+    "status-open-fg": {
+      "figmaVariableId": "VariableID:16:168",
+      "valueHash": "b3dfc8f7ea3c66cc",
+      "remoteHash": "51590c1efca67004"
+    },
+    "status-planned-bg": {
+      "figmaVariableId": "VariableID:16:169",
+      "valueHash": "d89f08c04919d5a9",
+      "remoteHash": "af444b05b8f4b93d"
+    },
+    "status-planned-fg": {
+      "figmaVariableId": "VariableID:16:170",
+      "valueHash": "f72b97e7076da08c",
+      "remoteHash": "6dd6bac13cae6b82"
+    },
+    "status-progress-bg": {
+      "figmaVariableId": "VariableID:16:171",
+      "valueHash": "073c9e7d6113e572",
+      "remoteHash": "422c80792be6ccfe"
+    },
+    "status-progress-fg": {
+      "figmaVariableId": "VariableID:16:172",
+      "valueHash": "0464a0237e04816f",
+      "remoteHash": "70007ce580932e08"
+    },
+    "status-shipped-bg": {
+      "figmaVariableId": "VariableID:16:173",
+      "valueHash": "625ee2e17edb463f",
+      "remoteHash": "f6710292767d099f"
+    },
+    "status-shipped-fg": {
+      "figmaVariableId": "VariableID:16:174",
+      "valueHash": "4dc2297ec8c419e0",
+      "remoteHash": "1021461e37abefa6"
+    },
+    "success": {
+      "figmaVariableId": "VariableID:16:165",
+      "valueHash": "78b5a58b570d49e1",
+      "remoteHash": "277d19218f6d270d"
+    },
+    "success-foreground": {
+      "figmaVariableId": "VariableID:16:166",
+      "valueHash": "ff32638e9d79333a",
+      "remoteHash": "6d65e76860c0555b"
+    },
+    "vote-active-bg": {
+      "figmaVariableId": "VariableID:16:175",
+      "valueHash": "3a4769b8128796f3",
+      "remoteHash": "d2d3f12fc081b8fa"
+    },
+    "vote-active-border": {
+      "figmaVariableId": "VariableID:16:176",
+      "valueHash": "1118bc1980777e6a",
+      "remoteHash": "83485fd6a0311223"
+    }
+  },
+  "styles": {}
+}

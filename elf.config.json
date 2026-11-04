@@ -1,0 +1,16 @@
+{
+  "figma": {
+    "fileKey": "Hkm2fZfiP82wOLjKF0u1p2",
+    "source": "bridge",
+    "authorization": "strict"
+  },
+  "codebase": {
+    "source": "auto",
+    "path": "auto"
+  },
+  "runtime": {
+    "autoSync": false,
+    "projectConfigured": true,
+    "setupComplete": true
+  }
+}

@@ -1,8 +1,9 @@
 "use client";
+import { DropdownChevron } from "@/components/ui/dropdown-chevron";
 
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react/autocomplete";
-import { CaretUpDownIcon as ChevronsUpDownIcon } from "@phosphor-icons/react/dist/ssr/CaretUpDown";
-import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
+
+import { XIcon } from "@/components/icons";
 import type React from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -67,7 +68,7 @@ export function AutocompleteInput({
           {...triggerProps}
         >
           <AutocompletePrimitive.Icon data-slot="autocomplete-icon">
-            <ChevronsUpDownIcon weight="bold" />
+            <DropdownChevron />
           </AutocompletePrimitive.Icon>
         </AutocompleteTrigger>
       )}
@@ -79,7 +80,7 @@ export function AutocompleteInput({
           )}
           {...clearProps}
         >
-          <XIcon weight="bold" />
+          <XIcon />
         </AutocompleteClear>
       )}
     </AutocompletePrimitive.InputGroup>
@@ -258,7 +259,7 @@ export function AutocompleteClear({
       data-slot="autocomplete-clear"
       {...props}
     >
-      <XIcon weight="bold" />
+      <XIcon />
     </AutocompletePrimitive.Clear>
   );
 }

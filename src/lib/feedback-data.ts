@@ -1,11 +1,17 @@
+export const FEEDBACK_CATEGORIES = {feedback: "Feedback", bug: "Bug report", feature_request: "Feature request"} as const;
+export type FeedbackCategory = keyof typeof FEEDBACK_CATEGORIES;
+export type FeedbackTag = {id:string;name:string};
+
 export type FeedbackStatus = "open" | "planned" | "in-progress" | "shipped";
 
 export type FeedbackComment = {
   id: string;
   author: string;
+  avatarUrl?: string;
   initials: string;
   time: string;
   body: string;
+  images?: string[];
   kind: "user" | "owner";
   likes?: number;
   liked?: boolean;
@@ -14,16 +20,22 @@ export type FeedbackComment = {
 export type FeedbackItemData = {
   id: string;
   boardId?: string;
+  category?: FeedbackCategory;
+  canEditCategory?: boolean;
+  tags?: FeedbackTag[];
   title: string;
   description: string;
+  images?: string[];
   votes: number;
   voted: boolean;
   status: FeedbackStatus;
   author: string;
+  avatarUrl?: string;
   initials: string;
   createdAt: string;
   createdOrder: number;
   pinned?: boolean;
+  following?: boolean;
   comments: FeedbackComment[];
 };
 

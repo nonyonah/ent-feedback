@@ -1,0 +1,6 @@
+import Link from 'next/link';
+import {notFound} from 'next/navigation';
+import {getPublicWorkspace} from '@/server/public-workspace';
+import {boardHref} from '@/lib/project-links';
+export const instant=false;
+export default async function Page({params}:{params:Promise<{project:string}>}){const {project}=await params;const workspace=await getPublicWorkspace(project);if(!workspace)notFound();return <main className="mx-auto w-full max-w-5xl px-8 py-12"><h1 className="text-2xl font-semibold">{workspace.project.name}</h1><p className="mt-2 text-sm text-muted-foreground">Share an idea and help shape what we build next.</p><div className="mt-8 grid gap-4 sm:grid-cols-2">{workspace.boards.map(board=><Link key={board.id} href={boardHref(workspace.project,board)} className="rounded-[18px] border border-border/60 bg-background p-5"><h2 className="flex items-center gap-2 text-base font-semibold">{board.emoji?<span>{board.emoji}</span>:<span className="size-3 rounded-full" style={{backgroundColor:board.color}}/>}{board.name}</h2><p className="mt-2 text-sm text-muted-foreground">{board.description}</p></Link>)}</div>{!workspace.boards.length&&<p className="mt-8 text-sm text-muted-foreground">No boards have been published yet.</p>}</main>;}

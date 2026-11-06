@@ -32,3 +32,7 @@ Next backend work: durable projects/posts/comments/votes, verified identities, o
 ## Project and board hierarchy
 
 Start at `/project` for the connected owner journey. Project creation (`/onboarding`) and board creation (`/project/boards/new`) are separate. Share (`/share`) and widget installation (`/install`) target the selected board. Public board and direct submission URLs include project and board handles. See [product-flow.md](./product-flow.md) for the full route sequence and current persistence boundaries. The default accent is charcoal with an inverse neutral treatment in dark mode.
+
+## November 5 navigation update
+
+All boards and board creation now live at `/dashboard/boards` and `/dashboard/boards/new`, inside the dashboard shell. The sidebar header plus creates a board; the request-pane plus is removed. Settings are grouped under `/dashboard/settings` (Branding), with Account, Notifications, Feedback, Share, and Widget sections. The former standalone `/project`, `/project-settings`, `/preferences`, `/share`, and `/install` pages were removed and all app links updated. Brand, appearance, and notification changes remain frontend session state.

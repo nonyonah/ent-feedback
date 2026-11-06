@@ -1,9 +1,9 @@
 "use client";
 
 import { type DateLib, DayPicker } from "@daypicker/react";
-import { CaretLeftIcon as ChevronLeftIcon } from "@phosphor-icons/react/dist/ssr/CaretLeft";
-import { CaretRightIcon as ChevronRightIcon } from "@phosphor-icons/react/dist/ssr/CaretRight";
-import { CaretUpDownIcon as ChevronsUpDownIcon } from "@phosphor-icons/react/dist/ssr/CaretUpDown";
+import { CaretLeftIcon as ChevronLeftIcon } from "@/components/icons";
+import { CaretRightIcon as ChevronRightIcon } from "@/components/icons";
+import { CaretDownIcon as ChevronDownIcon } from "@/components/icons";
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -79,7 +79,7 @@ export function Calendar({
     }): React.ReactElement => {
       if (orientation === "left") {
         return (
-          <ChevronLeftIcon weight="bold"
+          <ChevronLeftIcon
             className={cn(className, "rtl:rotate-180")}
             {...props}
             aria-hidden="true"
@@ -89,7 +89,7 @@ export function Calendar({
 
       if (orientation === "right") {
         return (
-          <ChevronRightIcon weight="bold"
+          <ChevronRightIcon
             className={cn(className, "rtl:rotate-180")}
             {...props}
             aria-hidden="true"
@@ -98,7 +98,7 @@ export function Calendar({
       }
 
       return (
-        <ChevronsUpDownIcon weight="bold"
+        <ChevronDownIcon
           className={className}
           {...props}
           aria-hidden="true"

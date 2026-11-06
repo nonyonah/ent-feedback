@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "workspaces_name_normalized_unique" ON "workspaces" USING btree (lower(regexp_replace(btrim("name"), '[[:space:]]+', ' ', 'g')));

@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { HeartIcon } from "@phosphor-icons/react/dist/ssr/Heart";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {features} from "@/lib/features";
+import {ComposerTools,AttachmentPreview} from "@/components/feedback/composer-tools";
+import { HeartIcon } from "@/components/icons";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toastManager } from "@/components/ui/toast";
@@ -16,23 +18,27 @@ export function CommentThread({
   item: FeedbackItemData;
   variant?: "default" | "dashboard";
 }): React.ReactElement {
-  const { addComment, toggleCommentLike } = useFeedback();
+  const { addComment, toggleCommentLike, pending } = useFeedback();
+  const [images,setImages]=React.useState<string[]>([]);
   const [body, setBody] = React.useState("");
   const composerRef = React.useRef<HTMLTextAreaElement>(null);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>): void {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!body.trim()) {
+    if (!body.trim()&&!images.length) {
       return;
     }
 
-    addComment(item.id, body);
+    try {
+    await addComment(item.id, body, images);
+    setImages([]);
     setBody("");
     toastManager.add({
       description: "Your comment is now visible to everyone.",
       title: "Comment posted",
       type: "success",
     });
+    }catch(error){toastManager.add({title:"Comment wasn’t posted",description:error instanceof Error?error.message:"Try again. Your draft is still here.",type:"error"});}
   }
 
   return (
@@ -45,7 +51,7 @@ export function CommentThread({
         )}
 
         {item.comments.map((comment) => {
-          const isOwner = comment.kind === "owner";
+          const isOwner = features.teams && comment.kind === "owner";
 
           return (
             <article className="group flex items-start gap-3" key={comment.id}>
@@ -53,14 +59,13 @@ export function CommentThread({
                 className="size-8"
                 style={{ "--avatar-size": "2rem" } as React.CSSProperties}
               >
+                <AvatarImage src={comment.avatarUrl} alt=""/>
                 <AvatarFallback
                   className={cn(
                     "bg-muted text-xs text-muted-foreground",
-                    isOwner && "bg-primary/10 text-primary",
+                    isOwner && "bg-primary/10 text-primary-text",
                   )}
-                >
-                  {comment.initials}
-                </AvatarFallback>
+                 seed={comment.author}/>
               </Avatar>
 
               <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -72,26 +77,27 @@ export function CommentThread({
                     {comment.time}
                   </span>
                   {isOwner && (
-                    <span className="inline-flex items-center rounded-lg bg-vote-active-bg px-1.5 py-px text-xs font-medium leading-4 text-primary">
+                    <span className="inline-flex items-center rounded-lg bg-vote-active-bg px-1.5 py-px text-xs font-medium leading-4 text-primary-text">
                       Team
                     </span>
                   )}
                 </div>
 
-                <p className="whitespace-pre-line text-sm leading-5 text-foreground">
+                <p className="whitespace-pre-line text-base leading-[1.5] text-foreground">
                   {comment.body}
                 </p>
 
+                {comment.images?.length?<AttachmentPreview images={comment.images}/>:null}
                 <div className="-ms-2 flex items-center gap-1 self-start">
                   <Button
                     aria-label={(comment.liked ? "Unlike" : "Like") + " comment by " + comment.author}
                     aria-pressed={Boolean(comment.liked)}
-                    className={cn("min-h-11 min-w-11 rounded-lg px-2 text-xs text-muted-foreground hover:text-foreground sm:h-6 sm:min-h-6 sm:min-w-6", comment.liked && "text-primary hover:text-primary")}
+                    className={cn("min-h-11 min-w-11 rounded-lg px-2 text-xs text-muted-foreground hover:text-foreground sm:h-6 sm:min-h-6 sm:min-w-6", comment.liked && "text-primary hover:text-primary [&_svg]:opacity-100")}
                     onClick={() => toggleCommentLike(item.id, comment.id)}
                     size="xs"
                     variant="ghost"
                   >
-                    <HeartIcon weight={comment.liked ? "fill" : "bold"} aria-hidden="true" />
+                    <HeartIcon  aria-hidden="true" />
                     {(comment.likes ?? 0) > 0 && <span className="tabular-nums">{comment.likes}</span>}
                   </Button>
                   <Button
@@ -115,16 +121,17 @@ export function CommentThread({
         </label>
         <Textarea
           className={cn("shadow-none [&_textarea]:min-h-24 [&_textarea]:sm:min-h-24", variant === "dashboard" && "border-0 bg-transparent ring-0 before:hidden [&_textarea]:min-h-14 [&_textarea]:sm:min-h-14")}
+          disabled={pending}
           id="new-comment"
           onChange={(event) => setBody(event.target.value)}
           placeholder="Add a comment or share more context…"
           ref={composerRef}
           value={body}
         />
-        <div className="flex justify-end">
+        <div className="flex items-end justify-between gap-3"><ComposerTools disabled={pending} value={body} onChange={setBody} inputRef={composerRef} images={images} onImagesChange={setImages}/>
           <Button
             className="min-h-11 sm:h-7 sm:min-h-7"
-            disabled={!body.trim()}
+            disabled={pending||(!body.trim()&&!images.length)}
             type="submit"
           >
             Comment

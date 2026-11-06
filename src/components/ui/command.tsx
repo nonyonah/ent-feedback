@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog as CommandDialogPrimitive } from "@base-ui/react/dialog";
-import { MagnifyingGlassIcon as SearchIcon } from "@phosphor-icons/react/dist/ssr/MagnifyingGlass";
+import { MagnifyingGlassIcon as SearchIcon } from "@/components/icons";
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -43,7 +43,7 @@ export function CommandDialogBackdrop({
   return (
     <CommandDialogPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-50 bg-black/32 backdrop-blur-sm transition-all duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0 supports-[-webkit-touch-callout:none]:absolute",
+        "fixed inset-0 z-50 bg-black/32 backdrop-blur-sm transition-none duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0 supports-[-webkit-touch-callout:none]:absolute",
         className,
       )}
       data-slot="command-dialog-backdrop"
@@ -126,7 +126,7 @@ export function CommandInput({
         )}
         placeholder={placeholder}
         size="lg"
-        startAddon={<SearchIcon weight="bold" />}
+        startAddon={<SearchIcon />}
         {...props}
       />
     </div>

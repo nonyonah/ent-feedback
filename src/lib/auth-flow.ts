@@ -1,0 +1,7 @@
+import {safeRedirectPath} from '@/lib/safe-redirect';
+export type AuthIntent='public'|'workspace';
+export function authIntent(value:string|string[]|undefined):AuthIntent{return (Array.isArray(value)?value[0]:value)==='public'?'public':'workspace';}
+export function publicReturnPath(value:string|string[]|undefined){const path=safeRedirectPath(value,'/');const pathname=new URL(path,'http://localhost').pathname;return pathname==='/'||/^\/(?:items\/[^/]+|following|submit)\/?$/.test(pathname)||/^\/p\/[^/]+\/(?:boards(?:\/[^/]+(?:\/submit)?)?|items\/[^/]+|following|submit)\/?$/.test(pathname)||/^\/boards(?:\/[^/]+(?:\/submit)?)?\/?$/.test(pathname)?path:'/';}
+export function dashboardReturnPath(value:string|string[]|undefined){const path=safeRedirectPath(value,'/dashboard/boards');const pathname=new URL(path,'http://localhost').pathname;return pathname==='/dashboard'||pathname.startsWith('/dashboard/')?path:'/dashboard/boards';}
+export function authContinuation(intent:AuthIntent,next?:string|string[]){const path=intent==='public'?publicReturnPath(next):safeRedirectPath(next,'/dashboard/boards');return '/auth/continue?'+new URLSearchParams({intent,next:path}).toString();}
+export function workspaceAuthDestination({next,hasWorkspace,onboardingPending}:{next?:string|string[];hasWorkspace:boolean;onboardingPending:boolean}){const path=safeRedirectPath(next,'/dashboard/boards');if(new URL(path,'http://localhost').pathname==='/invitations/accept')return path;if(!hasWorkspace||onboardingPending)return '/registration';return dashboardReturnPath(path);}

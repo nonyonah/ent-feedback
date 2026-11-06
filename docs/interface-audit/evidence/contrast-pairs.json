@@ -1,0 +1,2658 @@
+[
+  {
+    "theme": "light",
+    "foreground": [
+      10,
+      10,
+      10
+    ],
+    "background": [
+      245,
+      245,
+      244
+    ],
+    "ratio": 18.148,
+    "examples": [
+      "Skip to feedback",
+      "Acme Feedback"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share",
+      "settings/account",
+      "settings/branding",
+      "settings/team",
+      "settings/widget",
+      "settings/integrations"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      10,
+      10,
+      10
+    ],
+    "background": [
+      252,
+      252,
+      251
+    ],
+    "ratio": 19.286,
+    "examples": [
+      "Toggle Sidebar",
+      "Requests",
+      "All statuses",
+      "Top",
+      "10 requests",
+      "A public roadmap view",
+      "Dark mode for the feedback widget",
+      "Send a Slack message when an idea ships",
+      "Merge duplicate ideas from the dashboard",
+      "Custom statuses for each board",
+      "Import feedback from Intercom",
+      "Export feedback and votes to CSV",
+      "Weekly digest email for board owners",
+      "Pin important posts to the top",
+      "All boards",
+      "Collect Feedback",
+      "X",
+      "LinkedIn",
+      "Facebook",
+      "Reddit",
+      "Account",
+      "Profile",
+      "Appearance",
+      "Settings",
+      "Danger zone",
+      "Branding",
+      "Brand",
+      "Public board",
+      "Team",
+      "Members",
+      "Invitations \u00b7 0",
+      "Widget",
+      "Visitor details",
+      "Greeting",
+      "Reply time",
+      "Installation instructions \u2192",
+      "Integrations",
+      "Workspace apps",
+      "Product feedback",
+      "Let people vote without creating an account",
+      "Alex Kim",
+      "Requiring a sign-in before voting adds friction. A verified email vote or a one-click gues",
+      "Maya Chen",
+      "Shipped. Guest votes are deduplicated per email and can be disabled per board.",
+      "This is great, thank you. Already seeing more responses."
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share",
+      "settings/account",
+      "settings/branding",
+      "settings/team",
+      "settings/widget",
+      "settings/integrations"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      252,
+      252,
+      251
+    ],
+    "ratio": 4.619,
+    "examples": [
+      "10",
+      "Riley Johnson",
+      "1",
+      "1w ago",
+      "Jordan Lee",
+      "3",
+      "2h ago",
+      "Priya Shah",
+      "2",
+      "5h ago",
+      "Nina Patel",
+      "3d ago",
+      "Marco Ruiz",
+      "1d ago",
+      "Dana Brooks",
+      "0",
+      "2w ago",
+      "Sam Chen",
+      "2d ago",
+      "Theo Martin",
+      "5d ago",
+      "Casey Wu",
+      "3 boards inside Acme Feedback",
+      "Feedback board",
+      "Get Acme Feedback in front of your users.",
+      "Share on social",
+      "Announce your board where your users already are.",
+      "Post to your followers.",
+      "Share with your network.",
+      "Post to a page or group.",
+      "Share in a subreddit.",
+      "Widget embed",
+      "One snippet to collect feedback right inside your app.",
+      "Load Acme Feedback",
+      "Add a shortcut to your app",
+      "Choose whether to collect a name or email in Widget settings.",
+      "View docs \u2192",
+      "Everything below stays editable while this is off, so you can prepare before opening the d",
+      "Details are self-declared and are not a verified sign-in.",
+      "Shown above the feedback form. It is part of the screen, never a comment in the thread.",
+      "Sets the expectation shown to customers. It does not change routing or team availability.",
+      "Authorize an app to connect a channel to Acme Feedback. You can disconnect it anytime.",
+      "4d ago",
+      "Conversation \u00b7 2 comments",
+      "Reply"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share",
+      "settings/widget",
+      "settings/integrations"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      10,
+      10,
+      10
+    ],
+    "background": [
+      242.11764705882354,
+      242.11764705882354,
+      241.15686274509804
+    ],
+    "ratio": 17.692,
+    "examples": [
+      "Let people vote without creating an account"
+    ],
+    "screens": [
+      "requests"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      242.11764705882354,
+      242.11764705882354,
+      241.15686274509804
+    ],
+    "ratio": 4.237,
+    "examples": [
+      "Alex Kim",
+      "2",
+      "4d ago",
+      "164",
+      "128",
+      "96",
+      "88",
+      "74",
+      "61",
+      "52",
+      "41",
+      "33",
+      "Product feedback",
+      "On board"
+    ],
+    "screens": [
+      "requests"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      232.62283737024222,
+      232.62283737024222,
+      231.69973087274127
+    ],
+    "ratio": 3.89,
+    "examples": [
+      "210"
+    ],
+    "screens": [
+      "requests"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      32,
+      32,
+      31
+    ],
+    "ratio": 15.623,
+    "examples": [
+      "Skip to feedback",
+      "Acme Feedback"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share",
+      "settings/account",
+      "settings/branding",
+      "settings/team",
+      "settings/widget",
+      "settings/integrations"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      25,
+      25,
+      24
+    ],
+    "ratio": 16.856,
+    "examples": [
+      "Toggle Sidebar",
+      "Requests",
+      "10 requests",
+      "A public roadmap view",
+      "Dark mode for the feedback widget",
+      "Send a Slack message when an idea ships",
+      "Merge duplicate ideas from the dashboard",
+      "Custom statuses for each board",
+      "Import feedback from Intercom",
+      "Export feedback and votes to CSV",
+      "Weekly digest email for board owners",
+      "Pin important posts to the top",
+      "All boards",
+      "Collect Feedback",
+      "X",
+      "LinkedIn",
+      "Facebook",
+      "Reddit",
+      "Account",
+      "Profile",
+      "Appearance",
+      "Settings",
+      "Danger zone",
+      "Branding",
+      "Brand",
+      "Public board",
+      "Team",
+      "Members",
+      "Invitations \u00b7 0",
+      "Widget",
+      "Visitor details",
+      "Greeting",
+      "Reply time",
+      "Installation instructions \u2192",
+      "Integrations",
+      "Workspace apps",
+      "Product feedback",
+      "Let people vote without creating an account",
+      "Alex Kim",
+      "Requiring a sign-in before voting adds friction. A verified email vote or a one-click gues",
+      "Maya Chen",
+      "Shipped. Guest votes are deduplicated per email and can be disabled per board.",
+      "This is great, thank you. Already seeing more responses."
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share",
+      "settings/account",
+      "settings/branding",
+      "settings/team",
+      "settings/widget",
+      "settings/integrations"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      161
+    ],
+    "background": [
+      25,
+      25,
+      24
+    ],
+    "ratio": 6.81,
+    "examples": [
+      "10",
+      "Riley Johnson",
+      "1",
+      "1w ago",
+      "Jordan Lee",
+      "3",
+      "2h ago",
+      "Priya Shah",
+      "2",
+      "5h ago",
+      "Nina Patel",
+      "3d ago",
+      "Marco Ruiz",
+      "1d ago",
+      "Dana Brooks",
+      "0",
+      "2w ago",
+      "Sam Chen",
+      "2d ago",
+      "Theo Martin",
+      "5d ago",
+      "Casey Wu",
+      "3 boards inside Acme Feedback",
+      "Feedback board",
+      "Get Acme Feedback in front of your users.",
+      "Share on social",
+      "Announce your board where your users already are.",
+      "Post to your followers.",
+      "Share with your network.",
+      "Post to a page or group.",
+      "Share in a subreddit.",
+      "Widget embed",
+      "One snippet to collect feedback right inside your app.",
+      "Load Acme Feedback",
+      "Add a shortcut to your app",
+      "Choose whether to collect a name or email in Widget settings.",
+      "View docs \u2192",
+      "Everything below stays editable while this is off, so you can prepare before opening the d",
+      "Details are self-declared and are not a verified sign-in.",
+      "Shown above the feedback form. It is part of the screen, never a comment in the thread.",
+      "Sets the expectation shown to customers. It does not change routing or team availability.",
+      "Authorize an app to connect a channel to Acme Feedback. You can disconnect it anytime.",
+      "4d ago",
+      "Conversation \u00b7 2 comments",
+      "Reply"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share",
+      "settings/widget",
+      "settings/integrations"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      35.8235294117647,
+      35.8235294117647,
+      34.870588235294115
+    ],
+    "ratio": 14.917,
+    "examples": [
+      "All statuses",
+      "Top",
+      "Product feedback",
+      "Preview widget",
+      "210"
+    ],
+    "screens": [
+      "requests",
+      "share",
+      "settings/widget"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      34.01960784313725,
+      34.01960784313725,
+      33.05882352941177
+    ],
+    "ratio": 15.252,
+    "examples": [
+      "Let people vote without creating an account"
+    ],
+    "screens": [
+      "requests"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      161
+    ],
+    "background": [
+      34.01960784313725,
+      34.01960784313725,
+      33.05882352941177
+    ],
+    "ratio": 6.162,
+    "examples": [
+      "Alex Kim",
+      "2",
+      "4d ago",
+      "164",
+      "128",
+      "96",
+      "88",
+      "74",
+      "61",
+      "52",
+      "41",
+      "33",
+      "Product feedback",
+      "On board"
+    ],
+    "screens": [
+      "requests"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      161
+    ],
+    "background": [
+      42.68550557477893,
+      42.68550557477893,
+      41.762399077277976
+    ],
+    "ratio": 5.509,
+    "examples": [
+      "210"
+    ],
+    "screens": [
+      "requests"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      10,
+      10,
+      10
+    ],
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 19.798,
+    "examples": [
+      "Product feedback",
+      "Bug reports",
+      "\ud83d\udca1",
+      "Community ideas",
+      "Preview",
+      "Send to your developer",
+      "Email",
+      "Theme",
+      "Sign-in method",
+      "Project name",
+      "Primary color",
+      "Hide \u201cPowered by\u201d",
+      "Alex Smith",
+      "Allow new feedback",
+      "Ask for visitor details",
+      "Name",
+      "Greeting message",
+      "Default",
+      "Reply expectation",
+      "Preview widget",
+      "Slack",
+      "Discord",
+      "Acme Feedback",
+      "Feedback",
+      "Help shape what we build next.",
+      "Top",
+      "10 ideas",
+      "Let people vote without creating an account",
+      "A public roadmap view",
+      "Dark mode for the feedback widget",
+      "Send a Slack message when an idea ships",
+      "Merge duplicate ideas from the dashboard",
+      "Custom statuses for each board",
+      "Import feedback from Intercom",
+      "Export feedback and votes to CSV",
+      "Weekly digest email for board owners",
+      "Pin important posts to the top",
+      "Our app is dark by default, so the bright widget stands out. A theme option that follows t",
+      "Jordan Lee",
+      "Details",
+      "Actions",
+      "Conversation",
+      "Maya Chen",
+      "This is on the roadmap. We are adding a theme prop that mirrors the host app automatically",
+      "A simple light, dark, and system option would cover every case for us.",
+      "Sam Chen",
+      "Same here. We had to hide the launcher on our settings screens because of the contrast.",
+      "Add a comment",
+      "Following",
+      "Notification preferences",
+      "A good idea is worth following.",
+      "What could be better?",
+      "Profile",
+      "Workspace",
+      "Apps",
+      "Team",
+      "Tell us about yourself",
+      "Your photo",
+      "First name",
+      "Last name",
+      "Create your workspace",
+      "Website (optional)",
+      "Workspace name",
+      "Workspace domain",
+      "All feedback",
+      "210",
+      "All boards",
+      "Account",
+      "Branding",
+      "Widget",
+      "Integrations"
+    ],
+    "screens": [
+      "boards",
+      "share",
+      "settings/account",
+      "settings/branding",
+      "settings/team",
+      "settings/widget",
+      "settings/integrations",
+      "public",
+      "detail",
+      "following",
+      "embed",
+      "submit",
+      "registration",
+      "onboarding",
+      "requests"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 4.742,
+    "examples": [
+      "Help shape what we build next.",
+      "Public board \u00b7 /product",
+      "Tell us what needs a closer look.",
+      "Public board \u00b7 /bugs",
+      "Ideas for the next release.",
+      "Public board \u00b7 /ideas",
+      "Copy",
+      "alex@example.com",
+      "Match your system or pick a side.",
+      "Your account uses email sign-in.",
+      "Email",
+      "Review account deletion in your secure account settings before confirming.",
+      "Accent used across your public boards.",
+      "Dynamic lets visitors switch between light and dark.",
+      "Remove Ent attribution from the feedback widget.",
+      "No pending invitations. Bring a teammate into the conversation.",
+      "Customers can submit feedback from the widget.",
+      "Applies when an anonymous visitor submits feedback.",
+      "Lets your team follow up when email delivery is connected.",
+      "Adds a display name to the feedback.",
+      "Leave empty to use the default greeting. Saves when you click away.",
+      "Automatic shows no estimate until reply history is available.",
+      "Connect a channel for your workspace feedback.",
+      "Connect your community\u2019s feedback channel.",
+      "Product feedback",
+      "Share an idea, vote on what matters, and follow what ships. We review every request and bu",
+      "Open",
+      "Planned",
+      "In Progress",
+      "Completed",
+      "210",
+      "Requiring a sign-in before voting adds friction. A verified email vote or a one-click gues",
+      "Alex Kim",
+      "2",
+      "164",
+      "Show planned and shipped ideas on a simple timeline so customers can see what is coming ne",
+      "Riley Johnson",
+      "1",
+      "128",
+      "Our app is dark by default, so the bright widget stands out. A theme option that follows t",
+      "Jordan Lee",
+      "3",
+      "96",
+      "We want to close the loop with customers automatically. A Slack notification with the idea",
+      "Priya Shah",
+      "88",
+      "When two posts describe the same request, we want to merge them and keep the combined vote",
+      "Nina Patel",
+      "74",
+      "Every team has its own workflow. Let us rename and add statuses, such as Exploring or Need",
+      "Marco Ruiz",
+      "61",
+      "We already collect requests in Intercom conversations. Importing them would let us consoli",
+      "Dana Brooks",
+      "0",
+      "52",
+      "We report on product requests in a spreadsheet. An export with title, status, votes, autho",
+      "Sam Chen",
+      "41",
+      "A Monday summary of new ideas, top votes, and status changes would help us stay on top of ",
+      "Theo Martin",
+      "33",
+      "Pinned posts would let us keep a welcome note or a high-priority request above the rest of",
+      "Casey Wu",
+      "All feedback",
+      "128 people have voted for this",
+      "Author",
+      "2h ago",
+      "Status",
+      "Follow this post",
+      "Copy link",
+      "Share",
+      "1h ago",
+      "Reply",
+      "3h ago",
+      "Back to the board",
+      "Your corner of the conversation",
+      "The ideas you\u2019re keeping an eye on, all in one place.",
+      "Follow a post to keep it here. You can find the follow action beside any conversation.",
+      "A small improvement or a big idea. We\u2019d love to hear it.",
+      "Design preview. Changes stay in this session until the backend is connected.",
+      "Getting started",
+      "Step 1 of 4",
+      "A name and photo help your teammates recognize you.",
+      "Optional \u00b7 PNG, JPG or WebP, up to 2 MB",
+      "Set up a space to collect feedback and keep your team in sync.",
+      "(optional)",
+      "Enter your workspace name.",
+      ".feedback.riftlabs.xyz",
+      "At least 5 characters. Letters, numbers and dashes."
+    ],
+    "screens": [
+      "boards",
+      "share",
+      "settings/account",
+      "settings/branding",
+      "settings/team",
+      "settings/widget",
+      "settings/integrations",
+      "public",
+      "detail",
+      "following",
+      "embed",
+      "submit",
+      "registration",
+      "onboarding"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      255,
+      255,
+      255
+    ],
+    "background": [
+      98,
+      71,
+      170
+    ],
+    "ratio": 6.997,
+    "examples": [
+      "Open inbox",
+      "Copy link",
+      "Invite team",
+      "Share an idea",
+      "All",
+      "Explore feedback",
+      "Create",
+      "Continue"
+    ],
+    "screens": [
+      "boards",
+      "share",
+      "settings/team",
+      "public",
+      "following",
+      "submit",
+      "registration"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      36,
+      36,
+      35
+    ],
+    "ratio": 14.885,
+    "examples": [
+      "Product feedback",
+      "Bug reports",
+      "\ud83d\udca1",
+      "Community ideas",
+      "Your workspace board",
+      "Email",
+      "Theme",
+      "Sign-in method",
+      "Project name",
+      "Primary color",
+      "Hide \u201cPowered by\u201d",
+      "Alex Smith",
+      "Ask for visitor details",
+      "Name",
+      "Greeting message",
+      "Default",
+      "Reply expectation",
+      "Let people vote without creating an account",
+      "A public roadmap view",
+      "Dark mode for the feedback widget",
+      "Send a Slack message when an idea ships",
+      "Merge duplicate ideas from the dashboard",
+      "Custom statuses for each board",
+      "Import feedback from Intercom",
+      "Export feedback and votes to CSV",
+      "Weekly digest email for board owners",
+      "Pin important posts to the top"
+    ],
+    "screens": [
+      "boards",
+      "share",
+      "settings/account",
+      "settings/branding",
+      "settings/team",
+      "settings/widget",
+      "public"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      161
+    ],
+    "background": [
+      36,
+      36,
+      35
+    ],
+    "ratio": 6.013,
+    "examples": [
+      "Help shape what we build next.",
+      "Public board \u00b7 /product",
+      "Tell us what needs a closer look.",
+      "Public board \u00b7 /bugs",
+      "Ideas for the next release.",
+      "Public board \u00b7 /ideas",
+      "Share it with your users, drop it in your docs, or link it from your website.",
+      "Domain setup pending. Configure DNS and HTTPS to activate this address; Preview opens your",
+      "Copy",
+      "alex@example.com",
+      "Match your system or pick a side.",
+      "Your account uses email sign-in.",
+      "Email",
+      "Review account deletion in your secure account settings before confirming.",
+      "Accent used across your public boards.",
+      "Dynamic lets visitors switch between light and dark.",
+      "Remove Ent attribution from the feedback widget.",
+      "No pending invitations. Bring a teammate into the conversation.",
+      "Applies when an anonymous visitor submits feedback.",
+      "Lets your team follow up when email delivery is connected.",
+      "Adds a display name to the feedback.",
+      "Leave empty to use the default greeting. Saves when you click away.",
+      "Automatic shows no estimate until reply history is available.",
+      "Requiring a sign-in before voting adds friction. A verified email vote or a one-click gues",
+      "Alex Kim",
+      "2",
+      "Show planned and shipped ideas on a simple timeline so customers can see what is coming ne",
+      "Riley Johnson",
+      "1",
+      "Our app is dark by default, so the bright widget stands out. A theme option that follows t",
+      "Jordan Lee",
+      "3",
+      "We want to close the loop with customers automatically. A Slack notification with the idea",
+      "Priya Shah",
+      "When two posts describe the same request, we want to merge them and keep the combined vote",
+      "Nina Patel",
+      "Every team has its own workflow. Let us rename and add statuses, such as Exploring or Need",
+      "Marco Ruiz",
+      "We already collect requests in Intercom conversations. Importing them would let us consoli",
+      "Dana Brooks",
+      "0",
+      "We report on product requests in a spreadsheet. An export with title, status, votes, autho",
+      "Sam Chen",
+      "A Monday summary of new ideas, top votes, and status changes would help us stay on top of ",
+      "Theo Martin",
+      "Pinned posts would let us keep a welcome note or a high-priority request above the rest of",
+      "Casey Wu"
+    ],
+    "screens": [
+      "boards",
+      "share",
+      "settings/account",
+      "settings/branding",
+      "settings/team",
+      "settings/widget",
+      "public"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      255,
+      255,
+      255
+    ],
+    "background": [
+      98,
+      71,
+      170
+    ],
+    "ratio": 6.997,
+    "examples": [
+      "Open inbox",
+      "Copy link",
+      "Invite team",
+      "Share an idea",
+      "All",
+      "Explore feedback",
+      "Create",
+      "Continue"
+    ],
+    "screens": [
+      "boards",
+      "share",
+      "settings/team",
+      "public",
+      "following",
+      "submit",
+      "registration"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      10,
+      10,
+      10
+    ],
+    "background": [
+      254.39999999999998,
+      254.39999999999998,
+      254.2
+    ],
+    "ratio": 19.695,
+    "examples": [
+      "Your workspace board"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      254.39999999999998,
+      254.39999999999998,
+      254.2
+    ],
+    "ratio": 4.717,
+    "examples": [
+      "Share it with your users, drop it in your docs, or link it from your website.",
+      "Domain setup pending. Configure DNS and HTTPS to activate this address; Preview opens your"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      98,
+      71,
+      170
+    ],
+    "background": [
+      254.39999999999998,
+      254.39999999999998,
+      254.2
+    ],
+    "ratio": 6.961,
+    "examples": [
+      "https://acme-feedback.feedback.riftlabs.xyz/boards/product"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      227.32549019607845,
+      227.32549019607845,
+      226.42745098039217
+    ],
+    "ratio": 3.704,
+    "examples": [
+      "1",
+      "2"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      58.39999999999999,
+      58.39999999999999,
+      58.19999999999999
+    ],
+    "background": [
+      252,
+      252,
+      251
+    ],
+    "ratio": 11.015,
+    "examples": [
+      "Widget loader",
+      "Direct feedback link",
+      "Visitor details"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      245,
+      245,
+      245
+    ],
+    "ratio": 4.349,
+    "examples": [
+      "1",
+      "Optional",
+      "2"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      57.417254901960774,
+      57.417254901960774,
+      57.357647058823524
+    ],
+    "background": [
+      247.08627450980393,
+      247.08627450980393,
+      246.78823529411767
+    ],
+    "ratio": 10.719,
+    "examples": [
+      "<script src=\"http://localhost:3000/widget.js\" data-project=\"acme-feedback\" data-board=\"pro",
+      "<a href=\"https://acme-feedback.feedback.riftlabs.xyz/boards/product/submit\">Share feedback",
+      "Visitor details are configured in Widget settings.\nhttp://localhost:3000/dashboard/setting"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      98,
+      71,
+      170
+    ],
+    "ratio": 6.704,
+    "examples": [
+      "Copy all"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      196,
+      190,
+      228
+    ],
+    "background": [
+      36,
+      36,
+      35
+    ],
+    "ratio": 8.754,
+    "examples": [
+      "https://acme-feedback.feedback.riftlabs.xyz/boards/product"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      10,
+      10,
+      10
+    ],
+    "ratio": 18.968,
+    "examples": [
+      "Preview",
+      "Send to your developer",
+      "Allow new feedback",
+      "Slack",
+      "Discord",
+      "Acme Feedback",
+      "Feedback",
+      "Help shape what we build next.",
+      "10 ideas",
+      "Dark mode for the feedback widget",
+      "Our app is dark by default, so the bright widget stands out. A theme option that follows t",
+      "Jordan Lee",
+      "Details",
+      "Actions",
+      "Conversation",
+      "Maya Chen",
+      "This is on the roadmap. We are adding a theme prop that mirrors the host app automatically",
+      "A simple light, dark, and system option would cover every case for us.",
+      "Sam Chen",
+      "Same here. We had to hide the launcher on our settings screens because of the contrast.",
+      "Add a comment",
+      "Following",
+      "A good idea is worth following.",
+      "Let people vote without creating an account",
+      "A public roadmap view",
+      "Send a Slack message when an idea ships",
+      "Merge duplicate ideas from the dashboard",
+      "Custom statuses for each board",
+      "Import feedback from Intercom",
+      "Export feedback and votes to CSV",
+      "Weekly digest email for board owners",
+      "Pin important posts to the top",
+      "What could be better?",
+      "Profile",
+      "Workspace",
+      "Apps",
+      "Team",
+      "Tell us about yourself",
+      "Your photo",
+      "First name",
+      "Last name",
+      "Create your workspace",
+      "Website (optional)",
+      "Workspace name",
+      "Workspace domain",
+      "All feedback",
+      "All boards",
+      "Account",
+      "Branding",
+      "Widget",
+      "Integrations"
+    ],
+    "screens": [
+      "share",
+      "settings/widget",
+      "settings/integrations",
+      "public",
+      "detail",
+      "following",
+      "embed",
+      "submit",
+      "registration",
+      "onboarding",
+      "requests",
+      "boards",
+      "settings/account",
+      "settings/branding",
+      "settings/team"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      161
+    ],
+    "background": [
+      47.43137254901961,
+      47.43137254901961,
+      46.53333333333333
+    ],
+    "ratio": 5.155,
+    "examples": [
+      "1",
+      "2"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      205,
+      205,
+      204.8
+    ],
+    "background": [
+      25,
+      25,
+      24
+    ],
+    "ratio": 11.066,
+    "examples": [
+      "Widget loader",
+      "Direct feedback link",
+      "Visitor details"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      161
+    ],
+    "background": [
+      38,
+      38,
+      38
+    ],
+    "ratio": 5.857,
+    "examples": [
+      "1",
+      "Optional",
+      "2",
+      "Search\u2026"
+    ],
+    "screens": [
+      "share",
+      "public",
+      "detail",
+      "following",
+      "submit"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      206.82509803921567,
+      206.82509803921567,
+      206.76549019607842
+    ],
+    "background": [
+      34.12549019607843,
+      34.12549019607843,
+      33.82745098039216
+    ],
+    "ratio": 10.181,
+    "examples": [
+      "<script src=\"http://localhost:3000/widget.js\" data-project=\"acme-feedback\" data-board=\"pro",
+      "<a href=\"https://acme-feedback.feedback.riftlabs.xyz/boards/product/submit\">Share feedback",
+      "Visitor details are configured in Widget settings.\nhttp://localhost:3000/dashboard/setting"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      98,
+      71,
+      170
+    ],
+    "ratio": 6.704,
+    "examples": [
+      "Copy all"
+    ],
+    "screens": [
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      0,
+      130,
+      54
+    ],
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 4.945,
+    "examples": [
+      "Verified"
+    ],
+    "screens": [
+      "settings/account"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      10,
+      10,
+      10
+    ],
+    "background": [
+      243.01960784313727,
+      243.01960784313727,
+      243.01960784313727
+    ],
+    "ratio": 17.845,
+    "examples": [
+      "System"
+    ],
+    "screens": [
+      "settings/account"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      193,
+      0,
+      7
+    ],
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 6.421,
+    "examples": [
+      "Delete account"
+    ],
+    "screens": [
+      "settings/account"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      5,
+      223,
+      114
+    ],
+    "background": [
+      36,
+      36,
+      35
+    ],
+    "ratio": 8.734,
+    "examples": [
+      "Verified"
+    ],
+    "screens": [
+      "settings/account"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      46.305882352941175,
+      46.305882352941175,
+      45.35294117647059
+    ],
+    "ratio": 12.967,
+    "examples": [
+      "System",
+      "Purple",
+      "Dynamic",
+      "Optional",
+      "Automatic"
+    ],
+    "screens": [
+      "settings/account",
+      "settings/branding",
+      "settings/widget"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      255,
+      100,
+      103
+    ],
+    "background": [
+      36,
+      36,
+      35
+    ],
+    "ratio": 5.379,
+    "examples": [
+      "Delete account"
+    ],
+    "screens": [
+      "settings/account"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      10,
+      10,
+      10
+    ],
+    "background": [
+      245,
+      245,
+      245
+    ],
+    "ratio": 18.16,
+    "examples": [
+      "Purple",
+      "Dynamic",
+      "Owner",
+      "Optional",
+      "Automatic"
+    ],
+    "screens": [
+      "settings/branding",
+      "settings/team",
+      "settings/widget"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      38,
+      38,
+      38
+    ],
+    "ratio": 14.499,
+    "examples": [
+      "Owner",
+      "Alex Smith",
+      "Product feedback"
+    ],
+    "screens": [
+      "settings/team",
+      "submit"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      161
+    ],
+    "background": [
+      10,
+      10,
+      10
+    ],
+    "ratio": 7.663,
+    "examples": [
+      "Customers can submit feedback from the widget.",
+      "Connect a channel for your workspace feedback.",
+      "Connect your community\u2019s feedback channel.",
+      "Product feedback",
+      "Share an idea, vote on what matters, and follow what ships. We review every request and bu",
+      "All feedback",
+      "128",
+      "128 people have voted for this",
+      "Author",
+      "2h ago",
+      "Status",
+      "Follow this post",
+      "Copy link",
+      "Share",
+      "1h ago",
+      "Reply",
+      "3h ago",
+      "Back to the board",
+      "Your corner of the conversation",
+      "The ideas you\u2019re keeping an eye on, all in one place.",
+      "Follow a post to keep it here. You can find the follow action beside any conversation.",
+      "Requiring a sign-in before voting adds friction. A verified email vote or a one-click gues",
+      "Alex Kim",
+      "Show planned and shipped ideas on a simple timeline so customers can see what is coming ne",
+      "Riley Johnson",
+      "Our app is dark by default, so the bright widget stands out. A theme option that follows t",
+      "Jordan Lee",
+      "We want to close the loop with customers automatically. A Slack notification with the idea",
+      "Priya Shah",
+      "When two posts describe the same request, we want to merge them and keep the combined vote",
+      "Nina Patel",
+      "Every team has its own workflow. Let us rename and add statuses, such as Exploring or Need",
+      "Marco Ruiz",
+      "We already collect requests in Intercom conversations. Importing them would let us consoli",
+      "Dana Brooks",
+      "We report on product requests in a spreadsheet. An export with title, status, votes, autho",
+      "Sam Chen",
+      "A Monday summary of new ideas, top votes, and status changes would help us stay on top of ",
+      "Theo Martin",
+      "Pinned posts would let us keep a welcome note or a high-priority request above the rest of",
+      "Casey Wu",
+      "A small improvement or a big idea. We\u2019d love to hear it.",
+      "Design preview. Changes stay in this session until the backend is connected.",
+      "Getting started",
+      "Step 1 of 4",
+      "A name and photo help your teammates recognize you.",
+      "Optional \u00b7 PNG, JPG or WebP, up to 2 MB",
+      "Set up a space to collect feedback and keep your team in sync.",
+      "(optional)",
+      "Enter your workspace name.",
+      "At least 5 characters. Letters, numbers and dashes."
+    ],
+    "screens": [
+      "settings/widget",
+      "settings/integrations",
+      "public",
+      "detail",
+      "following",
+      "embed",
+      "submit",
+      "registration",
+      "onboarding"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      24,
+      24,
+      27
+    ],
+    "background": [
+      244,
+      244,
+      245
+    ],
+    "ratio": 16.118,
+    "examples": [
+      "Connect"
+    ],
+    "screens": [
+      "settings/integrations"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      39,
+      39,
+      42
+    ],
+    "ratio": 14.27,
+    "examples": [
+      "Connect"
+    ],
+    "screens": [
+      "settings/integrations"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      21,
+      128,
+      61
+    ],
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 5.016,
+    "examples": [
+      "Shipped"
+    ],
+    "screens": [
+      "public"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      29,
+      78,
+      216
+    ],
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 6.702,
+    "examples": [
+      "Planned"
+    ],
+    "screens": [
+      "public",
+      "detail"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      180,
+      83,
+      9
+    ],
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 5.022,
+    "examples": [
+      "In Progress"
+    ],
+    "screens": [
+      "public"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      82,
+      82,
+      91
+    ],
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 7.73,
+    "examples": [
+      "Open"
+    ],
+    "screens": [
+      "public"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      161
+    ],
+    "background": [
+      21.529411764705884,
+      21.529411764705884,
+      21.529411764705884
+    ],
+    "ratio": 7.034,
+    "examples": [
+      "Open",
+      "Planned",
+      "In Progress",
+      "Completed",
+      ".feedback.riftlabs.xyz"
+    ],
+    "screens": [
+      "public",
+      "onboarding"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      21.529411764705884,
+      21.529411764705884,
+      21.529411764705884
+    ],
+    "ratio": 17.412,
+    "examples": [
+      "Top",
+      "Notification preferences"
+    ],
+    "screens": [
+      "public",
+      "following"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 4.742,
+    "examples": [
+      "210",
+      "164",
+      "128",
+      "96",
+      "88",
+      "74",
+      "61",
+      "52",
+      "41",
+      "33"
+    ],
+    "screens": [
+      "public"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      134,
+      239,
+      172
+    ],
+    "background": [
+      36,
+      36,
+      35
+    ],
+    "ratio": 11.065,
+    "examples": [
+      "Shipped"
+    ],
+    "screens": [
+      "public"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      147,
+      197,
+      253
+    ],
+    "background": [
+      36,
+      36,
+      35
+    ],
+    "ratio": 8.616,
+    "examples": [
+      "Planned"
+    ],
+    "screens": [
+      "public"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      252,
+      211,
+      77
+    ],
+    "background": [
+      36,
+      36,
+      35
+    ],
+    "ratio": 10.775,
+    "examples": [
+      "In Progress"
+    ],
+    "screens": [
+      "public"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      170
+    ],
+    "background": [
+      36,
+      36,
+      35
+    ],
+    "ratio": 6.062,
+    "examples": [
+      "Open"
+    ],
+    "screens": [
+      "public"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      98,
+      71,
+      170
+    ],
+    "background": [
+      236.03529411764706,
+      232.99607843137255,
+      245.0313725490196
+    ],
+    "ratio": 5.845,
+    "examples": [
+      "Team"
+    ],
+    "screens": [
+      "detail"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      147,
+      197,
+      253
+    ],
+    "background": [
+      10,
+      10,
+      10
+    ],
+    "ratio": 10.979,
+    "examples": [
+      "Planned"
+    ],
+    "screens": [
+      "detail"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      196,
+      190,
+      228
+    ],
+    "background": [
+      23.56078431372549,
+      19.537254901960786,
+      33.54509803921569
+    ],
+    "ratio": 10.226,
+    "examples": [
+      "Team"
+    ],
+    "screens": [
+      "detail"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      58.999999999999986,
+      58.999999999999986,
+      58.999999999999986
+    ],
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 11.202,
+    "examples": [
+      "210",
+      "164",
+      "128",
+      "96",
+      "88",
+      "74",
+      "61",
+      "52",
+      "41",
+      "33"
+    ],
+    "screens": [
+      "embed"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      249.98039215686276,
+      249.98039215686276,
+      249.98039215686276
+    ],
+    "ratio": 4.542,
+    "examples": [
+      "Powered by Ent"
+    ],
+    "screens": [
+      "embed"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      57.99607843137254,
+      57.99607843137254,
+      57.99607843137254
+    ],
+    "background": [
+      249.98039215686276,
+      249.98039215686276,
+      249.98039215686276
+    ],
+    "ratio": 10.896,
+    "examples": [
+      "Ent"
+    ],
+    "screens": [
+      "embed"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      202,
+      202,
+      202
+    ],
+    "background": [
+      10,
+      10,
+      10
+    ],
+    "ratio": 12.079,
+    "examples": [
+      "210",
+      "164",
+      "128",
+      "96",
+      "88",
+      "74",
+      "61",
+      "52",
+      "41",
+      "33"
+    ],
+    "screens": [
+      "embed"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      161
+    ],
+    "background": [
+      24.054901960784314,
+      24.054901960784314,
+      24.054901960784314
+    ],
+    "ratio": 6.869,
+    "examples": [
+      "Powered by Ent"
+    ],
+    "screens": [
+      "embed"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      204.81098039215686,
+      204.81098039215686,
+      204.81098039215686
+    ],
+    "background": [
+      24.054901960784314,
+      24.054901960784314,
+      24.054901960784314
+    ],
+    "ratio": 11.142,
+    "examples": [
+      "Ent"
+    ],
+    "screens": [
+      "embed"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      10,
+      10,
+      10
+    ],
+    "background": [
+      250,
+      250,
+      250
+    ],
+    "ratio": 18.968,
+    "examples": [
+      "Alex Smith",
+      "Product feedback"
+    ],
+    "screens": [
+      "submit"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      251,
+      251,
+      251
+    ],
+    "ratio": 4.582,
+    "examples": [
+      "Search\u2026"
+    ],
+    "screens": [
+      "public",
+      "detail",
+      "following",
+      "submit"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      183.23529411764707,
+      183.23529411764707,
+      183.23529411764707
+    ],
+    "background": [
+      251,
+      251,
+      251
+    ],
+    "ratio": 1.933,
+    "examples": [
+      "/"
+    ],
+    "screens": [
+      "public",
+      "detail",
+      "following",
+      "submit"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      99.74117647058823,
+      99.74117647058823,
+      99.74117647058823
+    ],
+    "background": [
+      38,
+      38,
+      38
+    ],
+    "ratio": 2.547,
+    "examples": [
+      "/"
+    ],
+    "screens": [
+      "public",
+      "detail",
+      "following",
+      "submit"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      245,
+      245,
+      244
+    ],
+    "ratio": 4.346,
+    "examples": [
+      "Project",
+      "Requests",
+      "Manage",
+      "Take a quick tour",
+      "Back",
+      "Personal",
+      "Workspace",
+      "Product",
+      "Connections"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share",
+      "settings/account",
+      "settings/branding",
+      "settings/team",
+      "settings/widget",
+      "settings/integrations"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      56.999999999999986,
+      56.999999999999986,
+      56.79999999999999
+    ],
+    "background": [
+      245,
+      245,
+      244
+    ],
+    "ratio": 10.589,
+    "examples": [
+      "All boards",
+      "Share",
+      "Settings",
+      "Copy board link",
+      "All feedback",
+      "Branding",
+      "Team",
+      "Widget",
+      "Integrations",
+      "Account"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share",
+      "settings/account",
+      "settings/branding",
+      "settings/team",
+      "settings/widget",
+      "settings/integrations"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      245,
+      245,
+      244.7019607843137
+    ],
+    "ratio": 4.348,
+    "examples": [
+      "3",
+      "4",
+      "1",
+      "2",
+      "10"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      115,
+      115,
+      115
+    ],
+    "background": [
+      247.98039215686276,
+      247.98039215686276,
+      247.98039215686276
+    ],
+    "ratio": 4.464,
+    "examples": [
+      "10",
+      "3"
+    ],
+    "screens": [
+      "requests",
+      "boards"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      82,
+      82,
+      91
+    ],
+    "background": [
+      245,
+      245,
+      244
+    ],
+    "ratio": 7.086,
+    "examples": [
+      "Open"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      29,
+      78,
+      216
+    ],
+    "background": [
+      245,
+      245,
+      244
+    ],
+    "ratio": 6.143,
+    "examples": [
+      "Planned"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      180,
+      83,
+      9
+    ],
+    "background": [
+      245,
+      245,
+      244
+    ],
+    "ratio": 4.603,
+    "examples": [
+      "In Progress"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      21,
+      128,
+      61
+    ],
+    "background": [
+      245,
+      245,
+      244
+    ],
+    "ratio": 4.598,
+    "examples": [
+      "Shipped"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      98,
+      71,
+      170
+    ],
+    "background": [
+      233.4,
+      230.3607843137255,
+      241.5176470588235
+    ],
+    "ratio": 5.702,
+    "examples": [
+      "Team"
+    ],
+    "screens": [
+      "requests"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      10,
+      10,
+      10
+    ],
+    "background": [
+      249.8862745098039,
+      249.8862745098039,
+      249.18823529411762
+    ],
+    "ratio": 18.941,
+    "examples": [
+      "Add a comment"
+    ],
+    "screens": [
+      "requests"
+    ]
+  },
+  {
+    "theme": "light",
+    "foreground": [
+      21,
+      128,
+      61
+    ],
+    "background": [
+      254.5529411764706,
+      254.5529411764706,
+      254.40392156862745
+    ],
+    "ratio": 4.996,
+    "examples": [
+      "Shipped"
+    ],
+    "screens": [
+      "requests"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      161
+    ],
+    "background": [
+      32,
+      32,
+      31
+    ],
+    "ratio": 6.312,
+    "examples": [
+      "Project",
+      "Requests",
+      "Manage",
+      "Take a quick tour",
+      "Back",
+      "Personal",
+      "Workspace",
+      "Product",
+      "Connections"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share",
+      "settings/account",
+      "settings/branding",
+      "settings/team",
+      "settings/widget",
+      "settings/integrations"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      206.4,
+      206.4,
+      206.2
+    ],
+    "background": [
+      32,
+      32,
+      31
+    ],
+    "ratio": 10.402,
+    "examples": [
+      "All boards",
+      "Share",
+      "Settings",
+      "Copy board link",
+      "All feedback",
+      "Branding",
+      "Team",
+      "Widget",
+      "Integrations",
+      "Account"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share",
+      "settings/account",
+      "settings/branding",
+      "settings/team",
+      "settings/widget",
+      "settings/integrations"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      161
+    ],
+    "background": [
+      36.21176470588235,
+      36.21176470588235,
+      35.91372549019608
+    ],
+    "ratio": 5.994,
+    "examples": [
+      "3",
+      "4",
+      "1",
+      "2",
+      "10"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      161
+    ],
+    "background": [
+      29.65490196078431,
+      29.65490196078431,
+      29.65490196078431
+    ],
+    "ratio": 6.478,
+    "examples": [
+      "10",
+      "3"
+    ],
+    "screens": [
+      "requests",
+      "boards"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      161,
+      161,
+      170
+    ],
+    "background": [
+      32,
+      32,
+      31
+    ],
+    "ratio": 6.363,
+    "examples": [
+      "Open"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      147,
+      197,
+      253
+    ],
+    "background": [
+      32,
+      32,
+      31
+    ],
+    "ratio": 9.043,
+    "examples": [
+      "Planned"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      252,
+      211,
+      77
+    ],
+    "background": [
+      32,
+      32,
+      31
+    ],
+    "ratio": 11.309,
+    "examples": [
+      "In Progress"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      134,
+      239,
+      172
+    ],
+    "background": [
+      32,
+      32,
+      31
+    ],
+    "ratio": 11.614,
+    "examples": [
+      "Shipped"
+    ],
+    "screens": [
+      "requests",
+      "boards",
+      "share"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      196,
+      190,
+      228
+    ],
+    "background": [
+      36.325490196078434,
+      32.30196078431372,
+      45.45882352941176
+    ],
+    "ratio": 8.933,
+    "examples": [
+      "Team"
+    ],
+    "screens": [
+      "requests"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      250,
+      250,
+      250
+    ],
+    "background": [
+      28.32156862745098,
+      28.32156862745098,
+      27.6235294117647
+    ],
+    "ratio": 16.28,
+    "examples": [
+      "Add a comment"
+    ],
+    "screens": [
+      "requests"
+    ]
+  },
+  {
+    "theme": "dark",
+    "foreground": [
+      134,
+      239,
+      172
+    ],
+    "background": [
+      24.470449826989622,
+      24.470449826989622,
+      24.328442906574395
+    ],
+    "ratio": 12.589,
+    "examples": [
+      "Shipped"
+    ],
+    "screens": [
+      "requests"
+    ]
+  }
+]

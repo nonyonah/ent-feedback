@@ -1,0 +1,68 @@
+{
+  "focus": {
+    "focused": true,
+    "outline": "rgb(10, 10, 10) none 3px",
+    "shadow": "rgb(98, 71, 170) 0px -2px 0px 0px inset",
+    "border": "rgb(229, 229, 229)"
+  },
+  "rtl": [
+    {
+      "text": "Toggle Sidebar",
+      "rect": {
+        "x": 276,
+        "y": 12,
+        "width": 28,
+        "height": 28,
+        "top": 12,
+        "right": 304,
+        "bottom": 40,
+        "left": 276
+      }
+    },
+    {
+      "text": "Product feedback",
+      "rect": {
+        "x": 32,
+        "y": 83.5,
+        "width": 256,
+        "height": 36,
+        "top": 83.5,
+        "right": 288,
+        "bottom": 119.5,
+        "left": 32
+      }
+    },
+    {
+      "text": "Copy link",
+      "rect": {
+        "x": 175.234375,
+        "y": 518.40625,
+        "width": 95.765625,
+        "height": 30,
+        "top": 518.40625,
+        "right": 271,
+        "bottom": 548.40625,
+        "left": 175.234375
+      }
+    }
+  ],
+  "german": {
+    "rect": {
+      "x": 49,
+      "y": 518.40625,
+      "width": 222,
+      "height": 42,
+      "top": 518.40625,
+      "right": 271,
+      "bottom": 560.40625,
+      "left": 49
+    },
+    "scrollWidth": 220,
+    "clientWidth": 220,
+    "viewport": 320
+  },
+  "zoom": {
+    "method": "CSS zoom 2 at 640px; not native browser zoom",
+    "overflow": false
+  }
+}

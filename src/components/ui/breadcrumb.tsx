@@ -2,8 +2,8 @@
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { CaretRightIcon as ChevronRight } from "@phosphor-icons/react/dist/ssr/CaretRight";
-import { DotsThreeIcon as MoreHorizontal } from "@phosphor-icons/react/dist/ssr/DotsThree";
+import { CaretRightIcon as ChevronRight } from "@/components/icons";
+import { DotsThreeIcon as MoreHorizontal } from "@/components/icons";
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -86,7 +86,7 @@ export function BreadcrumbSeparator({
       role="presentation"
       {...props}
     >
-      {children ?? <ChevronRight weight="bold" />}
+      {children ?? <ChevronRight />}
     </li>
   );
 }
@@ -103,7 +103,7 @@ export function BreadcrumbEllipsis({
       role="presentation"
       {...props}
     >
-      <MoreHorizontal weight="bold" className="size-4" />
+      <MoreHorizontal className="size-4" />
       <span className="sr-only">More</span>
     </span>
   );

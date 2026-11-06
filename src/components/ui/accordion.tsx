@@ -1,7 +1,7 @@
 "use client";
 
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
-import { CaretDownIcon as ChevronDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
+import { DropdownChevron } from "@/components/ui/dropdown-chevron";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
@@ -33,15 +33,15 @@ export function AccordionTrigger({
     <AccordionPrimitive.Header className="flex">
       <AccordionPrimitive.Trigger
         className={cn(
-          "flex flex-1 cursor-pointer items-start justify-between gap-4 rounded-md py-4 text-left font-medium text-sm outline-none transition-all focus-visible:ring-[3px] focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-64 data-panel-open:*:data-[slot=accordion-indicator]:rotate-180",
+          "flex flex-1 cursor-pointer items-start justify-between gap-4 rounded-md py-4 text-left font-medium text-sm outline-none transition-shadow focus-visible:ring-[3px] focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-64",
           className,
         )}
         data-slot="accordion-trigger"
         {...props}
       >
         {children}
-        <ChevronDownIcon weight="bold"
-          className="pointer-events-none size-4 shrink-0 translate-y-0.5 opacity-80 transition-transform duration-200 ease-in-out"
+        <DropdownChevron
+          className="pointer-events-none size-4 shrink-0 translate-y-0.5 opacity-80"
           data-slot="accordion-indicator"
         />
       </AccordionPrimitive.Trigger>

@@ -39,20 +39,15 @@ export function AvatarImage({
   );
 }
 
-export function AvatarFallback({
-  className,
-  ...props
-}: AvatarPrimitive.Fallback.Props): React.ReactElement {
-  return (
-    <AvatarPrimitive.Fallback
-      className={cn(
-        "absolute inset-0 flex size-full items-center justify-center rounded-[inherit] bg-border",
-        className,
-      )}
-      data-slot="avatar-fallback"
-      {...props}
-    />
-  );
+const avatarPalettes=[
+ ["#30a8a0","#b3d3ff","#287bba"],["#d68eae","#e5d5fa","#a76fae"],
+ ["#e3a25e","#ffe4a6","#cf6d86"],["#6c85c8","#d2b8f1","#4fb1b4"],
+ ["#75a885","#d3e9ad","#54aab8"],["#c98e6f","#ffdbbc","#ca9dbf"],
+];
+export function avatarGradient(seed:string):React.CSSProperties{let hash=0;for(let i=0;i<seed.length;i++)hash=(Math.imul(hash,31)+seed.charCodeAt(i))>>>0;const [base,light,accent]=avatarPalettes[hash%avatarPalettes.length];return {backgroundColor:base,backgroundImage:`radial-gradient(ellipse at ${20+hash%45}% -15%, ${light} 0%, transparent 65%), radial-gradient(ellipse at 110% 85%, ${accent} 0%, transparent 70%), linear-gradient(145deg, ${light}, ${base} 65%)`};}
+export function AvatarFallback({className,children,seed,style,...props}:AvatarPrimitive.Fallback.Props & {seed?:string}):React.ReactElement{
+ const identity=seed??(typeof children==="string"||typeof children==="number"?String(children):"avatar");
+ return <AvatarPrimitive.Fallback className={cn("absolute inset-0 flex size-full items-center justify-center rounded-[inherit]",className)} data-slot="avatar-fallback" data-avatar-gradient="true" aria-hidden="true" {...props} style={{...avatarGradient(identity),...(typeof style==="object"?style:{})}}/>;
 }
 
 export interface AvatarGroupProps extends React.ComponentProps<"div"> {
@@ -110,7 +105,7 @@ export function AvatarGroupCount({
       data-slot="avatar-group-count"
       {...props}
     >
-      <AvatarFallback>{children}</AvatarFallback>
+      <AvatarPrimitive.Fallback className="absolute inset-0 flex items-center justify-center rounded-[inherit] bg-border">{children}</AvatarPrimitive.Fallback>
     </Avatar>
   );
 }

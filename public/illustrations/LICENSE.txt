@@ -1,0 +1,8 @@
+Isometric icons by Isocons — https://www.isocons.app/
+Licensed under Creative Commons Attribution 4.0 International:
+https://creativecommons.org/licenses/by/4.0/
+
+Items: Create new folder, Cards, Manage Search, Browse activity.
+Changes: extracted as standalone SVG, black strokes changed to neutral gray.
+The UI may scale or invert these images to match the active theme.
+No endorsement by the original creator is implied.

@@ -1,14 +1,16 @@
-import { TrayIcon as InboxIcon } from "@phosphor-icons/react/dist/ssr/Tray";
+import {EmptyIllustration} from "./empty-illustration";
 import { cn } from "@/lib/utils";
 
 export function EmptyState({
   title,
   description,
   className,
+  variant="empty",
 }: {
   title: string;
   description: string;
   className?: string;
+  variant?: "empty"|"search"|"notifications";
 }): React.ReactElement {
   return (
     <div
@@ -17,9 +19,7 @@ export function EmptyState({
         className,
       )}
     >
-      <span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <InboxIcon weight="bold" aria-hidden="true" className="size-5" />
-      </span>
+      <EmptyIllustration variant={variant}/>
       <h3 className="text-xl font-semibold leading-7 text-foreground">{title}</h3>
       <p className="text-sm leading-5 text-muted-foreground">{description}</p>
     </div>

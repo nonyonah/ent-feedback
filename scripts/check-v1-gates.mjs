@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {mkdtempSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {createRequire} from 'node:module';
+import esbuild from 'esbuild';
+const output=join(mkdtempSync(join(tmpdir(),'ent-v1-gates-')),'gates.cjs');
+await esbuild.build({stdin:{contents:`export * as integrations from './src/server/actions/integrations';export * as workspaces from './src/server/actions/workspaces';export * as registration from './src/server/actions/registration';export * as services from './src/server/services/workspaces';export {GET as callback} from './src/app/api/integrations/[provider]/callback/route';export {GET as team} from './src/app/api/workspaces/[workspaceId]/team/route';export {features} from './src/lib/features';`,resolveDir:process.cwd(),loader:'ts'},bundle:true,packages:'external',platform:'node',format:'cjs',outfile:output,banner:{js:`require=require('node:module').createRequire('${process.cwd()}/package.json');`},plugins:[{name:'deny-side-effects',setup(b){b.onResolve({filter:/^(server-only|@clerk\/nextjs\/server|@\/server\/(auth|db\/client))$/},a=>({path:a.path,namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},a=>({loader:'js',resolveDir:process.cwd(),contents:a.path==='server-only'?'':a.path==='@clerk/nextjs/server'?`const forbidden=()=>{global.gateSideEffects++;throw Error('Unexpected Clerk access')};export const clerkClient=forbidden,currentUser=forbidden;`:a.path.endsWith('/auth')?`const forbidden=()=>{global.gateSideEffects++;throw Error('Unexpected auth access')};export const requireAppUser=forbidden,getOptionalAppUser=forbidden;`:`export function getDb(){global.gateSideEffects++;throw Error('Unexpected database access')}` }));}}]});
+const load=createRequire(import.meta.url);const a=load(output);globalThis.gateSideEffects=0;
+assert.deepEqual(a.features,{integrations:false,customDomains:false,teams:false});
+const calls=[()=>a.integrations.listConnectionsAction('workspace'),()=>a.integrations.connectIntegrationAction({provider:'slack',workspaceId:'workspace',returnTo:'/registration'}),()=>a.integrations.disconnectIntegrationAction({provider:'discord',workspaceId:'workspace'}),()=>a.workspaces.inviteMembersAction({workspaceId:'workspace',emails:['test@example.com'],role:'admin'}),()=>a.workspaces.cancelInvitationAction({workspaceId:'workspace',invitationId:'invite'}),()=>a.workspaces.acceptInvitationAction('token'),()=>a.registration.advanceRegistrationAction({workspaceId:'workspace',step:3})];
+for(const call of calls){const result=await call();assert.equal(result.ok,false);assert.equal(result.error.code,'forbidden');}
+for(const name of ['listWorkspaceMembers','listPendingInvitations','createInvitations','cancelInvitation','previewInvitation','acceptInvitation'])await assert.rejects(()=>a.services[name]({}),{code:'forbidden'});
+const callback=await a.callback(new Request('https://app.example/api/integrations/slack/callback?code=test'),{params:Promise.resolve({provider:'slack'})});assert.equal(callback.status,404);
+const team=await a.team(new Request('https://app.example/api/workspaces/id/team'),{params:Promise.resolve({workspaceId:'id'})});assert.equal(team.status,403);
+assert.equal(globalThis.gateSideEffects,0);
+console.log('PASS v1 gates: all three flags off; integration/invitation actions, team services, legacy onboarding advance and direct callbacks/team API blocked before authentication, database or provider access.');

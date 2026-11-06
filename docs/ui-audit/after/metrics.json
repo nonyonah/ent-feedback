@@ -1,0 +1,364 @@
+{
+  "report": [
+    {
+      "screen": "requests",
+      "section": "",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px",
+        "14px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "boards",
+      "section": "",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px",
+        "14px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "share",
+      "section": "",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "settings",
+      "section": "account",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "settings",
+      "section": "branding",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "settings",
+      "section": "team",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "settings",
+      "section": "widget",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "settings",
+      "section": "integrations",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "public",
+      "section": "",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px",
+        "14px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "detail",
+      "section": "",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px",
+        "14px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "following",
+      "section": "",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px",
+        "14px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "embed",
+      "section": "",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px",
+        "14px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "submit",
+      "section": "",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px",
+        "14px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "registration",
+      "section": "",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "onboarding",
+      "section": "",
+      "width": 1440,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "requests",
+      "section": "",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "boards",
+      "section": "",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "share",
+      "section": "",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "settings",
+      "section": "account",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "settings",
+      "section": "branding",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "settings",
+      "section": "team",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "settings",
+      "section": "widget",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "settings",
+      "section": "integrations",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "public",
+      "section": "",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px",
+        "14px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "detail",
+      "section": "",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px",
+        "14px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "following",
+      "section": "",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px",
+        "14px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "embed",
+      "section": "",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px",
+        "14px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "submit",
+      "section": "",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "13px",
+        "14px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "registration",
+      "section": "",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    },
+    {
+      "screen": "onboarding",
+      "section": "",
+      "width": 390,
+      "overflow": false,
+      "font": "Inter, \"Inter Fallback\", Inter, ui-sans-serif, system-ui, sans-serif",
+      "type": [
+        "14px",
+        "13px"
+      ],
+      "tight": []
+    }
+  ],
+  "errors": []
+}

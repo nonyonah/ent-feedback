@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretUpIcon as ChevronUpIcon } from "@phosphor-icons/react/dist/ssr/CaretUp";
+import { CaretUpIcon as ChevronUpIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +29,7 @@ export function VoteButton({
       onClick={onVote}
       variant="outline"
     >
-      <ChevronUpIcon weight="bold"
+      <ChevronUpIcon
         aria-hidden="true"
         className={cn("size-4", voted ? "text-primary" : "text-muted-foreground")}
         />

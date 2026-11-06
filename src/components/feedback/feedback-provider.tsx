@@ -1,163 +1,127 @@
 "use client";
 
-import * as React from "react";
-import { useProject } from "@/components/feedback/project-provider";
-import {
-  type FeedbackComment,
-  type FeedbackItemData,
-  type FeedbackStatus,
-  seedFeedback,
-} from "@/lib/feedback-data";
+import * as React from 'react';
+import {usePathname} from 'next/navigation';
+import {useUser} from '@clerk/nextjs';
+import {useProject} from '@/components/feedback/project-provider';
+import {loadFeedbackAction,loadWorkspaceFeedbackAction,mutateFeedbackAction,type FeedbackCommand} from '@/server/actions/feedback';
+import {createMutationQueue} from '@/lib/mutation-queue';
+import {createFeedbackUploader} from '@/lib/feedback-uploads';
+import {toastManager} from '@/components/ui/toast';
+import type {FeedbackItemData,FeedbackStatus,FeedbackCategory} from '@/lib/feedback-data';
 
-type NewFeedbackInput = {
-  title: string;
-  description: string;
-  email?: string;
+type MutationData=Extract<Awaited<ReturnType<typeof mutateFeedbackAction>>,{ok:true}>['data'];
+type NewFeedbackInput={category?:FeedbackCategory;title:string;description:string;images?:string[];email?:string;name?:string;channel?:'board'|'widget'};
+type FeedbackContextValue={
+ items:FeedbackItemData[];loading:boolean;error:string;pending:boolean;retry:()=>void;
+ vote:(id:string)=>void;
+ toggleFollow:(id:string)=>Promise<void>;
+ addFeedback:(input:NewFeedbackInput)=>Promise<FeedbackItemData>;
+ addComment:(id:string,body:string,images?:string[])=>Promise<void>;
+ toggleCommentLike:(id:string,commentId:string)=>void;
+ updateStatus:(id:string,status:FeedbackStatus)=>void;
+ deleteItem:(id:string)=>void;
+ updateCategory:(id:string,category:FeedbackCategory)=>Promise<void>;
+ classify:(id:string,category:FeedbackCategory,tagIds:string[])=>Promise<void>;
 };
-
-type FeedbackContextValue = {
-  items: FeedbackItemData[];
-  vote: (id: string) => void;
-  addFeedback: (input: NewFeedbackInput) => FeedbackItemData;
-  addComment: (itemId: string, body: string) => void;
-  toggleCommentLike: (itemId: string, commentId: string) => void;
-  updateStatus: (id: string, status: FeedbackStatus) => void;
-  deleteItem: (id: string) => void;
-};
-
-const FeedbackContext = React.createContext<FeedbackContextValue | null>(null);
-
-function initialsFor(name: string): string {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-export function FeedbackProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactElement {
-  const { activeBoard } = useProject();
-  const boardId = activeBoard?.id ?? "";
-  const [items, setItems] =
-    React.useState<FeedbackItemData[]>(seedFeedback);
-
-  const vote = React.useCallback((id: string) => {
-    setItems((current) =>
-      current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              voted: !item.voted,
-              votes: item.votes + (item.voted ? -1 : 1),
-            }
-          : item,
-      ),
-    );
-  }, []);
-
-  const addFeedback = React.useCallback(
-    (input: NewFeedbackInput): FeedbackItemData => {
-      if (!boardId) throw new Error("Create a feedback board before adding an idea.");
-      const item: FeedbackItemData = {
-        id: `idea-${Date.now()}`,
-        boardId,
-        title: input.title.trim(),
-        description: input.description.trim(),
-        votes: 1,
-        voted: true,
-        status: "open",
-        author: "You",
-        initials: initialsFor("You"),
-        createdAt: "Just now",
-        createdOrder: Date.now(),
-        comments: [],
-      };
-
-      setItems((current) => [item, ...current]);
-      return item;
-    },
-    [boardId],
-  );
-
-  const addComment = React.useCallback((itemId: string, body: string) => {
-    const comment: FeedbackComment = {
-      id: `comment-${Date.now()}`,
-      author: "You",
-      initials: initialsFor("You"),
-      time: "Just now",
-      body: body.trim(),
-      kind: "user",
-    };
-
-    setItems((current) =>
-      current.map((item) =>
-        item.id === itemId
-          ? { ...item, comments: [...item.comments, comment] }
-          : item,
-      ),
-    );
-  }, []);
-
-  const toggleCommentLike = React.useCallback((itemId: string, commentId: string) => {
-    setItems((current) => current.map((item) => item.id !== itemId ? item : {
-      ...item,
-      comments: item.comments.map((comment) => comment.id !== commentId ? comment : {
-        ...comment,
-        liked: !comment.liked,
-        likes: Math.max(0, (comment.likes ?? 0) + (comment.liked ? -1 : 1)),
-      }),
-    }));
-  }, []);
-
-  const updateStatus = React.useCallback(
-    (id: string, status: FeedbackStatus) => {
-      setItems((current) =>
-        current.map((item) => {
-          if (item.id !== id || item.status === status) {
-            return item;
-          }
-
-          return { ...item, status };
-        }),
-      );
-    },
-    [],
-  );
-
-  const deleteItem = React.useCallback((id: string) => {
-    setItems((current) => current.filter((item) => item.id !== id));
-  }, []);
-
-  const boardItems = React.useMemo(() => items.filter(item => (item.boardId ?? "product") === boardId), [items, boardId]);
-  const value = React.useMemo<FeedbackContextValue>(
-    () => ({
-      items: boardItems,
-      vote,
-      addFeedback,
-      addComment,
-      toggleCommentLike,
-      updateStatus,
-      deleteItem,
-    }),
-    [boardItems, vote, addFeedback, addComment, toggleCommentLike, updateStatus, deleteItem],
-  );
-
-  return (
-    <FeedbackContext.Provider value={value}>
-      {children}
-    </FeedbackContext.Provider>
-  );
-}
-
-export function useFeedback(): FeedbackContextValue {
-  const context = React.useContext(FeedbackContext);
-  if (!context) {
-    throw new Error("useFeedback must be used within a FeedbackProvider.");
+const FeedbackContext=React.createContext<FeedbackContextValue|null>(null);
+const isId=(value:string)=>/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(value);
+export function FeedbackProvider({children}:{children:React.ReactNode}){
+ const {project,activeBoard,workspaceReady,publicUser}=useProject();const {user,isLoaded}=useUser();
+ const workspaceInbox=usePathname().startsWith('/dashboard');
+ const wid=project.id,bid=activeBoard?.id??'';const key=wid+':'+(workspaceInbox?'inbox:'+bid:bid)+':'+(user?.id??'guest');
+ const valid=workspaceReady&&isLoaded&&isId(wid)&&isId(bid);
+ const [snapshot,setSnapshot]=React.useState<{key:string;items:FeedbackItemData[]}>({key:'',items:[]});
+ const [failure,setFailure]=React.useState<{key:string;message:string}>({key:'',message:''});
+ const uploader=React.useRef<ReturnType<typeof createFeedbackUploader>|null>(null);
+ if(uploader.current === null){uploader.current=createFeedbackUploader();}
+ const retries=React.useRef(new Map<string,string>());
+ const queue=React.useRef(createMutationQueue());
+ const queued=React.useRef(new Map<string,Promise<MutationData>>());
+ const queuedCount=React.useRef(0);
+ const [pending,setPending]=React.useState(false);const busy=React.useRef(false);const token=React.useRef<string|undefined>(undefined);const scope=React.useRef(key);const generation=React.useRef(0);
+ React.useLayoutEffect(()=>{scope.current=key;},[key]);
+ const items=snapshot.key===key?snapshot.items:[];
+ const error=failure.key===key?failure.message:'';
+ const loading=valid&&snapshot.key!==key&&!error;
+ const reload=React.useCallback(async(cancelled:()=>boolean=()=>false)=>{
+  if(!valid)return;const version=++generation.current;
+  let saved:string|undefined;
+  try{saved=localStorage.getItem('ent-visitor:'+wid)??undefined;}catch{}
+  try{
+   const result=await (workspaceInbox?loadWorkspaceFeedbackAction(wid):loadFeedbackAction(wid,bid,saved));
+   if(cancelled()||busy.current||scope.current!==key||generation.current!==version)return;
+   if(!result.ok)throw Error(result.error.message);
+   token.current=result.data.guestToken;
+   if(result.data.guestToken){try{localStorage.setItem('ent-visitor:'+wid,result.data.guestToken);}catch{}}
+   setFailure({key,message:''});setSnapshot({key,items:result.data.items});
+  }catch(error){if(!cancelled()&&scope.current===key&&generation.current===version)setFailure({key,message:error instanceof Error?error.message:'Feedback could not be loaded. Try again.'});}
+ },[valid,key,wid,bid,workspaceInbox]);
+ React.useEffect(()=>{
+  const controller=new AbortController();
+  // Skip an already-cleaned-up Strict Mode pass before starting visitor bootstrap.
+  queueMicrotask(()=>{if(!controller.signal.aborted)void reload(()=>controller.signal.aborted);});
+  return()=>controller.abort();
+ },[reload]);
+ React.useEffect(()=>{
+  const refresh=()=>{if(!busy.current&&document.visibilityState==='visible')void reload();};
+  window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);
+  const changed=(event:Event)=>{if(event instanceof StorageEvent?event.key==='ent-feedback-updated:'+wid:(event as CustomEvent).detail===wid)refresh();};
+  window.addEventListener('storage',changed);window.addEventListener('ent-feedback-updated',changed);
+  const timer=window.setInterval(refresh,15000);
+  return()=>{window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh);window.removeEventListener('storage',changed);window.removeEventListener('ent-feedback-updated',changed);window.clearInterval(timer);};
+ },[reload,wid]);
+ function retry(){setFailure({key,message:''});void reload();}
+ function mutate(input:FeedbackCommand):Promise<MutationData>{
+  const fingerprint=key+JSON.stringify(input),existing=queued.current.get(fingerprint);
+  if(existing)return existing;
+  queuedCount.current++;setPending(true);
+  const task=queue.current.run(async()=>{
+   if(scope.current!==key)throw Error('The workspace changed. Return to the original workspace to try again.');
+   return executeMutation(input);
+  }).finally(()=>{queued.current.delete(fingerprint);queuedCount.current--;setPending(queuedCount.current>0);});
+  queued.current.set(fingerprint,task);
+  return task;
+ }
+ async function executeMutation(input:FeedbackCommand){
+  if(!valid||snapshot.key!==key)throw Error('Wait for this board to load, then try again.');
+  const targetBoard=input.type==='create'?bid:items.find(item=>item.id===input.id)?.boardId??bid;
+  const fingerprint=key+JSON.stringify(input);
+  let command=input;
+  if(input.type==='create'||input.type==='comment'){
+   const requestId=retries.current.get(fingerprint)??crypto.randomUUID();
+   retries.current.set(fingerprint,requestId);
+   if(retries.current.size>20)retries.current.delete(retries.current.keys().next().value!);
+   command={...input,requestId};
   }
-  return context;
+  busy.current=true;generation.current++;
+  try{
+   if(command.type==='create'||command.type==='comment'){const images=await uploader.current!.upload(command.images,{workspaceId:wid,boardId:targetBoard,actorKey:key+":"+command.requestId,guestToken:token.current});if(scope.current!==key)throw Error('The board changed. Return to your draft to submit it.');command={...command,images};}
+   const result=await new Promise<Awaited<ReturnType<typeof mutateFeedbackAction>>>((resolve,reject)=>React.startTransition(async()=>{try{resolve(await mutateFeedbackAction(wid,targetBoard,command,token.current,workspaceInbox));}catch(error){reject(error);}}));
+   if(!result.ok)throw Error(Object.values(result.error.fieldErrors??{})[0]?.[0]??result.error.message);
+   retries.current.delete(fingerprint);
+   if(command.type==='create'||command.type==='comment')uploader.current!.clear({workspaceId:wid,boardId:targetBoard,actorKey:key+':'+command.requestId});
+   if(scope.current===key)setSnapshot({key,items:result.data.items});
+   try{localStorage.setItem('ent-feedback-updated:'+wid,crypto.randomUUID());}catch{}
+   window.dispatchEvent(new CustomEvent('ent-feedback-updated',{detail:wid}));
+   return result.data;
+  }finally{busy.current=false;}
+ }
+ function report(operation:Promise<unknown>){void operation.catch(error=>toastManager.add({title:'Change wasn’t saved',description:error instanceof Error?error.message:'Try again.',type:'error'}));}
+ async function addFeedback(input:NewFeedbackInput){
+  const result=await mutate({type:'create',category:input.category,channel:input.channel,title:input.title,description:input.description,name:input.name,email:input.email,anonymous:!publicUser,images:input.images});
+  const created=result.items.find(item=>item.id===result.createdId);if(!created)throw Error('Feedback was saved. Refresh the board to view it.');return created;
+ }
+ const value:FeedbackContextValue={items,loading,error,pending,retry,
+  vote:id=>{const item=items.find(item=>item.id===id);if(item)report(mutate({type:'vote',id,active:!item.voted}));},
+  toggleFollow:async id=>{const item=items.find(item=>item.id===id);if(item)await mutate({type:'follow',id,active:!item.following});},
+  addFeedback,addComment:async(id,body,images)=>{await mutate({type:'comment',id,body,images});},
+  toggleCommentLike:(id,commentId)=>{const comment=items.find(item=>item.id===id)?.comments.find(comment=>comment.id===commentId);if(comment)report(mutate({type:'reaction',id,commentId,active:!comment.liked}));},
+  updateStatus:(id,status)=>report(mutate({type:'status',id,status})),
+  updateCategory:async(id,category)=>{await mutate({type:'category',id,category});},
+  classify:async(id,category,tagIds)=>{await mutate({type:'classification',id,category,tagIds});},
+  deleteItem:id=>report(mutate({type:'delete',id})),
+ };
+ return <FeedbackContext.Provider value={value}>{error&&<div role="alert" className="flex flex-wrap items-center justify-center gap-3 border-b border-border px-4 py-3 text-sm"><span>{error}</span><button type="button" disabled={pending} className="rounded-md underline underline-offset-4 focus-visible:outline-2" onClick={retry}>Retry loading feedback</button></div>}{children}</FeedbackContext.Provider>;
 }
+export function useFeedback(){const context=React.useContext(FeedbackContext);if(!context)throw Error('useFeedback must be used within a FeedbackProvider.');return context;}

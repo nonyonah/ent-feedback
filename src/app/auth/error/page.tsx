@@ -1,2 +1,5 @@
-import { AuthView } from "@/components/feedback/auth-view";
-export default function Page() { return <AuthView initialStage="error"/>; }
+import { redirect } from "next/navigation";
+
+export default function Page() {
+  redirect("/auth");
+}

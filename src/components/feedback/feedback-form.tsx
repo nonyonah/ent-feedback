@@ -1,57 +1,20 @@
 "use client";
+import {FeedbackTypeSelect} from "@/components/feedback/feedback-type-select";
+import type {FeedbackCategory} from "@/lib/feedback-data";
+import { DropdownChevron } from "@/components/ui/dropdown-chevron";
 import * as React from "react";
-import Link from "next/link";
-import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
-import { ArrowUpIcon } from "@phosphor-icons/react/dist/ssr/ArrowUp";
-import { WarningCircleIcon } from "@phosphor-icons/react/dist/ssr/WarningCircle";
-import { Button } from "@/components/ui/button";
-import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Spinner } from "@/components/ui/spinner";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { StatusLabel } from "@/components/feedback/status-label";
-import { useFeedback } from "@/components/feedback/feedback-provider";
-
-export type FormPreview = "default" | "similar" | "success" | "error" | "sending" | "invalid";
-export function FeedbackForm({ onDone, preview = "default", compact = false }: { onDone?: () => void; preview?: FormPreview; compact?: boolean }) {
-  const { addFeedback, items, vote } = useFeedback();
-  const uid = React.useId();
-  const [title, setTitle] = React.useState(preview === "similar" ? "Dark mode" : ["sending", "error"].includes(preview) ? "Keyboard shortcuts for the dashboard" : "");
-  const [description, setDescription] = React.useState(["sending", "error"].includes(preview) ? "I’d love to move through requests with my keyboard when reviewing feedback." : "");
-  const [email, setEmail] = React.useState("");
-  const [attempted, setAttempted] = React.useState(preview === "invalid");
-  const [state, setState] = React.useState<"idle" | "sending" | "success" | "error">(preview === "success" ? "success" : preview === "error" ? "error" : preview === "sending" ? "sending" : "idle");
-  const [postedId, setPostedId] = React.useState<string | null>(null);
-  const titleError = attempted && title.trim().length < 4;
-  const descriptionError = attempted && description.trim().length < 10;
-  const terms = title.toLowerCase().match(/[a-z0-9]+/g)?.filter((word) => word.length > 2) ?? [];
-  const similar = terms.length ? items.map((item) => ({ item, score: terms.filter((term) => (item.title + " " + item.description).toLowerCase().includes(term)).length })).filter((match) => match.score > 0).sort((a,b) => b.score - a.score).slice(0,3).map((match) => match.item) : [];
-
-  async function submit(event: React.FormEvent) {
-    event.preventDefault(); setAttempted(true);
-    if (title.trim().length < 4 || description.trim().length < 10) return;
-    setState("sending");
-    try {
-      await new Promise((resolve) => window.setTimeout(resolve, 450));
-      const item = addFeedback({ title, description, email });
-      setPostedId(item.id); setState("success");
-    } catch { setState("error"); }
-  }
-
-  if (state === "success") return <div className="flex flex-col items-center gap-4 py-8 text-center" role="status">
-    <span className="flex size-12 items-center justify-center rounded-full bg-status-shipped-bg text-status-shipped-fg"><CheckIcon weight="bold" className="size-6" aria-hidden="true" /></span>
-    <div><h2 className="text-xl font-semibold leading-7">Your idea is on the board.</h2><p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">Thanks for helping us make something better. Others can now join the conversation.</p></div>
-    {postedId ? <Button render={<Link href={"/items/" + postedId} />} onClick={onDone}>View your idea</Button> : <Button onClick={() => { setState("idle"); setTitle(""); setDescription(""); setAttempted(false); }}>Share another idea</Button>}
-    {onDone && <Button variant="ghost" onClick={onDone}>Back to feedback</Button>}
-  </div>;
-
-  return <form onSubmit={submit} className="flex flex-col gap-5">
-    {state === "error" && <Alert variant="error"><WarningCircleIcon weight="bold"/><AlertTitle>Your idea couldn’t be posted.</AlertTitle><AlertDescription>Your draft is still here. Check your connection and try again.</AlertDescription></Alert>}
-    <Field data-invalid={titleError || undefined}><FieldLabel htmlFor={uid+"-title"}>Title</FieldLabel><Input id={uid+"-title"} className="[&_input]:h-10 [&_input]:sm:h-10" placeholder="A short, specific summary" value={title} onChange={(event) => setTitle(event.target.value)} aria-invalid={titleError || undefined} aria-describedby={titleError ? uid+"-title-error" : undefined} maxLength={160} disabled={state === "sending"} />{titleError && <p id={uid+"-title-error"} className="text-xs text-destructive-foreground">Add a title with at least 4 characters.</p>}</Field>
-    {similar.length > 0 && <section aria-label="Similar ideas" className="rounded-lg border bg-muted/30 p-3"><p className="text-xs font-medium">Someone might be thinking the same thing.</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Vote on an existing idea to keep the conversation together.</p><ul className="mt-3 flex flex-col gap-2">{similar.map((item) => <li key={item.id} className="flex items-center gap-2"><Button type="button" size="xs" variant={item.voted ? "secondary" : "outline"} aria-label={"Vote for "+item.title} aria-pressed={item.voted} onClick={() => vote(item.id)} className="min-h-9 min-w-11"><ArrowUpIcon weight="bold" />{item.votes}</Button><Link className="min-w-0 flex-1 text-xs font-medium leading-5 hover:underline" href={"/items/"+item.id}>{item.title}</Link>{!compact && <StatusLabel status={item.status} />}</li>)}</ul></section>}
-    <Field data-invalid={descriptionError || undefined}><FieldLabel htmlFor={uid+"-description"}>Description</FieldLabel><Textarea id={uid+"-description"} className="[&_textarea]:min-h-24 [&_textarea]:sm:min-h-24" placeholder="What problem would this solve? A little context goes a long way." value={description} onChange={(event) => setDescription(event.target.value)} aria-invalid={descriptionError || undefined} aria-describedby={descriptionError ? uid+"-description-error" : undefined} maxLength={3000} disabled={state === "sending"} />{descriptionError && <p id={uid+"-description-error"} className="text-xs text-destructive-foreground">Add at least 10 characters of context.</p>}</Field>
-    <Field><FieldLabel htmlFor={uid+"-email"}>Email <span className="font-normal text-muted-foreground">(optional)</span></FieldLabel><Input id={uid+"-email"} className="[&_input]:h-10 [&_input]:sm:h-10" type="email" autoComplete="email" placeholder="you@company.com" value={email} onChange={(event) => setEmail(event.target.value)} disabled={state === "sending"} /><FieldDescription>Use your email to follow up on this idea when notifications are available.</FieldDescription></Field>
-    <div className="flex justify-end gap-2">{onDone && <Button type="button" variant="outline" onClick={onDone}>Cancel</Button>}<Button type="submit" className="min-h-11 sm:min-h-10" disabled={state === "sending"}>{state === "sending" && <Spinner />} {state === "sending" ? "Posting idea…" : state === "error" ? "Try again" : "Post idea"}</Button></div>
-  </form>;
+import {CheckIcon,CaretRightIcon,XIcon} from "@/components/icons";
+import {Button} from "@/components/ui/button";
+import {Avatar,AvatarFallback,AvatarImage} from "@/components/ui/avatar";
+import {Menu,MenuTrigger,MenuPopup,MenuItem} from "@/components/ui/menu";
+import {Select,SelectTrigger,SelectValue,SelectPopup,SelectItem} from "@/components/ui/select";
+import {useFeedback} from "@/components/feedback/feedback-provider";
+import {useProject} from "@/components/feedback/project-provider";
+import {ComposerTools} from "@/components/feedback/composer-tools";
+export function FeedbackForm({onDone}:{onDone?:()=>void}){
+ const [category,setCategory]=React.useState<FeedbackCategory>("feedback");
+ const {addFeedback}=useFeedback();const {project,boards,activeBoard,selectBoard,publicUser,setPublicUser}=useProject();const [title,setTitle]=React.useState("");const [description,setDescription]=React.useState("");const [images,setImages]=React.useState<string[]>([]);const [state,setState]=React.useState<"idle"|"sending"|"success"|"error">("idle");const textarea=React.useRef<HTMLTextAreaElement>(null);const [error,setError]=React.useState("");
+ async function submit(event:React.FormEvent){event.preventDefault();if(title.trim().length<4){setError("Add a title with at least 4 characters.");return;}if(!activeBoard){setError("Choose a board in this workspace.");return;}setState("sending");setError("");try{await addFeedback({category,title,description:description.trim()||title,name:publicUser?.name||"Anonymous",email:publicUser?.email,images});setState("success");}catch(error){setState("error");setError(error instanceof Error?error.message:"Your idea couldn’t be posted. Your draft is still here.");}}
+ if(state==="success")return <div data-feedback-composer role="status" className="flex flex-col items-center gap-4 px-6 py-8 text-center"><CheckIcon className="size-8"/><h2 className="text-lg font-semibold">Your idea is on the board.</h2><p className="text-sm text-muted-foreground">Thanks for sharing feedback with {project.name}.</p><Button className="rounded-2xl" onClick={onDone??(()=>{setState("idle");setTitle("");setDescription("");setImages([]);})}>{onDone?"Back to feedback":"Share another idea"}</Button></div>;
+ return <form data-feedback-composer onSubmit={submit} className="flex min-h-[239px] flex-col overflow-hidden rounded-xl bg-background"><header className="flex items-center justify-between gap-2 bg-background/75 p-4 backdrop-blur-lg"><div className="flex min-w-0 flex-wrap items-center gap-1.5">{publicUser?<Menu><MenuTrigger disabled={state==="sending"} render={<button type="button" aria-label="Submission author" className="flex min-h-7 min-w-0 items-center gap-1.5 rounded-full border border-border/60 bg-control-quiet py-0.75 pl-0.75 pr-1.75 text-sm dark:bg-control-quiet"/>}><Avatar className="size-6"><AvatarImage src={publicUser.avatar}/><AvatarFallback className="text-[13px]" seed={publicUser.name}/></Avatar><span className="max-w-36 truncate">{publicUser.name}</span><DropdownChevron className="size-4"/></MenuTrigger><MenuPopup data-feedback-composer><MenuItem className="data-highlighted:bg-transparent data-highlighted:text-foreground" onClick={()=>setPublicUser(null)}>Post anonymously</MenuItem></MenuPopup></Menu>:<Avatar title="Posting anonymously" aria-label="Posting anonymously" className="size-8"><AvatarFallback seed="anonymous"/></Avatar>}<div className="flex min-w-0 max-w-full items-center gap-1.5"><CaretRightIcon className="size-3.5 shrink-0 text-muted-foreground"/><Select disabled={state==="sending"} items={boards.map(board=>({value:board.id,label:board.name}))} value={activeBoard?.id??null} onValueChange={value=>{if(value)selectBoard(value);}}><SelectTrigger aria-label="Feedback board" className="h-7 min-h-7 w-auto min-w-0 max-w-48 rounded-2xl border-border/60 bg-control-quiet py-0.75 text-sm shadow-none dark:bg-control-quiet"><SelectValue placeholder="Choose board"/></SelectTrigger><SelectPopup data-feedback-composer>{boards.map(board=><SelectItem className="data-highlighted:bg-transparent data-highlighted:text-foreground" key={board.id} value={board.id}>{board.name}</SelectItem>)}</SelectPopup></Select><FeedbackTypeSelect value={category} onChange={setCategory} disabled={state==="sending"} compact/></div></div>{onDone&&<button type="button" aria-label="Close feedback form" onClick={onDone} className="flex size-7 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-control-quiet text-foreground dark:bg-control-quiet"><XIcon className="size-3.5"/></button>}</header><div className="flex min-h-24 flex-1 flex-col gap-1.5 px-4 pb-4"><label className="flex min-w-0 flex-col gap-1 text-[13px] text-muted-foreground"><span>Title</span><input autoFocus aria-label="Submission title" placeholder="Submission title" value={title} disabled={state==="sending"} maxLength={160} onChange={event=>setTitle(event.target.value)} className="h-7 w-full min-w-0 rounded-lg bg-transparent text-lg font-medium leading-5.5 tracking-[-0.14px] outline-none placeholder:text-muted-foreground text-foreground"/></label><label className="flex min-w-0 flex-col gap-1 text-[13px] text-muted-foreground"><span>Details</span><textarea ref={textarea} aria-label="Add details" placeholder="Add details" maxLength={3000} value={description} disabled={state==="sending"} onChange={event=>setDescription(event.target.value)} className="min-h-12 w-full resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-muted-foreground text-foreground"/></label>{error&&<p role="alert" className="text-xs text-red-600">{error}</p>}</div><footer className="flex items-end justify-between gap-3 border-t border-border/50 bg-control-quiet px-4 py-3.5 dark:bg-control-quiet/40"><ComposerTools noHover value={description} onChange={setDescription} inputRef={textarea} images={images} onImagesChange={setImages} disabled={state==="sending"}/><Button type="submit" disabled={state==="sending"||!activeBoard} className="hover:bg-primary min-h-8 rounded-2xl px-2.75 py-1.25 text-sm shadow-[inset_0_1px_0_#FFFFFF29,0_1px_2px_#1717173D]">{state==="sending"?"Creating…":state==="error"?"Try again":"Create"}</Button></footer></form>;
 }

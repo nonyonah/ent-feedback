@@ -1,0 +1,55 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793888976049,
+      "tag": "0000_jittery_arachne",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793891720894,
+      "tag": "0001_same_doorman",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793897844867,
+      "tag": "0002_smooth_pestilence",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793976690560,
+      "tag": "0003_youthful_patriot",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793976931162,
+      "tag": "0004_icy_steve_rogers",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793980599824,
+      "tag": "0005_past_living_mummy",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793986413837,
+      "tag": "0006_rich_banshee",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,5 +1,2 @@
-import { BoardView } from "@/components/feedback/board-view";
-
-export default function Home() {
-  return <BoardView />;
-}
+import {redirect} from 'next/navigation';
+export default function Home(){redirect('/dashboard');}

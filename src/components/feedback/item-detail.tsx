@@ -1,4 +1,5 @@
 "use client";
+import {TrendingBadge} from "./trending-badge";
 import {Select,SelectTrigger,SelectValue,SelectPopup,SelectItem} from "@/components/ui/select";
 import {FeedbackTypeLabel} from "./feedback-type-label";
 import {FEEDBACK_CATEGORIES,type FeedbackCategory} from "@/lib/feedback-data";
@@ -97,7 +98,7 @@ export function ItemDetail({ id,boardId }: { id: string;boardId?:string }): Reac
             <Button aria-label={item.voted ? "Remove your vote" : "Vote for this idea"} aria-pressed={item.voted} className="min-h-11 w-[54px] shrink-0 rounded-full p-0 hover:bg-transparent sm:min-h-11" variant="ghost" onClick={() => vote(item.id)}>
               <span className={cn("flex h-8 w-[54px] items-center justify-center gap-0.5 rounded-full border text-sm font-semibold tabular-nums", item.voted ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground")}><ArrowUpIcon aria-hidden="true" className="size-3.5!" />{item.votes}</span>
             </Button>
-            <div className="flex min-w-0 flex-1 flex-col gap-2"><h1 id="post-title" className="text-pretty text-2xl font-semibold leading-8 tracking-tight">{item.title}</h1><p className="flex items-center gap-1.5 text-xs leading-5 text-muted-foreground"><UsersIcon aria-hidden="true" className="size-4" />{item.votes} {item.votes === 1 ? "person has" : "people have"} voted for this</p></div>
+            <div className="flex min-w-0 flex-1 flex-col gap-2"><h1 id="post-title" className="text-pretty text-2xl font-semibold leading-8 tracking-tight">{item.title}</h1><TrendingBadge id={item.id}/><p className="flex items-center gap-1.5 text-xs leading-5 text-muted-foreground"><UsersIcon aria-hidden="true" className="size-4" />{item.votes} {item.votes === 1 ? "person has" : "people have"} voted for this</p></div>
           </div>
           <p className="mt-5 whitespace-pre-wrap break-words text-pretty text-base leading-[1.5]">{item.description}</p>{item.images?.map((image,index)=><Avatar key={index} className="mt-3 h-48 w-full rounded-xl"><AvatarImage src={image} alt={"Feedback attachment "+(index+1)} className="object-contain"/></Avatar>)}
         </section>

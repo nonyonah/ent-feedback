@@ -307,10 +307,10 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     return()=>{cancelled=true;};
   },[clerkUserId,workspaceReady,project.id,management,settingsAttempt]);
   React.useEffect(()=>{
-    if(!clerkUserId)return;let cancelled=false;
+    if(!clerkUserId||pathname==="/"||pathname==="/landing-v2")return;let cancelled=false;
     void loadNotificationSettingsAction().then(result=>{if(cancelled)return;if(result.ok){setNotifications(result.data??{email:clerkUser?.primaryEmailAddress?.emailAddress??"",newFeedback:true,comments:true,replies:true,commentReactions:true,feedbackReactions:true});setPreferenceStatus({userId:clerkUserId,ready:true,error:""});}else setPreferenceStatus({userId:clerkUserId,ready:false,error:result.error.message});}).catch(()=>{if(!cancelled)setPreferenceStatus({userId:clerkUserId,ready:false,error:"Notification preferences could not be loaded."});});
     return()=>{cancelled=true;};
-  },[clerkUserId,clerkUser?.primaryEmailAddress?.emailAddress,preferencesAttempt]);
+  },[clerkUserId,clerkUser?.primaryEmailAddress?.emailAddress,preferencesAttempt,pathname]);
   const hydrateWidgetSettings=React.useCallback((workspaceId:string,settings:WidgetSettings)=>setWidgetByProject(current=>({...current,[workspaceId]:settings})),[]);
   function switchProject(id: string) {
     const next = projects.find((item) => item.id === id);

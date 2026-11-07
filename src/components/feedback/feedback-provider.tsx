@@ -5,6 +5,7 @@ import {usePathname} from 'next/navigation';
 import {useUser} from '@clerk/nextjs';
 import {useProject} from '@/components/feedback/project-provider';
 import {loadFeedbackAction,loadWorkspaceFeedbackAction,mutateFeedbackAction,type FeedbackCommand} from '@/server/actions/feedback';
+import {getTrendingIds} from '@/lib/feedback-sort';
 import {createMutationQueue} from '@/lib/mutation-queue';
 import {createFeedbackUploader} from '@/lib/feedback-uploads';
 import {toastManager} from '@/components/ui/toast';
@@ -13,7 +14,7 @@ import type {FeedbackItemData,FeedbackStatus,FeedbackCategory} from '@/lib/feedb
 type MutationData=Extract<Awaited<ReturnType<typeof mutateFeedbackAction>>,{ok:true}>['data'];
 type NewFeedbackInput={category?:FeedbackCategory;title:string;description:string;images?:string[];email?:string;name?:string;channel?:'board'|'widget'};
 type FeedbackContextValue={
- items:FeedbackItemData[];loading:boolean;error:string;pending:boolean;retry:()=>void;
+ trendingIds:ReadonlySet<string>;items:FeedbackItemData[];loading:boolean;error:string;pending:boolean;retry:()=>void;
  vote:(id:string)=>void;
  toggleFollow:(id:string)=>Promise<void>;
  addFeedback:(input:NewFeedbackInput)=>Promise<FeedbackItemData>;
@@ -28,9 +29,9 @@ const FeedbackContext=React.createContext<FeedbackContextValue|null>(null);
 const isId=(value:string)=>/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(value);
 export function FeedbackProvider({children}:{children:React.ReactNode}){
  const {project,activeBoard,workspaceReady,publicUser}=useProject();const {user,isLoaded}=useUser();
- const workspaceInbox=usePathname().startsWith('/dashboard');
+ const pathname=usePathname();const workspaceInbox=pathname.startsWith('/dashboard');
  const wid=project.id,bid=activeBoard?.id??'';const key=wid+':'+(workspaceInbox?'inbox:'+bid:bid)+':'+(user?.id??'guest');
- const valid=workspaceReady&&isLoaded&&isId(wid)&&isId(bid);
+ const valid=pathname!=="/"&&pathname!=="/landing-v2"&&workspaceReady&&isLoaded&&isId(wid)&&isId(bid);
  const [snapshot,setSnapshot]=React.useState<{key:string;items:FeedbackItemData[]}>({key:'',items:[]});
  const [failure,setFailure]=React.useState<{key:string;message:string}>({key:'',message:''});
  const uploader=React.useRef<ReturnType<typeof createFeedbackUploader>|null>(null);
@@ -112,7 +113,7 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
   const result=await mutate({type:'create',category:input.category,channel:input.channel,title:input.title,description:input.description,name:input.name,email:input.email,anonymous:!publicUser,images:input.images});
   const created=result.items.find(item=>item.id===result.createdId);if(!created)throw Error('Feedback was saved. Refresh the board to view it.');return created;
  }
- const value:FeedbackContextValue={items,loading,error,pending,retry,
+ const value:FeedbackContextValue={trendingIds:getTrendingIds(items),items,loading,error,pending,retry,
   vote:id=>{const item=items.find(item=>item.id===id);if(item)report(mutate({type:'vote',id,active:!item.voted}));},
   toggleFollow:async id=>{const item=items.find(item=>item.id===id);if(item)await mutate({type:'follow',id,active:!item.following});},
   addFeedback,addComment:async(id,body,images,parentCommentId)=>{await mutate({type:'comment',id,body,images,parentCommentId});},
@@ -122,6 +123,6 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
   classify:async(id,category,tagIds)=>{await mutate({type:'classification',id,category,tagIds});},
   deleteItem:id=>report(mutate({type:'delete',id})),
  };
- return <FeedbackContext.Provider value={value}>{error&&<div role="alert" className="flex flex-wrap items-center justify-center gap-3 border-b border-border px-4 py-3 text-sm"><span>{error}</span><button type="button" disabled={pending} className="rounded-md underline underline-offset-4 focus-visible:outline-2" onClick={retry}>Retry loading feedback</button></div>}{children}</FeedbackContext.Provider>;
+ return <FeedbackContext.Provider value={value}>{valid&&error&&<div role="alert" className="flex flex-wrap items-center justify-center gap-3 border-b border-border px-4 py-3 text-sm"><span>{error}</span><button type="button" disabled={pending} className="rounded-md underline underline-offset-4 focus-visible:outline-2" onClick={retry}>Retry loading feedback</button></div>}{children}</FeedbackContext.Provider>;
 }
 export function useFeedback(){const context=React.useContext(FeedbackContext);if(!context)throw Error('useFeedback must be used within a FeedbackProvider.');return context;}

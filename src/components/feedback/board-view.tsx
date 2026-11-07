@@ -22,7 +22,7 @@ export function BoardView(): React.ReactElement {
   const { items,loading,error } = useFeedback();
   const { activeBoard } = useProject();
   const [filter, setFilter] = React.useState<"all" | FeedbackStatus>("all");
-  const [sort, setSort] = React.useState("top");
+  const [sort, setSort] = React.useState("trending");
   const visibleItems = items.filter((item) => filter === "all" || item.status === filter).sort((a, b) => compareFeedback(sort, a, b));
 
   if(loading)return <BoardLoading/>;

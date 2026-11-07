@@ -1,0 +1,584 @@
+[
+  {
+    "name": "beside",
+    "url": "https://www.beside.com/",
+    "title": "Beside: The AI operating system that runs your local business",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "The AI that runs your\nlocal business",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", sans-serif",
+        "size": "48px",
+        "weight": "400",
+        "spacing": "-1.44px"
+      },
+      {
+        "tag": "H2",
+        "text": "Three jobs stand between you and your craft.",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", sans-serif",
+        "size": "28px",
+        "weight": "400",
+        "spacing": "-0.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "Built for how your business actually runs",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", sans-serif",
+        "size": "28px",
+        "weight": "400",
+        "spacing": "-0.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "Software that accelerates local\u00a0businesses",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", sans-serif",
+        "size": "28px",
+        "weight": "400",
+        "spacing": "-0.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "The phone that answers for you",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", sans-serif",
+        "size": "28px",
+        "weight": "400",
+        "spacing": "-0.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "It asks first, then earns the keys",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", sans-serif",
+        "size": "28px",
+        "weight": "400",
+        "spacing": "-0.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "And it's all one system",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", sans-serif",
+        "size": "28px",
+        "weight": "400",
+        "spacing": "-0.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "Other tools give you a dashboard. Beside does the work.",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", sans-serif",
+        "size": "28px",
+        "weight": "400",
+        "spacing": "-0.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "Don\u2019t take our word for it.\nGive it a try now.",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", sans-serif",
+        "size": "32px",
+        "weight": "400",
+        "spacing": "-0.64px"
+      },
+      {
+        "tag": "H2",
+        "text": "Integrates with your tools",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", sans-serif",
+        "size": "28px",
+        "weight": "400",
+        "spacing": "-0.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "21,000+ paying businesses already run on Beside",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", sans-serif",
+        "size": "28px",
+        "weight": "400",
+        "spacing": "-0.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "Your questions, covered",
+        "font": "Inter, ui-sans-serif, system-ui, -apple-system, \"system-ui\", sans-serif",
+        "size": "28px",
+        "weight": "400",
+        "spacing": "-0.56px"
+      }
+    ],
+    "background": "rgb(255, 255, 255)",
+    "firstScreenLinks": [
+      "Products",
+      "Beside Phone\nYour number, calls, texts, and AI Receptionist.",
+      "AI Receptionist\nAnswers every missed call and books the job.",
+      "Scheduling\nThe call becomes a time on the calendar.",
+      "CRM\nThe call writes the customer record.",
+      "Reviews Manager\nA reply for every review.",
+      "Website Builder\nA website that gets you the call.",
+      "Ads Manager\nPaid clicks that become booked jobs.",
+      "Industries",
+      "Realtors",
+      "Plumbers",
+      "HVAC",
+      "Hair salons",
+      "Insurance",
+      "All industries",
+      "Integrations",
+      "Pricing",
+      "Customers",
+      "Resources",
+      "Blog",
+      "Contact",
+      "Download Beside Phone",
+      "Help Center",
+      "Review Writer"
+    ]
+  },
+  {
+    "name": "userjot",
+    "url": "https://userjot.com/",
+    "title": "UserJot: Customer Feedback, Roadmap, Changelog and Support for SaaS Teams",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "Customer support and feedback\nfor product teams and AI agents.",
+        "font": "\"Inter Variable\", \"Inter Variable\", \"Inter Fallback\", -apple-system, \"system-ui\", \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
+        "size": "60px",
+        "weight": "400",
+        "spacing": "-1.8px"
+      },
+      {
+        "tag": "H2",
+        "text": "Right inside your app.",
+        "font": "\"Inter Variable\", \"Inter Variable\", \"Inter Fallback\", -apple-system, \"system-ui\", \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
+        "size": "52px",
+        "weight": "400",
+        "spacing": "-1.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "Meet\nJuno.",
+        "font": "\"Inter Variable\", \"Inter Variable\", \"Inter Fallback\", -apple-system, \"system-ui\", \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
+        "size": "96px",
+        "weight": "400",
+        "spacing": "-3.84px"
+      },
+      {
+        "tag": "H2",
+        "text": "Built for the everyday.",
+        "font": "\"Inter Variable\", \"Inter Variable\", \"Inter Fallback\", -apple-system, \"system-ui\", \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
+        "size": "52px",
+        "weight": "400",
+        "spacing": "-1.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "The life of a request.",
+        "font": "\"Inter Variable\", \"Inter Variable\", \"Inter Fallback\", -apple-system, \"system-ui\", \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
+        "size": "52px",
+        "weight": "400",
+        "spacing": "-1.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "See what matters.",
+        "font": "\"Inter Variable\", \"Inter Variable\", \"Inter Fallback\", -apple-system, \"system-ui\", \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
+        "size": "52px",
+        "weight": "400",
+        "spacing": "-1.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "Ship it, and say so.",
+        "font": "\"Inter Variable\", \"Inter Variable\", \"Inter Fallback\", -apple-system, \"system-ui\", \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
+        "size": "52px",
+        "weight": "400",
+        "spacing": "-1.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "Your agent works here too.",
+        "font": "\"Inter Variable\", \"Inter Variable\", \"Inter Fallback\", -apple-system, \"system-ui\", \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
+        "size": "52px",
+        "weight": "400",
+        "spacing": "-1.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "Everything else, A to Z.",
+        "font": "\"Inter Variable\", \"Inter Variable\", \"Inter Fallback\", -apple-system, \"system-ui\", \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
+        "size": "52px",
+        "weight": "400",
+        "spacing": "-1.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "Questions, answered.",
+        "font": "\"Inter Variable\", \"Inter Variable\", \"Inter Fallback\", -apple-system, \"system-ui\", \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
+        "size": "52px",
+        "weight": "400",
+        "spacing": "-1.56px"
+      },
+      {
+        "tag": "H2",
+        "text": "Your customers are already talking.",
+        "font": "\"Inter Variable\", \"Inter Variable\", \"Inter Fallback\", -apple-system, \"system-ui\", \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\"",
+        "size": "68px",
+        "weight": "400",
+        "spacing": "-2.04px"
+      }
+    ],
+    "background": "rgba(0, 0, 0, 0)",
+    "firstScreenLinks": [
+      "UserJot",
+      "Product",
+      "Resources",
+      "Pricing",
+      "Blog",
+      "Log in",
+      "Get started",
+      "Get started free",
+      "Talk to Juno \u2192",
+      "Live chat",
+      "Feedback",
+      "Roadmap",
+      "Changelog",
+      "Widget"
+    ]
+  },
+  {
+    "name": "linear",
+    "url": "https://linear.app/",
+    "title": "Linear \u2013 The system for product development",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "The product development\nsystem for teams and agents\nThe product development system for teams and agents",
+        "font": "\"Inter Variable\", \"SF Pro Display\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+        "size": "64px",
+        "weight": "510",
+        "spacing": "-1.408px"
+      },
+      {
+        "tag": "H2",
+        "text": "A new species of product tool. Purpose-built for modern teams with AI workflows at its core, Linear sets a new standard for planning and building products.",
+        "font": "\"Inter Variable\", \"SF Pro Display\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+        "size": "48px",
+        "weight": "510",
+        "spacing": "-1.056px"
+      },
+      {
+        "tag": "H2",
+        "text": "Intake\nand integrations",
+        "font": "\"Inter Variable\", \"SF Pro Display\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+        "size": "48px",
+        "weight": "510",
+        "spacing": "-1.056px"
+      },
+      {
+        "tag": "H2",
+        "text": "Planning\nand monitoring",
+        "font": "\"Inter Variable\", \"SF Pro Display\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+        "size": "48px",
+        "weight": "510",
+        "spacing": "-1.056px"
+      },
+      {
+        "tag": "H2",
+        "text": "AI and\nautomations",
+        "font": "\"Inter Variable\", \"SF Pro Display\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+        "size": "48px",
+        "weight": "510",
+        "spacing": "-1.056px"
+      },
+      {
+        "tag": "H2",
+        "text": "Build, review,\nand ship",
+        "font": "\"Inter Variable\", \"SF Pro Display\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+        "size": "48px",
+        "weight": "510",
+        "spacing": "-1.056px"
+      },
+      {
+        "tag": "H2",
+        "text": "Changelog",
+        "font": "\"Inter Variable\", \"SF Pro Display\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+        "size": "48px",
+        "weight": "510",
+        "spacing": "-1.056px"
+      },
+      {
+        "tag": "H2",
+        "text": "Built for the future. Available today.",
+        "font": "\"Inter Variable\", \"SF Pro Display\", -apple-system, \"system-ui\", \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+        "size": "72px",
+        "weight": "510",
+        "spacing": "-1.584px"
+      }
+    ],
+    "background": "rgb(8, 9, 10)",
+    "firstScreenLinks": [
+      "Skip to content \u2192",
+      "Product",
+      "Resources",
+      "Customers",
+      "Pricing",
+      "Now",
+      "Contact",
+      "Log in",
+      "Sign up",
+      "New\nLoops \u2192",
+      "Linear",
+      "Pulse",
+      "Inbox",
+      "My issues",
+      "Reviews",
+      "Workspace",
+      "Initiatives",
+      "Projects",
+      "More",
+      "Favorites",
+      "Faster app launch",
+      "Agent tasks",
+      "Agent Insights",
+      "UI Refresh"
+    ]
+  },
+  {
+    "name": "tally",
+    "url": "https://tally.so/",
+    "title": "Tally - Create Beautiful Forms for Free | Unlimited Forms & Submissions",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "The simplest way to create forms",
+        "font": "Inter, \"Inter Fallback\", sans-serif",
+        "size": "64px",
+        "weight": "700",
+        "spacing": "-2px"
+      },
+      {
+        "tag": "H2",
+        "text": "A form builder like no other",
+        "font": "Inter, \"Inter Fallback\", sans-serif",
+        "size": "36px",
+        "weight": "700",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Simple but\n powerful",
+        "font": "Inter, \"Inter Fallback\", sans-serif",
+        "size": "36px",
+        "weight": "700",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Craft intelligent\n forms",
+        "font": "Inter, \"Inter Fallback\", sans-serif",
+        "size": "36px",
+        "weight": "700",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Make forms uniquely yours",
+        "font": "Inter, \"Inter Fallback\", sans-serif",
+        "size": "36px",
+        "weight": "700",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Share with your audience",
+        "font": "Inter, \"Inter Fallback\", sans-serif",
+        "size": "36px",
+        "weight": "700",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Connect your favorite tools",
+        "font": "Inter, \"Inter Fallback\", sans-serif",
+        "size": "36px",
+        "weight": "700",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Designed for you",
+        "font": "Inter, \"Inter Fallback\", sans-serif",
+        "size": "36px",
+        "weight": "700",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Build stunning forms for free",
+        "font": "Inter, \"Inter Fallback\", sans-serif",
+        "size": "36px",
+        "weight": "700",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Questions & answers",
+        "font": "Inter, \"Inter Fallback\", sans-serif",
+        "size": "36px",
+        "weight": "700",
+        "spacing": "normal"
+      }
+    ],
+    "background": "rgba(0, 0, 0, 0)",
+    "firstScreenLinks": [
+      "Pricing",
+      "Log in",
+      "Sign up",
+      "Create form",
+      "Create a free form"
+    ]
+  },
+  {
+    "name": "altitude-xyz",
+    "url": "https://altitude.xyz/",
+    "title": "Global business account, open from 200+ countries | Altitude",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "Run business finance from one global business account.",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "32px",
+        "weight": "700",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Get paid. Pay anyone.\nRun everything in between.",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "40px",
+        "weight": "400",
+        "spacing": "-0.8px"
+      },
+      {
+        "tag": "H2",
+        "text": "USD and EUR business accounts\nfrom anywhere in the world.",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "40px",
+        "weight": "400",
+        "spacing": "-0.8px"
+      },
+      {
+        "tag": "H2",
+        "text": "Bill pay and global payments.\nSave up to 60% on FX fees.",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "40px",
+        "weight": "400",
+        "spacing": "-0.8px"
+      },
+      {
+        "tag": "H2",
+        "text": "Earn up to 2% cashback. Full spend management and controls.",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "40px",
+        "weight": "400",
+        "spacing": "-0.8px"
+      },
+      {
+        "tag": "H2",
+        "text": "Get paid on time, without\nadding another tool.",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "40px",
+        "weight": "400",
+        "spacing": "-0.8px"
+      },
+      {
+        "tag": "H2",
+        "text": "Cut the manual work\nbehind every transaction.",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "40px",
+        "weight": "400",
+        "spacing": "-0.8px"
+      },
+      {
+        "tag": "H2",
+        "text": "Built for businesses already operating beyond borders.",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "40px",
+        "weight": "400",
+        "spacing": "-0.8px"
+      },
+      {
+        "tag": "H2",
+        "text": "Secure from the ground up.",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "56px",
+        "weight": "400",
+        "spacing": "-1.12px"
+      },
+      {
+        "tag": "H2",
+        "text": "Frequently\nasked questions",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "32px",
+        "weight": "500",
+        "spacing": "-0.64px"
+      },
+      {
+        "tag": "H2",
+        "text": "Open from anywhere. Operate everywhere.",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "56px",
+        "weight": "400",
+        "spacing": "-1.12px"
+      },
+      {
+        "tag": "H2",
+        "text": "Product",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "16px",
+        "weight": "400",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Solutions",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "16px",
+        "weight": "400",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Company",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "16px",
+        "weight": "400",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Get Started",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "14px",
+        "weight": "500",
+        "spacing": "normal"
+      },
+      {
+        "tag": "H2",
+        "text": "Disclaimers",
+        "font": "gtStandard, \"gtStandard Fallback\", sans-serif",
+        "size": "14px",
+        "weight": "500",
+        "spacing": "normal"
+      }
+    ],
+    "background": "rgb(255, 255, 255)",
+    "firstScreenLinks": [
+      "Skip to content",
+      "Local payments are here. Pay like a local from your Altitude balance in the UK, Mexico, Brazil, and Colombia\n\u2192",
+      "Product",
+      "Solutions",
+      "Company",
+      "Log in",
+      "See a demo",
+      "Open an account",
+      "Open an account"
+    ]
+  }
+]

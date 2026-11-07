@@ -6,17 +6,34 @@ export const FEEDBACK_SORT_OPTIONS = [
   { label: "Newest", value: "newest" },
 ];
 
-// Prototype heuristic: engagement decays with post age. Production should use
-// timestamps and recent vote/comment events rather than relative display labels.
+/** Conversation counts twice, so discussion-heavy requests can rise alongside voted posts. */
 export function trendingScore(item: FeedbackItemData): number {
-  const age = item.createdAt.match(/^(\d+)(h|d|w)/);
-  const hours = age ? Number(age[1]) * ({ h: 1, d: 24, w: 168 }[age[2]] ?? 1) : 0;
-  return (item.votes + item.comments.length * 2) / Math.pow(hours + 2, 1.3);
+  return item.votes + item.comments.length * 2;
+}
+
+/** Top fifth of each board, including ties, with enough activity to avoid empty-board noise. */
+export function getTrendingIds(items: readonly FeedbackItemData[]): ReadonlySet<string> {
+  const boards = new Map<string, FeedbackItemData[]>();
+  for (const item of items) {
+    const key = item.boardId ?? "default";
+    const group = boards.get(key) ?? [];
+    group.push(item);
+    boards.set(key, group);
+  }
+  const ids = new Set<string>();
+  for (const group of boards.values()) {
+    const ranked = [...group].sort((a,b) => trendingScore(b)-trendingScore(a));
+    const cutoff = trendingScore(ranked[Math.ceil(ranked.length / 5)-1]);
+    for (const item of ranked) {
+      if ((item.votes >= 5 || item.comments.length >= 3) && trendingScore(item) >= cutoff) ids.add(item.id);
+    }
+  }
+  return ids;
 }
 
 export function compareFeedback(sort: string, a: FeedbackItemData, b: FeedbackItemData): number {
   const tie = b.createdOrder - a.createdOrder || b.id.localeCompare(a.id);
-  if (sort === "trending") return trendingScore(b) - trendingScore(a) || tie;
+  if (sort === "trending") return trendingScore(b) - trendingScore(a) || b.votes-a.votes || tie;
   if (sort === "newest") return tie;
-  return b.votes - a.votes || tie;
+  return b.votes - a.votes || b.comments.length-a.comments.length || tie;
 }

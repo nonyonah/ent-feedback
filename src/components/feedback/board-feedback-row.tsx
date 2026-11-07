@@ -1,4 +1,5 @@
 "use client";
+import {TrendingBadge} from "./trending-badge";
 import {FeedbackTypeLabel} from "./feedback-type-label";
 
 import Link from "next/link";
@@ -35,7 +36,7 @@ export function BoardFeedbackRow({ item }: { item: FeedbackItemData }): React.Re
         <Link className="text-pretty text-lg font-semibold leading-7 tracking-tight outline-none hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring" href={"/items/" + item.id}>
           {item.pinned && <PinIcon aria-label="Pinned" className="mr-1 inline size-3.5 text-muted-foreground" />}
           {item.title}
-        </Link>
+        </Link><TrendingBadge id={item.id} className="ml-2 align-middle"/>
         <p className="mt-2 line-clamp-2 text-base leading-[1.5] text-muted-foreground">{item.description}</p>
       </div>
       <Link className="-mt-2 hidden min-h-11 shrink-0 items-center gap-2 rounded-md outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:flex" href={"/items/" + item.id} aria-label={item.comments.length + " comments on " + item.title}>

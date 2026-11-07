@@ -16,3 +16,11 @@ Validation:
 - `node scripts/check-feedback-db.mjs` passed against PostgreSQL with fixture rollback and a mocked Clerk actor: second-board public submission, workspace inbox access, type/tag persistence, normalized tag uniqueness, cross-workspace tag rejection and existing feedback/comment/reaction behavior.
 - Local browser checks used actual components and mocked actions: launcher click close/reopen and Escape, workspace header identity, bug submission, multi-board inbox, create/assign tag, tag filter and focus refresh.
 - No live notification email was sent. Authenticated production Clerk flows and deployed cross-domain routing were not exercised by these checks.
+
+## Automatic Trending badge
+
+The default dashboard/public-board order is Trending, using `votes + 2 × comments` (including replies). Top remains vote-first with comment count as a tie-breaker; Newest remains available. The widget uses the same default engagement order.
+
+A separate automatic Trending badge marks the top 20% by engagement within each board, including ties, only after at least five votes or three comments. The threshold prevents a new board's initial self-vote from appearing popular. The provider computes badges from the complete loaded board/workspace snapshot before client filters; another board's activity cannot change a board's badges. It recalculates after mutations and normal refreshes and appears in public cards, dashboard requests/details and the widget. It is not a stored/manual tag and uses all-time engagement, not a recent-activity or velocity claim. No schema changes required.
+
+Tests cover vote/comment ordering, Top/Newest alternatives, empty/new boards, eligibility thresholds, ties, board isolation and independence from relative date labels.

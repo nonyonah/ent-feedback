@@ -13,7 +13,8 @@
     "db:check": "drizzle-kit check",
     "db:studio": "drizzle-kit studio",
     "jobs:check": "node scripts/run-maintenance.mjs --check",
-    "jobs:run": "node scripts/run-maintenance.mjs"
+    "jobs:run": "node scripts/run-maintenance.mjs",
+    "widget:test": "node scripts/serve-widget-test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1163.0",

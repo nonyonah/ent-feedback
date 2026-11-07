@@ -30,3 +30,11 @@ The browser harness was temporary under `/tmp/ent-audit`; the PostgreSQL integra
 R2 uploads, image validation/association, persisted follows, transactional notification events, the inbox, Sendbyte delivery jobs and request rate limits are now implemented. Tests and deployment limits are recorded in [backend readiness](backend-readiness.md).
 
 The notification inbox has cursor pagination. The main feedback dataset still loads as a complete list. Parent-comment IDs are accepted server-side, while the conversation UI remains flat. Merge is explicitly unavailable. Full live Clerk onboarding and third-party embedded-browser verification remain deployment checks. Anonymous tokens identify a visitor browser rather than a verified person; signing in does not merge previous anonymous votes automatically.
+
+## Conversation replies and status timeline
+
+The public board, dashboard and widget now share `CommentThread`: a dashboard-style composer, inline per-comment reply composers, nested replies, image/emoji tools and solid primary heart reactions. Replies send the existing `parentCommentId` command field; the server verifies the parent belongs to the same workspace and request. Drafts remain after failed submissions.
+
+Feedback DTOs now include comment creation timestamps and workspace-scoped status history (actor name, previous/new status, time). The conversation places its composer first, then root comments and status changes chronologically, with replies nested under their parents and status changes shown against a timeline rule. Existing status-history records appear without a migration. No email addresses are exposed by the added history query.
+
+Verification: TypeScript and targeted ESLint passed. Browser fixture checked nested reply submission (including parent ID), primary-filled heart likes, status history entries, and mobile width. Real embedded details loaded the shared composer without browser errors or posting to the live board. PostgreSQL integration checks passed for persisted parent replies, cross-request parent rejection and public status-history reads; fixture transaction rolled back.

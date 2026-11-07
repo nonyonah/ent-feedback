@@ -17,7 +17,7 @@ type FeedbackContextValue={
  vote:(id:string)=>void;
  toggleFollow:(id:string)=>Promise<void>;
  addFeedback:(input:NewFeedbackInput)=>Promise<FeedbackItemData>;
- addComment:(id:string,body:string,images?:string[])=>Promise<void>;
+ addComment:(id:string,body:string,images?:string[],parentCommentId?:string)=>Promise<void>;
  toggleCommentLike:(id:string,commentId:string)=>void;
  updateStatus:(id:string,status:FeedbackStatus)=>void;
  deleteItem:(id:string)=>void;
@@ -115,7 +115,7 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
  const value:FeedbackContextValue={items,loading,error,pending,retry,
   vote:id=>{const item=items.find(item=>item.id===id);if(item)report(mutate({type:'vote',id,active:!item.voted}));},
   toggleFollow:async id=>{const item=items.find(item=>item.id===id);if(item)await mutate({type:'follow',id,active:!item.following});},
-  addFeedback,addComment:async(id,body,images)=>{await mutate({type:'comment',id,body,images});},
+  addFeedback,addComment:async(id,body,images,parentCommentId)=>{await mutate({type:'comment',id,body,images,parentCommentId});},
   toggleCommentLike:(id,commentId)=>{const comment=items.find(item=>item.id===id)?.comments.find(comment=>comment.id===commentId);if(comment)report(mutate({type:'reaction',id,commentId,active:!comment.liked}));},
   updateStatus:(id,status)=>report(mutate({type:'status',id,status})),
   updateCategory:async(id,category)=>{await mutate({type:'category',id,category});},

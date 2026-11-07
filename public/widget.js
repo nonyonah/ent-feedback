@@ -14,15 +14,26 @@
   button.textContent = "Submit feedback";
   function applyTheme(theme) {
     const dark = theme === "dark";
-    button.style.background = dark ? "#242423" : "#ffffff";
+    button.style.background = dark ? "#242424" : "#ffffff";
     button.style.color = dark ? "#f5f5f5" : "#171717";
-    if (document.getElementById("ent-feedback-panel")) document.getElementById("ent-feedback-panel").style.background = dark ? "#242423" : "#ffffff";
+    if (document.getElementById("ent-feedback-panel")) document.getElementById("ent-feedback-panel").style.background = dark ? "#242424" : "#ffffff";
   }
   const media = window.matchMedia("(prefers-color-scheme: dark)");
-  let themeMode = ["light", "dark"].includes(script.dataset.theme) ? script.dataset.theme : "system";
-  const followSystem = () => { applyTheme(themeMode === "system" ? (media.matches ? "dark" : "light") : themeMode); };
+  const themeMode = ["light", "dark"].includes(script.dataset.theme) ? script.dataset.theme : "system";
+  const hostTheme = () => {
+    const html = document.documentElement;
+    const value = html.dataset.theme || html.dataset.colorScheme;
+    if (value === "light" || value === "dark") return value;
+    if (html.classList.contains("dark")) return "dark";
+    if (html.classList.contains("light")) return "light";
+    return media.matches ? "dark" : "light";
+  };
+  const followSystem = () => { applyTheme(themeMode === "system" ? hostTheme() : themeMode); };
   followSystem();
   media.addEventListener("change", followSystem);
+  const themeObserver = new MutationObserver(followSystem);
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme", "data-color-scheme"] });
+  window.addEventListener("pageshow", followSystem);
   button.addEventListener("focus", () => { if (button.matches(":focus-visible")) button.style.outline = "2px solid #7443e9"; });
   button.addEventListener("blur", () => { button.style.outline = "0"; });
   const frame = document.createElement("iframe");
@@ -72,7 +83,6 @@
     if (event.source !== frame.contentWindow || event.origin !== origin || !event.data) return;
     if (event.data.type === "ent:close") setOpen(false, event.data.inputModality === "keyboard");
     if (event.data.type === "ent:appearance" && /^#[0-9a-f]{6}$/i.test(event.data.accent)) {
-      if (["system", "light", "dark"].includes(event.data.themeMode)) themeMode = event.data.themeMode;
       followSystem();
       frame.style.background = button.style.background;
     }
@@ -80,4 +90,5 @@
   window.addEventListener("keydown", event => { if (event.key === "Escape" && open) setOpen(false, true); });
   root.append(frame, button);
   document.body.append(root);
+  followSystem();
 })();

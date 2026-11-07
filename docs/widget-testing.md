@@ -29,3 +29,11 @@ For a Next.js host, put the equivalent `next/script` component in the site's sha
 If the launcher is absent, check that the script URL opens and that the host's content-security policy permits the feedback origin for both scripts and frames. If the launcher appears but its contents do not, open `/embed?project=WORKSPACE-SLUG&board=BOARD-SLUG` directly at the feedback app origin and check the board slugs and server connection.
 
 No private API key belongs in the snippet. The current widget does not provide host-user identity/SSO through data attributes.
+
+## Standalone local demo
+
+Run Ent Feedback with `npm run dev -- --port 3000`, then run `npm run widget:test` in another terminal. Open http://localhost:3333.
+
+`examples/widget-test/index.html` is an independent sample app. It installs the actual loader with the same script attributes as Share → Widget embed, pointing to the existing `elf-workspace` / `product` board. Edit its final script tag to test another board or app origin. No Next/React components are reused on the host site. Posts made in this demo are real board submissions, not fixtures. `WIDGET_TEST_PORT` can override port 3333.
+
+The launcher follows a host page's explicit `html[data-theme]`, `html[data-color-scheme]` or `html.dark`/`html.light` state, falling back to the device color scheme. Host theme mutations and device changes update it live. A `data-theme="light"` or `data-theme="dark"` installation attribute explicitly locks its appearance; iframe workspace theme messages do not lock the launcher.

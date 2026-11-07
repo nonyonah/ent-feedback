@@ -10,6 +10,8 @@ export type FeedbackComment = {
   avatarUrl?: string;
   initials: string;
   time: string;
+  createdOrder?: number;
+  parentCommentId?: string;
   body: string;
   images?: string[];
   kind: "user" | "owner";
@@ -36,6 +38,7 @@ export type FeedbackItemData = {
   createdOrder: number;
   pinned?: boolean;
   following?: boolean;
+  statusHistory?: {id:string;author:string;previousStatus:FeedbackStatus|null;status:FeedbackStatus;time:string;createdOrder:number}[];
   comments: FeedbackComment[];
 };
 

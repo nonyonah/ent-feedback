@@ -1,5 +1,6 @@
 "use server";
 
+import {getWorkspaceEntitlements} from "@/server/billing/access";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { requireAppUser } from "@/server/auth";
@@ -35,6 +36,8 @@ export async function createBoardAction(workspaceId: string, input: z.input<type
       if (!workspace) throw new ServiceError("not_found", "Workspace not found. Refresh and try again.");
       const current = await tx.select({ handle: boards.handle, position: boards.position }).from(boards)
         .where(eq(boards.workspaceId, wid));
+      const entitlement=await getWorkspaceEntitlements(wid);
+      if(current.length>=entitlement.boardLimit)throw new ServiceError('forbidden',entitlement.plan==='free'?'Your Free plan includes 2 boards. Start an Essentials trial for up to 5 boards in Settings → Billing.':'Essentials includes up to 5 boards.');
       let base = value.name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
         .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "board";
       base = base.slice(0, 50).replace(/-$/, "");

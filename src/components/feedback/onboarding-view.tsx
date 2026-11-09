@@ -1,4 +1,5 @@
 "use client";
+import {ActionButton} from "@/components/ui/action-button";
 
 import * as React from "react";
 import {WorkspaceIdentityFields} from "@/components/feedback/workspace-identity-fields";
@@ -166,16 +167,19 @@ export function OnboardingView({
               {error}
             </p>
           )}
-          <Button
+          <ActionButton
+            state={submitting?"pending":error?"error":"idle"}
+            pendingLabel="Creating workspace…"
+            retryLabel="Retry creating workspace"
             type="submit"
             className="mt-2 h-9 self-start rounded-2xl px-3.5 text-sm"
             disabled={name.trim().length<2 || slug.length<5 || submitting}
           >
-            {submitting ? "Creating workspace…" : "Create workspace"}
+            Create workspace
             <kbd className="ml-1.5 rounded bg-primary-foreground/15 px-1 py-0.5 text-[13px]">
               ⌘ ↵
             </kbd>
-          </Button>
+          </ActionButton>
         </form>
       </div>
     </main>

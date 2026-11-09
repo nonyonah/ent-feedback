@@ -1,5 +1,6 @@
 "use client";
 
+import {XIcon} from "@/components/icons";
 import { Toast } from "@base-ui/react/toast";
 import { WarningCircleIcon as CircleAlertIcon } from "@/components/icons";
 import { CheckCircleIcon as CircleCheckIcon } from "@/components/icons";
@@ -159,6 +160,7 @@ function Toasts({
                     {toast.actionProps.children}
                   </Toast.Action>
                 )}
+                <Toast.Close aria-label="Dismiss notification" className="ml-1 inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"><XIcon className="size-3.5"/></Toast.Close>
               </Toast.Content>
             </Toast.Root>
           );
@@ -247,6 +249,7 @@ function AnchoredToasts({
                         {toast.actionProps.children}
                       </Toast.Action>
                     )}
+                    <Toast.Close aria-label="Dismiss notification" className="ml-1 inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"><XIcon className="size-3.5"/></Toast.Close>
                   </Toast.Content>
                 )}
               </Toast.Root>
@@ -260,6 +263,9 @@ function AnchoredToasts({
 
 export const toastManager: ReturnType<typeof Toast.createToastManager> =
   Toast.createToastManager();
+
+const addToast=toastManager.add;
+toastManager.add=options=>addToast({...options,timeout:options.timeout??(options.type==='error'||options.actionProps?0:5000)});
 
 export const anchoredToastManager: ReturnType<typeof Toast.createToastManager> =
   Toast.createToastManager();

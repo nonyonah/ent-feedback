@@ -50,6 +50,20 @@
       "when": 1793986413837,
       "tag": "0006_rich_banshee",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794215552574,
+      "tag": "0007_neat_nebula",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794227256670,
+      "tag": "0008_broken_the_captain",
+      "breakpoints": true
     }
   ]
 }

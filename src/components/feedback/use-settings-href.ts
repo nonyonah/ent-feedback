@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useSyncExternalStore} from 'react';
 import {useUser} from '@clerk/nextjs';
-const sections=['branding','account','widget'];
+const sections=['branding','account','widget','billing'];
 function subscribe(listener:()=>void){window.addEventListener('ent-settings-section',listener);return()=>window.removeEventListener('ent-settings-section',listener);}
 export function useSettingsHref(){
  const {user}=useUser();const key='ent-last-settings:'+(user?.id??'guest');

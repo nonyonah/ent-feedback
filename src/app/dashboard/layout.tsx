@@ -1,3 +1,5 @@
+import {BillingCacheProvider} from "@/components/feedback/billing-cache";
+import {readBillingSummary} from "@/server/billing/summary";
 import {DashboardLoading} from "@/components/feedback/dashboard-loading";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
@@ -18,10 +20,12 @@ async function DashboardShell({ children }: { children: React.ReactNode }) {
   const {progress,workspaces}=await getRegistrationState();
   if(!workspaces.length||(!progress.complete&&progress.workspaceId))redirect("/registration");
 
+  const billing=Object.fromEntries(await Promise.all(workspaces.map(async workspace=>[workspace.id,await readBillingSummary(workspace.id,workspace.role==='owner')])));
+
   return (
     <>
       <WorkspaceSync redirectWhenEmpty initialWorkspaces={workspaces}/>
-      <WorkspaceGate>{children}</WorkspaceGate>
+      <BillingCacheProvider initial={billing}><WorkspaceGate>{children}</WorkspaceGate></BillingCacheProvider>
     </>
   );
 }

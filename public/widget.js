@@ -10,7 +10,7 @@
   button.type = "button";
   button.setAttribute("aria-label", "Submit feedback");
   button.setAttribute("aria-expanded", "false");
-  button.style.cssText = "position:fixed;right:16px;bottom:20px;height:40px;padding:0 16px;border:0;outline:0;border-radius:12px;background:#fff;color:#171717;font:500 13px/20px Inter,system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 20px #00000014;z-index:2147483000;display:flex;align-items:center;justify-content:center;appearance:none;white-space:nowrap";
+  button.style.cssText = "position:fixed;right:16px;bottom:20px;height:40px;padding:0 16px;border:0;outline:0;border-radius:9999px;background:#fff;color:#171717;font:500 13px/20px Inter,system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 20px #00000014;z-index:2147483000;display:flex;align-items:center;justify-content:center;appearance:none;white-space:nowrap";
   button.textContent = "Submit feedback";
   function applyTheme(theme) {
     const dark = theme === "dark";
@@ -34,7 +34,7 @@
   const themeObserver = new MutationObserver(followSystem);
   themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme", "data-color-scheme"] });
   window.addEventListener("pageshow", followSystem);
-  button.addEventListener("focus", () => { if (button.matches(":focus-visible")) button.style.outline = "2px solid #7443e9"; });
+  button.addEventListener("focus", () => { if (button.matches(":focus-visible")) button.style.outline = "2px solid " + button.style.color; });
   button.addEventListener("blur", () => { button.style.outline = "0"; });
   const frame = document.createElement("iframe");
   frame.id = "ent-feedback-panel";

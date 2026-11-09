@@ -22,6 +22,14 @@ const serverEnvSchema = z.object({
   CRON_SECRET: z.string().min(32).optional(),
   SENDBYTE_API_KEY: z.string().min(1).optional(),
   EMAIL_FROM: z.string().min(1).optional(),
+  BACHS_RETURN_ORIGIN:z.url().optional(),
+  BACHS_API_KEY:z.string().optional(),
+  BACHS_WEBHOOK_SECRET:z.string().optional(),
+  BACHS_ORGANIZATION_ID:z.string().optional(),
+  BACHS_MONTHLY_PRODUCT_ID:z.string().optional(),
+  BACHS_YEARLY_PRODUCT_ID:z.string().optional(),
+  BACHS_MONTHLY_TRIAL_PRODUCT_ID:z.string().optional(),
+  BACHS_YEARLY_TRIAL_PRODUCT_ID:z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -29,7 +37,8 @@ export type ServerEnv = z.infer<typeof serverEnvSchema>;
 let cached: ServerEnv | null = null;
 
 export function getServerEnv(): ServerEnv {
-  if (cached) {
+  // Next reloads .env.local during development; do not retain a stale snapshot.
+  if (cached && process.env.NODE_ENV === "production") {
     return cached;
   }
 

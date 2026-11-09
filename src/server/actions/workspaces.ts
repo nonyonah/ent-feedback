@@ -1,5 +1,6 @@
 "use server";
 
+import {consumeRateLimit} from "@/server/rate-limit";
 import {requireFeature} from "@/server/features";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -145,4 +146,4 @@ export async function acceptInvitationAction(token: string) {
   });
 }
 
-export async function checkWorkspaceAvailabilityAction(input:{name:string;handle:string}){return runService(async()=>{await requireAppUser();const parsed=z.object({name:z.string().max(60),handle:z.string().max(40)}).parse(input);return checkWorkspaceAvailability(parsed.name,parsed.handle);});}
+export async function checkWorkspaceAvailabilityAction(input:{name:string;handle:string}){return runService(async()=>{const actor=await requireAppUser();await consumeRateLimit("workspace-availability:"+actor.id,60,60);const parsed=z.object({name:z.string().max(60),handle:z.string().max(40)}).parse(input);return checkWorkspaceAvailability(parsed.name,parsed.handle);});}

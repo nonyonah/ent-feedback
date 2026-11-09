@@ -43,7 +43,8 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
  const [pending,setPending]=React.useState(false);const busy=React.useRef(false);const token=React.useRef<string|undefined>(undefined);const scope=React.useRef(key);const generation=React.useRef(0);
  React.useLayoutEffect(()=>{scope.current=key;},[key]);
  const items=snapshot.key===key?snapshot.items:[];
- const error=failure.key===key?failure.message:'';
+ const failureMessage=failure.key===key?failure.message:'';
+ const error=snapshot.key===key?'':failureMessage;
  const loading=valid&&snapshot.key!==key&&!error;
  const reload=React.useCallback(async(cancelled:()=>boolean=()=>false)=>{
   if(!valid)return;const version=++generation.current;
@@ -108,21 +109,21 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
    return result.data;
   }finally{busy.current=false;}
  }
- function report(operation:Promise<unknown>){void operation.catch(error=>toastManager.add({title:'Change wasn’t saved',description:error instanceof Error?error.message:'Try again.',type:'error'}));}
+ function report(operation:Promise<unknown>,title='Change wasn’t saved'){void operation.catch(error=>toastManager.add({title,description:error instanceof Error?error.message:'Try again.',type:'error'}));}
  async function addFeedback(input:NewFeedbackInput){
   const result=await mutate({type:'create',category:input.category,channel:input.channel,title:input.title,description:input.description,name:input.name,email:input.email,anonymous:!publicUser,images:input.images});
   const created=result.items.find(item=>item.id===result.createdId);if(!created)throw Error('Feedback was saved. Refresh the board to view it.');return created;
  }
  const value:FeedbackContextValue={trendingIds:getTrendingIds(items),items,loading,error,pending,retry,
-  vote:id=>{const item=items.find(item=>item.id===id);if(item)report(mutate({type:'vote',id,active:!item.voted}));},
+  vote:id=>{const item=items.find(item=>item.id===id);if(item)report(mutate({type:'vote',id,active:!item.voted}),'Vote wasn’t saved');},
   toggleFollow:async id=>{const item=items.find(item=>item.id===id);if(item)await mutate({type:'follow',id,active:!item.following});},
   addFeedback,addComment:async(id,body,images,parentCommentId)=>{await mutate({type:'comment',id,body,images,parentCommentId});},
-  toggleCommentLike:(id,commentId)=>{const comment=items.find(item=>item.id===id)?.comments.find(comment=>comment.id===commentId);if(comment)report(mutate({type:'reaction',id,commentId,active:!comment.liked}));},
-  updateStatus:(id,status)=>report(mutate({type:'status',id,status})),
+  toggleCommentLike:(id,commentId)=>{const comment=items.find(item=>item.id===id)?.comments.find(comment=>comment.id===commentId);if(comment)report(mutate({type:'reaction',id,commentId,active:!comment.liked}),'Reaction wasn’t saved');},
+  updateStatus:(id,status)=>report(mutate({type:'status',id,status}),'Status wasn’t updated'),
   updateCategory:async(id,category)=>{await mutate({type:'category',id,category});},
   classify:async(id,category,tagIds)=>{await mutate({type:'classification',id,category,tagIds});},
-  deleteItem:id=>report(mutate({type:'delete',id})),
+  deleteItem:id=>report(mutate({type:'delete',id}),'Feedback wasn’t deleted'),
  };
- return <FeedbackContext.Provider value={value}>{valid&&error&&<div role="alert" className="flex flex-wrap items-center justify-center gap-3 border-b border-border px-4 py-3 text-sm"><span>{error}</span><button type="button" disabled={pending} className="rounded-md underline underline-offset-4 focus-visible:outline-2" onClick={retry}>Retry loading feedback</button></div>}{children}</FeedbackContext.Provider>;
+ return <FeedbackContext.Provider value={value}>{valid&&failureMessage&&<div role={snapshot.key===key?"status":"alert"} className="flex flex-wrap items-center justify-center gap-3 border-b border-border px-4 py-3 text-sm"><span>{snapshot.key===key?"Couldn’t refresh feedback. Showing the last saved version. ":""}{failureMessage}</span><button type="button" disabled={pending} className="rounded-md underline underline-offset-4 focus-visible:outline-2" onClick={retry}>Retry loading feedback</button></div>}{children}</FeedbackContext.Provider>;
 }
 export function useFeedback(){const context=React.useContext(FeedbackContext);if(!context)throw Error('useFeedback must be used within a FeedbackProvider.');return context;}

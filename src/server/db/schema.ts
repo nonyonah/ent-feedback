@@ -88,7 +88,7 @@ export const workspaces = pgTable(
     name: text("name").notNull(),
     description: text("description").notNull().default(""),
     website: text("website"),
-    accentColor: text("accent_color").notNull().default("#7443e9"),
+    accentColor: text("accent_color").notNull().default("#212529"),
     logoUrl: text("logo_url"),
     theme: workspaceTheme("theme").notNull().default("dynamic"),
     hideAttribution: boolean("hide_attribution").notNull().default(false),
@@ -644,3 +644,21 @@ export const feedbackTags = pgTable("feedback_tags", {
  foreignKey({columns:[table.tagId,table.workspaceId],foreignColumns:[tags.id,tags.workspaceId]}).onDelete("cascade"),
  index("feedback_tags_workspace_tag_idx").on(table.workspaceId,table.tagId),
 ]);
+
+export const workspaceSubscriptions = pgTable('workspace_subscriptions', {
+ workspaceId:uuid('workspace_id').primaryKey().references(()=>workspaces.id,{onDelete:'cascade'}),
+ customerId:text('customer_id'),subscriptionId:text('subscription_id').unique(),
+ status:text('status').notNull().default('none'),interval:text('interval').notNull().default('monthly'),
+ trialUsed:boolean('trial_used').notNull().default(false),trialEnd:timestamp('trial_end',{withTimezone:true}),
+ periodEnd:timestamp('period_end',{withTimezone:true}),cancelAtPeriodEnd:boolean('cancel_at_period_end').notNull().default(false),
+ ...timestamps(),
+});
+export const billingCheckouts = pgTable('billing_checkouts', {
+ id:uuid('id').primaryKey().defaultRandom(),workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ productId:text('product_id').notNull(),interval:text('interval').notNull(),status:text('status').notNull().default('creating'),
+ checkoutId:text('checkout_id').unique(),checkoutUrl:text('checkout_url'),expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),
+ ...timestamps(),
+},table=>[index('billing_checkouts_workspace_idx').on(table.workspaceId),uniqueIndex('billing_checkouts_one_pending').on(table.workspaceId).where(sql`${table.status} in ('creating','open')`)]);
+export const billingWebhookEvents = pgTable('billing_webhook_events', {
+ id:text('id').primaryKey(),type:text('type').notNull(),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+});

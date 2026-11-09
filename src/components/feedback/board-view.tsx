@@ -1,6 +1,6 @@
 "use client";
 
-import {BoardLoading} from "@/components/feedback/board-states";
+import {BoardLoading,BoardState} from "@/components/feedback/board-states";
 import { NoBoard } from "@/components/feedback/board-context";
 import * as React from "react";
 import { PlusIcon } from "@/components/icons";
@@ -19,14 +19,14 @@ import { useProject } from "@/components/feedback/project-provider";
 const SORT_OPTIONS = FEEDBACK_SORT_OPTIONS;
 
 export function BoardView(): React.ReactElement {
-  const { items,loading,error } = useFeedback();
+  const { items,loading,error,retry } = useFeedback();
   const { activeBoard } = useProject();
   const [filter, setFilter] = React.useState<"all" | FeedbackStatus>("all");
   const [sort, setSort] = React.useState("trending");
   const visibleItems = items.filter((item) => filter === "all" || item.status === filter).sort((a, b) => compareFeedback(sort, a, b));
 
   if(loading)return <BoardLoading/>;
-  if(error)return <main className="p-6 text-center text-sm">Feedback is unavailable. Use Retry loading feedback above.</main>;
+  if(error)return <main className="mx-auto w-full max-w-[720px] px-4 py-8"><BoardState kind="error" onRetry={retry}/></main>;
   if (!activeBoard) return <main className="mx-auto w-full max-w-[720px] px-4 py-16"><NoBoard/></main>;
   return (
     <>

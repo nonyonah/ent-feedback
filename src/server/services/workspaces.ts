@@ -1,4 +1,6 @@
 import "server-only";
+import {consumeRateLimit} from "@/server/rate-limit";
+import {getWorkspaceEntitlements} from "@/server/billing/access";
 import {requireFeature} from "@/server/features";
 import {normalizeWorkspaceName,validNewWorkspaceDomain} from "@/lib/workspace-domain";
 
@@ -150,10 +152,11 @@ export async function listWorkspacesForUser(userId: string): Promise<WorkspaceSu
     rows.map((row) => row.id),
   );
 
-  return rows.map((row) => ({
+  return Promise.all(rows.map(async (row) => ({
     ...row,
+    hideAttribution:(await getWorkspaceEntitlements(row.id)).hideAttribution,
     boards: boardMap.get(row.id) ?? [],
-  }));
+  })));
 }
 
 export async function checkWorkspaceAvailability(name:string,handle:string){
@@ -170,6 +173,7 @@ export async function createWorkspaceForUser(input: {
   website?: string | null;
 }): Promise<WorkspaceSummary> {
   const db = getDb();
+  await consumeRateLimit("workspace-create:"+input.userId,10,3600);
   const availability=await checkWorkspaceAvailability(input.name,input.handle);
   if(!availability.nameAvailable)throw new ServiceError("conflict","That workspace name is already taken.",{fieldErrors:{name:["Choose a different workspace name."]}});
   if(!availability.handleAvailable)throw new ServiceError("conflict","That workspace subdomain is unavailable.",{fieldErrors:{handle:["Choose a different subdomain."]}});
@@ -180,7 +184,7 @@ export async function createWorkspaceForUser(input: {
         .insert(workspaces)
         .values({
           name: normalizeWorkspaceName(input.name),
-          accentColor: "#7443e9",
+          accentColor: "#212529",
           handle: input.handle,
           website: input.website ?? null,
         })

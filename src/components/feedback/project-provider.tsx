@@ -32,12 +32,12 @@ export type FeedbackBoard = {
 };
 
 export function projectTheme(accent: string): React.CSSProperties {
-  if (accent.toLowerCase() === "#7443e9") {
+  if (["#212529", "#7443e9"].includes(accent.toLowerCase())) {
     return {
       "--primary": "var(--project-primary)",
       "--primary-text": "color-mix(in oklab, var(--primary), var(--primary-text-tint) var(--primary-text-mix))",
       "--primary-foreground": "var(--project-primary-foreground)",
-      "--ring": "#7443e9",
+      "--ring": "var(--project-primary)",
       "--vote-active-bg": "var(--project-vote-bg)",
       "--vote-active-border": "var(--project-primary)",
     } as React.CSSProperties;
@@ -66,7 +66,7 @@ const initial: Project = {
   name: "Ent Feedback",
   slug: "ent",
   description: "A little feedback. A better product.",
-  accent: "#7443e9",
+  accent: "#212529",
   logo: "",
 };
 const initialBoard: FeedbackBoard = {
@@ -132,6 +132,7 @@ type ProjectContextValue = {
   updateProject: (project: Project) => Promise<boolean>;
   settingsPending: boolean;
   settingsError: string;
+  settingsSaveError: string;
   settingsReady: boolean;
   preferencesError: string;
   preferencesReady: boolean;
@@ -159,9 +160,7 @@ type ProjectContextValue = {
   ) => void;
   reorderBoards: (activeId: string, overId: string) => Promise<void>;
   notifications: NotificationPreferences;
-  updateNotifications: React.Dispatch<
-    React.SetStateAction<NotificationPreferences>
-  >;
+  updateNotifications: (value:React.SetStateAction<NotificationPreferences>)=>Promise<boolean>;
 };
 
 const ProjectContext = React.createContext<ProjectContextValue | null>(null);
@@ -180,6 +179,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const clerkUserId=clerkUser?.id;
   const pathname=usePathname();
   const [settingsPending,setSettingsPending]=React.useState(false);
+  const [settingsSaveFailure,setSettingsSaveFailure]=React.useState({workspaceId:"",message:""});
   const [settingsStatus,setSettingsStatus]=React.useState<{workspaceId:string;ready:boolean;error:string}>({workspaceId:"",ready:false,error:""});
   const [preferenceStatus,setPreferenceStatus]=React.useState<{userId:string;ready:boolean;error:string}>({userId:"",ready:false,error:""});
   const saving=React.useRef(false);
@@ -189,6 +189,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [preferencesAttempt,retryPreferences]=React.useReducer(value=>value+1,0);
   const [project, setProject] = React.useState(initial);
   const settingsReady=settingsStatus.workspaceId===project.id&&settingsStatus.ready;
+  const settingsSaveError=settingsSaveFailure.workspaceId===project.id?settingsSaveFailure.message:"";
   const settingsError=settingsStatus.workspaceId===project.id?settingsStatus.error:"";
   const preferencesReady=Boolean(clerkUserId)&&preferenceStatus.userId===clerkUserId&&preferenceStatus.ready;
   const preferencesError=Boolean(clerkUserId)&&preferenceStatus.userId===clerkUserId?preferenceStatus.error:"";
@@ -258,6 +259,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   },[project.accent]);
   const hydrateWorkspaces = React.useCallback(
     (nextProjects: Project[], nextBoards: FeedbackBoard[]) => {
+      nextProjects=nextProjects.map(item=>item.accent.toLowerCase()==="#7443e9"?{...item,accent:"#212529"}:item);
       setProjects(nextProjects);
       setBoards(nextBoards);
 
@@ -277,9 +279,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     [clerkUserId],
   );
   async function persist(operation:()=>Promise<{ok:boolean;error?:{message:string}}>,apply:()=>void){
-    if(saving.current)return false;saving.current=true;const workspaceId=project.id;setSettingsPending(true);setSettingsStatus(current=>({workspaceId,ready:current.workspaceId===workspaceId?current.ready:false,error:""}));
-    try{const result=await operation();if(!result.ok){setSettingsStatus(current=>({...current,workspaceId,error:result.error?.message??"Changes could not be saved."}));return false;}apply();return true;}
-    catch{setSettingsStatus(current=>({...current,workspaceId,error:"Changes could not be saved. Try again."}));return false;}
+    if(saving.current)return false;saving.current=true;const workspaceId=project.id;setSettingsPending(true);setSettingsSaveFailure({workspaceId,message:""});
+    try{const result=await operation();if(!result.ok){setSettingsSaveFailure({workspaceId,message:result.error?.message??"Changes could not be saved."});return false;}apply();return true;}
+    catch{setSettingsSaveFailure({workspaceId,message:"Changes could not be saved. Try again."});return false;}
     finally{saving.current=false;setSettingsPending(false);}
   }
   async function updateProject(next: Project) {
@@ -288,16 +290,18 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       setProjects(current=>current.map(item=>item.id===next.id?next:item));
     });
   }
-  const updateNotifications:React.Dispatch<React.SetStateAction<NotificationPreferences>>=(value)=>{
-    if(preferenceSaving.current||!clerkUserId)return;
+  const updateNotifications=async(value:React.SetStateAction<NotificationPreferences>):Promise<boolean>=>{
+    if(preferenceSaving.current||!clerkUserId)return false;
     const userId=clerkUserId;
     const next=typeof value==='function'?value(notifications):value;
     preferenceSaving.current=true;setPreferencesPending(true);
     setPreferenceStatus(current=>({...current,error:""}));
-    void saveNotificationSettingsAction(next).then(result=>{
-      if(result.ok)setNotifications(next);
-      else setPreferenceStatus(current=>({...current,userId,error:result.error.message}));
-    }).catch(()=>setPreferenceStatus(current=>({...current,userId,error:"Preferences could not be saved. Try again."}))).finally(()=>{preferenceSaving.current=false;setPreferencesPending(false);});
+    try{
+      const result=await saveNotificationSettingsAction(next);
+      if(result.ok){setNotifications(next);return true;}
+      setPreferenceStatus(current=>({...current,userId,error:result.error.message}));return false;
+    }catch{setPreferenceStatus(current=>({...current,userId,error:"Preferences could not be saved. Try again."}));return false;}
+    finally{preferenceSaving.current=false;setPreferencesPending(false);}
   };
   const management=pathname.startsWith('/dashboard');
   React.useEffect(()=>{
@@ -442,7 +446,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         configureIntegration,
         removeIntegration,
         updateProject,
-        settingsPending,settingsError,settingsReady,preferencesError,preferencesReady,preferencesPending,retrySettings,retryPreferences,hydrateWidgetSettings,
+        settingsPending,settingsError,settingsSaveError,settingsReady,preferencesError,preferencesReady,preferencesPending,retrySettings,retryPreferences,hydrateWidgetSettings,
         createProject,
         createBoard,
         selectBoard,

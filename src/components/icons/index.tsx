@@ -135,3 +135,6 @@ import AttachmentData from "@hugeicons/core-free-icons/Attachment01Icon";
 export function AttachmentIcon(props:IconProps){return <HugeiconsIcon icon={AttachmentData} size={16} strokeWidth={2.25} aria-hidden="true" {...props}/>;}
 
 export function FilterIcon({size=16,strokeWidth=2,...props}:IconProps){return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}><path d="M3 6H21"/><path d="M6 12H18"/><path d="M9 18H15"/></svg>;}
+
+import InvoiceData from "@hugeicons/core-free-icons/Invoice02Icon";
+export function InvoiceIcon(props:IconProps){return <HugeiconsIcon icon={InvoiceData} size={16} strokeWidth={2.25} aria-hidden="true" data-icon-library="hugeicons" {...props}/>;}

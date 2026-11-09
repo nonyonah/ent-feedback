@@ -117,7 +117,13 @@ export function toAppError(error: unknown): AppError {
     return error;
   }
 
-  console.error("Unhandled service error", error);
+  // ORM/provider errors may include SQL parameters, tokens, or customer data.
+  console.error("Unhandled service error", {
+    type: error instanceof Error ? error.name : "UnknownError",
+    code: typeof error === "object" && error !== null && "code" in error &&
+      typeof error.code === "string" && /^[A-Z0-9_]{1,32}$/.test(error.code)
+      ? error.code : undefined,
+  });
 
   return {
     code: "internal",
@@ -136,7 +142,7 @@ export async function runService<T>(operation: () => Promise<T>): Promise<Result
 
 export function toResponse<T>(result: Result<T>): Response {
   if (result.ok) {
-    return Response.json({ ok: true, data: result.data });
+    return Response.json({ ok: true, data: result.data }, {headers:{"Cache-Control":"private, no-store"}});
   }
 
   return Response.json(
@@ -150,6 +156,6 @@ export function toResponse<T>(result: Result<T>): Response {
         details: result.error.details,
       },
     },
-    { status: httpStatusByErrorCode[result.error.code] },
+    { status: httpStatusByErrorCode[result.error.code], headers:{"Cache-Control":"private, no-store"} },
   );
 }

@@ -1,0 +1,30 @@
+{
+  "results": [
+    "Title validation identifies the field",
+    "Invalid title receives focus",
+    "Feedback pending blocks duplicate submission",
+    "Feedback pending exposes busy state",
+    "Feedback failure preserves title",
+    "Feedback failure preserves details",
+    "Feedback retry reaches success",
+    "Comment pending is visible",
+    "Unrelated reply remains available despite queue pending",
+    "Comment failure preserves draft",
+    "Comment retry clears draft only on success",
+    "Widget pending is visible",
+    "Widget failure preserves draft",
+    "Widget retry reaches success",
+    "Tag load failure cannot erase existing selections",
+    "Tag creation has local pending feedback",
+    "Tag creation does not label main Save as Saving",
+    "Classification failure keeps dialog open",
+    "Classification failure retains selected tags",
+    "Classification retry closes dialog and confirms with toast",
+    "Background refresh failure retains existing feedback",
+    "Background failure does not become initial error",
+    "Background retry restores fresh state",
+    "Initial load error has working recovery",
+    "No browser runtime errors"
+  ],
+  "errors": []
+}

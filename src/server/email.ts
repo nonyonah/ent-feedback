@@ -43,7 +43,7 @@ export async function sendInvitationEmail(input: InvitationEmailInput): Promise<
       <p style="margin:0 0 8px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#737373">Ent</p>
       <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3">Join ${escapeHtml(input.workspaceName)}</h1>
       <p style="margin:0 0 24px;color:#525252">${escapeHtml(input.inviterName)} invited you to join <strong>${escapeHtml(input.workspaceName)}</strong> as ${roleLabel}.</p>
-      <a href="${acceptUrl.toString()}" style="display:inline-block;border-radius:10px;background:#7443e9;color:#ffffff;padding:10px 18px;text-decoration:none;font-weight:600;font-size:14px">Accept invitation</a>
+      <a href="${acceptUrl.toString()}" style="display:inline-block;border-radius:9999px;background:#212529;color:#ffffff;padding:10px 18px;text-decoration:none;font-weight:600;font-size:14px">Accept invitation</a>
       <p style="margin:24px 0 0;font-size:12px;color:#737373">This invitation expires in 7 days. If you were not expecting it, you can ignore this email.</p>
     </div>
   `.trim();
@@ -114,6 +114,6 @@ export async function sendActivityEmail(input: {
     subject: input.subject,
     key: input.key,
     text: `${input.subject}\n\n${input.title}\n\nOpen feedback: ${input.url}\n\n${preferences}`,
-    html: `<div style="font:14px/1.5 Inter,system-ui,sans-serif;color:#171717;max-width:520px;margin:auto;padding:24px"><h1 style="font-size:16px">${escapeHtml(input.subject)}</h1><p>${escapeHtml(input.title)}</p><a style="color:#7443e9" href="${escapeHtml(input.url)}">Open feedback</a><p>${preferences}</p></div>`,
+    html: `<div style="font:14px/1.5 Inter,system-ui,sans-serif;color:#171717;max-width:520px;margin:auto;padding:24px"><h1 style="font-size:16px">${escapeHtml(input.subject)}</h1><p>${escapeHtml(input.title)}</p><a style="color:#212529" href="${escapeHtml(input.url)}">Open feedback</a><p>${preferences}</p></div>`,
   });
 }

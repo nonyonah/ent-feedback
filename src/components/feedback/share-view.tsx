@@ -4,15 +4,14 @@ import {XMark as XLogoIcon,LinkedInMark as LinkedinLogoIcon,FacebookMark as Face
 import { LinkIcon, CopyIcon, ArrowUpRightIcon } from "@/components/icons";
 import * as React from "react";
 import { useProject } from "@/components/feedback/project-provider";
-import { BoardPicker, NoBoard } from "@/components/feedback/board-context";
+import { NoBoard } from "@/components/feedback/board-context";
 import { boardHref } from "@/lib/project-links";
 import {workspaceDomainAddress,workspaceBaseDomain} from "@/lib/workspace-domain";
 const subscribe = () => () => {};
 export function ShareView() {
   const {
     project,
-    activeBoard,
-    boards
+    activeBoard
   } = useProject();
   const origin = React.useSyncExternalStore(subscribe, () => window.location.origin, () => "");
   const [message, setMessage] = React.useState("");
@@ -40,7 +39,7 @@ export function ShareView() {
     }
   }
   if (!activeBoard) return <NoBoard />;
-  return <>{boards.length > 1 && <div className="mx-auto max-w-3xl px-8 pt-4"><BoardPicker /></div>}<div className="[font-synthesis:none] wrap-anywhere w-full min-h-full bg-[var(--dashboard-body)] antialiased text-xs/4">
+  return <div className="[font-synthesis:none] wrap-anywhere w-full min-h-full bg-[var(--dashboard-body)] antialiased text-xs/4">
       <div className="w-full max-w-3xl py-10 px-6 sm:px-8 mx-auto">
         <div className="mb-8">
           <div className="text-[14px] leading-[150%] wrap-normal font-sans font-semibold text-foreground">
@@ -86,7 +85,7 @@ export function ShareView() {
                 Copy link
               </div>
             </button>
-            <a className="relative flex min-h-7 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-2xl border border-border bg-background px-2.25 py-1 shadow-sm" href={path}>
+            <a className="relative inline-flex min-h-7 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md px-2 py-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring" href={path}>
               <div className="inline-block text-[13px] leading-[142.857%] w-max wrap-normal relative font-sans font-medium text-foreground">
                 {domainReady?"Visit":"Preview"}
               </div>
@@ -211,9 +210,6 @@ export function ShareView() {
               </div>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {['Email signature','Ready-to-paste messages'].map(title=><div key={title} role="group" aria-label={title} aria-disabled="true" className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/30 px-4 py-4 text-muted-foreground"><h2 className="text-xs font-medium">{title}</h2><span className="rounded-full bg-muted px-2 py-1 text-[13px]">Disabled</span></div>)}
-          </div>
           <div className="mb-10" id={"widget-embed"}>
             <div className="text-[13px] tracking-[0.44px] uppercase leading-[150%] wrap-normal font-sans font-medium text-muted-foreground">
               Widget embed
@@ -320,5 +316,5 @@ export function ShareView() {
           </div>
         </div>
       </div>
-    </div></>;
+    </div>;
 }

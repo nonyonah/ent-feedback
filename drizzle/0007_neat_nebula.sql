@@ -1,0 +1,1 @@
+ALTER TABLE "workspaces" ALTER COLUMN "accent_color" SET DEFAULT '#212529';

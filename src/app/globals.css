@@ -114,14 +114,14 @@
   --primary-text-tint: #000;
   --primary-text-mix: 0%;
   --primary-text: color-mix(in oklab, var(--primary), var(--primary-text-tint) var(--primary-text-mix));
-  --project-primary: #7443e9;
+  --project-primary: #212529;
   --project-primary-foreground: #ffffff;
-  --project-vote-bg: #7443e91f;
+  --project-vote-bg: #2125291f;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #7443e9;
+  --primary: #212529;
   --primary-foreground: #ffffff;
   --secondary: #f1f1f1;
   --secondary-foreground: #3d3d3d;
@@ -136,7 +136,7 @@
   --control-quiet: #f3f3f3;
   --control-hover: #ebebeb;
   --control-pressed: #e4e4e4;
-  --ring: #7443e9;
+  --ring: #212529;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -145,12 +145,12 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: #292929;
-  --sidebar-primary: #7443e9;
+  --sidebar-primary: #212529;
   --sidebar-primary-foreground: var(--project-primary-foreground);
   --sidebar-accent: #ebebeb;
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: #7443e9;
+  --sidebar-ring: #212529;
   --destructive-foreground: #b91c1c;
   --info: #3b82f6;
   --info-foreground: #1d4ed8;
@@ -172,8 +172,8 @@
   --status-progress-fg: #b45309;
   --status-shipped-bg: #e6f6ec;
   --status-shipped-fg: #15803d;
-  --vote-active-bg: #7443e91f;
-  --vote-active-border: #7443e9;
+  --vote-active-bg: #2125291f;
+  --vote-active-border: #212529;
 }
 
 .dark {
@@ -182,17 +182,17 @@
   --primary-text-mix: 65%;
   --dashboard-sidebar: #202020;
   --dashboard-body: #191919;
-  --project-primary: #7443e9;
-  --project-primary-foreground: #ffffff;
-  --project-vote-bg: #7443e926;
+  --project-primary: #e8e8e8;
+  --project-primary-foreground: #212529;
+  --project-vote-bg: #21252926;
   --background: #171717;
   --foreground: #e8e8e8;
   --card: #222222;
   --card-foreground: #e8e8e8;
   --popover: #262626;
   --popover-foreground: #e8e8e8;
-  --primary: #7443e9;
-  --primary-foreground: #ffffff;
+  --primary: #e8e8e8;
+  --primary-foreground: #212529;
   --secondary: #292929;
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -206,7 +206,7 @@
   --control-quiet: #2b2b2b;
   --control-hover: #343434;
   --control-pressed: #3d3d3d;
-  --ring: #7443e9;
+  --ring: #ababab;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -214,12 +214,12 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: #e8e8e8;
-  --sidebar-primary: #7443e9;
+  --sidebar-primary: #e8e8e8;
   --sidebar-primary-foreground: var(--project-primary-foreground);
   --sidebar-accent: #2c2c2c;
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: #343434;
-  --sidebar-ring: #7443e9;
+  --sidebar-ring: #ababab;
   --destructive-foreground: #f87171;
   --info: #3b82f6;
   --info-foreground: #60a5fa;
@@ -239,8 +239,8 @@
   --status-progress-fg: #fcd34d;
   --status-shipped-bg: #0f2e1a;
   --status-shipped-fg: #86efac;
-  --vote-active-bg: #7443e926;
-  --vote-active-border: #7443e9;
+  --vote-active-bg: #21252926;
+  --vote-active-border: #e8e8e8;
 }
 
 @layer base {
@@ -343,7 +343,7 @@
 [data-slot="button"]:not([data-feedback-composer] *) {
   transition: scale 160ms var(--ease-out), box-shadow 125ms ease;
 }
-html:not([data-input-modality="keyboard"]) [data-slot="button"]:not(:disabled):not([aria-disabled="true"]):not([data-loading]):not([data-feedback-composer] *):active { scale: 0.97; }
+html:not([data-input-modality="keyboard"]) [data-slot="button"]:not(:disabled):not([aria-disabled="true"]):not([data-loading]):not([data-feedback-composer] *):active { scale: 0.97; transition-duration: 100ms; }
 [data-slot="dropdown-chevron"] { display: inline-flex; align-items: center; justify-content: center; }
 [data-slot="dropdown-chevron"] [data-direction="up"] { display: none; }
 button:is([aria-expanded="true"], [data-popup-open], [data-panel-open]) [data-slot="dropdown-chevron"] [data-direction="down"] { display: none; }
@@ -397,3 +397,29 @@ html[data-input-modality="keyboard"] [data-board-id] { transition: none !importa
 
 .bg-control-quiet:is(button, [role="button"]):not(:disabled):not([aria-disabled="true"]):not([data-feedback-composer] *):hover { background-color: var(--control-hover); }
 .bg-control-quiet:is(button, [role="button"]):not(:disabled):not([aria-disabled="true"]):not([data-feedback-composer] *):is(:active, [data-pressed]) { background-color: var(--control-pressed); }
+
+/* Unified squircle controls. Checkboxes and radio inputs keep their own geometry. */
+button:not([role="checkbox"]):not([role="radio"]),
+[role="button"],
+[data-slot="button"],
+[data-slot="select-trigger"],
+[data-slot="select-button"],
+[data-slot="combobox-trigger"],
+[data-slot="menu-trigger"],
+select { border-radius: 10px !important; }
+button:not([role="checkbox"]):not([role="radio"])::before,
+[data-slot="button"]::before,
+[data-slot="select-trigger"]::before,
+[data-slot="select-button"]::before { border-radius: inherit !important; }
+
+:is([data-slot="tabs-list"],[data-slot="segmented-control"]){border-radius:10px}
+:is([data-slot="tab-indicator"],[data-slot="segmented-control-indicator"]){border-radius:8px}
+
+/* Keep translucent chrome legible when users request opaque materials. */
+@media (prefers-reduced-transparency: reduce) {
+  [data-material="toolbar"] { background: var(--background); backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  [data-material="toolbar"] { background: var(--background); backdrop-filter: none; border-bottom: 1px solid var(--foreground); }
+  [data-slot="button"]:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; }
+}

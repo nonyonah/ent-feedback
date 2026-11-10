@@ -12,10 +12,14 @@ import { Card } from "@/components/ui/card";
 import { useFeedback } from "@/components/feedback/feedback-provider";
 import { type FeedbackItemData } from "@/lib/feedback-data";
 import { cn } from "@/lib/utils";
+import { useProject } from "./project-provider";
+import { feedbackHref } from "@/lib/project-links";
 import { StatusLabel } from "@/components/feedback/status-label";
 
 export function BoardFeedbackRow({ item }: { item: FeedbackItemData }): React.ReactElement {
   const { vote } = useFeedback();
+  const { project } = useProject();
+  const href = feedbackHref(project, item.id);
   const participants = [...new Map(item.comments.map((comment) => [comment.author, comment])).values()].slice(0, 2);
 
   return (
@@ -33,17 +37,17 @@ export function BoardFeedbackRow({ item }: { item: FeedbackItemData }): React.Re
         </span>
       </Button>
       <div className="min-w-0 flex-1">
-        <Link className="text-pretty text-lg font-semibold leading-7 tracking-tight outline-none hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring" href={"/items/" + item.id}>
-          {item.pinned && <PinIcon aria-label="Pinned" className="mr-1 inline size-3.5 text-muted-foreground" />}
+        <Link className="break-words text-pretty text-sm font-semibold leading-5 tracking-tight outline-none hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring" href={href}>
+          {item.pinned && <PinIcon aria-label="Pinned" className="me-1 inline size-3.5 text-muted-foreground" />}
           {item.title}
-        </Link><TrendingBadge id={item.id} className="ml-2 align-middle"/>
-        <p className="mt-2 line-clamp-2 text-base leading-[1.5] text-muted-foreground">{item.description}</p>
+        </Link><TrendingBadge id={item.id} className="ms-2 align-middle"/>
+        <p className="mt-2 line-clamp-2 break-words text-base leading-[1.5] text-muted-foreground">{item.description}</p>
       </div>
-      <Link className="-mt-2 hidden min-h-11 shrink-0 items-center gap-2 rounded-md outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:flex" href={"/items/" + item.id} aria-label={item.comments.length + " comments on " + item.title}>
+      <Link className="-mt-2 hidden min-h-11 shrink-0 items-center gap-2 rounded-md outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring sm:flex" href={href} aria-label={item.comments.length + " comments on " + item.title}>
         <span className="flex items-center gap-0.5 text-xs text-muted-foreground">{item.comments.length}<MessageSquareIcon aria-hidden="true" className="size-4" /></span>
         {participants.length > 0 && <AvatarGroup style={{ "--avatar-size": "24px" } as React.CSSProperties}>{participants.map((person) => <Avatar key={person.author} aria-label={person.author}><AvatarImage src={person.avatarUrl} alt=""/><AvatarFallback seed={person.author}/></Avatar>)}</AvatarGroup>}
       </Link>
-      <div style={{gridColumn:"2 / -1"}} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-4"><span className="inline-flex min-w-0 items-center gap-1.5 text-muted-foreground"><Avatar className="size-5"><AvatarImage src={item.avatarUrl} alt=""/><AvatarFallback seed={item.author}/></Avatar><span className="truncate">{item.author}</span></span><StatusLabel status={item.status}/><Link className="inline-flex h-7 shrink-0 items-center gap-1 text-muted-foreground sm:hidden" href={"/items/"+item.id} aria-label={item.comments.length+" comments on "+item.title}>{item.comments.length}<MessageSquareIcon className="size-3.5"/></Link><span data-slot="feedback-type-chip" className="ml-auto shrink-0 rounded-full bg-control-quiet px-2 py-1 text-xs text-muted-foreground"><FeedbackTypeLabel category={item.category??"feedback"}/></span></div>{Boolean(item.tags?.length)&&<div style={{gridColumn:"2 / -1"}} className="flex flex-wrap gap-1.5">{item.tags?.map(tag=><span key={tag.id} className="rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{tag.name}</span>)}</div>}
+      <div style={{gridColumn:"2 / -1"}} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-4"><span className="inline-flex min-w-0 items-center gap-1.5 text-muted-foreground"><Avatar className="size-5"><AvatarImage src={item.avatarUrl} alt=""/><AvatarFallback seed={item.author}/></Avatar><span className="truncate">{item.author}</span></span><StatusLabel status={item.status}/><Link className="inline-flex h-7 shrink-0 items-center gap-1 text-muted-foreground sm:hidden" href={href} aria-label={item.comments.length+" comments on "+item.title}>{item.comments.length}<MessageSquareIcon className="size-3.5"/></Link><span data-slot="feedback-type-chip" className="ms-auto shrink-0 rounded-full bg-control-quiet px-2 py-1 text-xs text-muted-foreground"><FeedbackTypeLabel category={item.category??"feedback"}/></span></div>{Boolean(item.tags?.length)&&<div style={{gridColumn:"2 / -1"}} className="flex flex-wrap gap-1.5">{item.tags?.map(tag=><span key={tag.id} className="max-w-full break-words rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{tag.name}</span>)}</div>}
     </Card>
   );
 }

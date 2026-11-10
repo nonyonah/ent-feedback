@@ -5,7 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty";
 export function BoardLoading() {
-  return <div className="mx-auto w-full max-w-[720px] px-4 py-12" role="status" aria-label="Loading feedback"><Skeleton className="mb-4 h-8 w-48"/><Skeleton className="mb-10 h-4 w-64 max-w-full"/><div className="mb-5 flex gap-2">{[1,2,3].map(n=><Skeleton key={n} className="h-8 w-20 rounded-full"/>)}</div><div className="flex flex-col gap-6">{[1,2,3].map(n=><div key={n} className="flex gap-4"><Skeleton className="h-8 w-12 shrink-0 rounded-full"/><div className="flex flex-1 flex-col gap-3"><Skeleton className="h-5 w-4/5"/><Skeleton className="h-4 w-full"/><Skeleton className="h-3 w-1/3"/></div></div>)}</div><span className="sr-only">Loading feedback…</span></div>;
+  return <main id="public-content" tabIndex={-1} className="scroll-mt-28 md:scroll-mt-16 mx-auto w-full max-w-5xl px-4 pb-28 pt-8 sm:px-8" role="status" aria-label="Loading feedback">
+    <div aria-hidden="true">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap gap-3">{[1,2,3,4,5].map(n=><Skeleton key={n} className="motion-reduce:animate-none h-8 w-16 rounded-xl"/>)}</div>
+        <Skeleton className="motion-reduce:animate-none ms-auto h-8 w-52 max-w-full rounded-xl"/>
+      </div>
+      <div className="mt-6 flex flex-col gap-2">{[1,2,3].map(n=><div key={n} className="flex gap-4 rounded-lg p-3 sm:p-4"><Skeleton className="motion-reduce:animate-none h-7 w-12 shrink-0 rounded-xl"/><div className="flex min-w-0 flex-1 flex-col gap-3"><Skeleton className="motion-reduce:animate-none h-5 w-4/5"/><Skeleton className="motion-reduce:animate-none h-4 w-full"/><Skeleton className="motion-reduce:animate-none h-4 w-3/5"/><Skeleton className="motion-reduce:animate-none h-5 w-1/3"/></div></div>)}</div>
+    </div>
+    <span className="sr-only">Loading feedback…</span>
+  </main>;
 }
 export function BoardState({ kind, onRetry }: { kind:"empty"|"error"|"no-results"; onRetry?:()=>void }) {
   const content={empty:{title:"No feedback yet",description:"Share the first idea."},error:{title:"Couldn’t load feedback",description:"Check your connection and retry."},"no-results":{title:"No matching feedback",description:"Try another search or status."}}[kind];

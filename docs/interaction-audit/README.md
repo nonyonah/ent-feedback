@@ -66,3 +66,9 @@ Full ESLint, TypeScript (`tsc --noEmit`) and `git diff --check` passed. No produ
 ## Billing portal follow-up
 
 Manage/Cancel subscription now opens the secure Bachs portal in a separate tab, allocated during the user click. The originating action resets after handing off the URL. Blocked tabs, closed waiting tabs, service failures and a 30-second timeout produce error toasts and allow retry. Checkout continues to use the existing overlay. Browser fixtures verified successful navigation/reset, service-error recovery, timeout recovery (virtual clock), and blocked-pop-up handling, with no runtime errors. These checks did not open a live billing session.
+
+## Dashboard loading follow-up
+
+Replaced visible request-pane loading text with six compact skeleton rows. Dashboard inbox snapshots are scoped to workspace and actor, so selecting another board no longer reloads the same workspace collection. Public-board snapshots remain board-scoped, and create-command deduplication still includes its destination board. Workspace bootstrap now reads subscriptions in one batch alongside boards, derives billing usage from the loaded board collection, and seeds the dashboard billing cache without repeated per-workspace billing queries. The plan-limit notice reuses a matching cached summary instead of submitting another server action during startup.
+
+Verification: browser assertions confirm a dashboard board switch retains the snapshot and does not issue another inbox request; all previous failure/retry cases still pass (27 assertions). PostgreSQL rollback fixtures verify bootstrap board counts and entitlements as well as board mutation authorization. Existing 42 Node tests passed. This removes redundant work; it is not a claim of measured production load latency.

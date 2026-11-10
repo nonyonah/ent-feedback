@@ -30,7 +30,7 @@ const isId=(value:string)=>/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test
 export function FeedbackProvider({children}:{children:React.ReactNode}){
  const {project,activeBoard,workspaceReady,publicUser}=useProject();const {user,isLoaded}=useUser();
  const pathname=usePathname();const workspaceInbox=pathname.startsWith('/dashboard');
- const wid=project.id,bid=activeBoard?.id??'';const key=wid+':'+(workspaceInbox?'inbox:'+bid:bid)+':'+(user?.id??'guest');
+ const wid=project.id,bid=activeBoard?.id??'';const key=wid+':'+(workspaceInbox?'inbox':bid)+':'+(user?.id??'guest');
  const valid=pathname!=="/"&&pathname!=="/landing-v2"&&workspaceReady&&isLoaded&&isId(wid)&&isId(bid);
  const [snapshot,setSnapshot]=React.useState<{key:string;items:FeedbackItemData[]}>({key:'',items:[]});
  const [failure,setFailure]=React.useState<{key:string;message:string}>({key:'',message:''});
@@ -46,19 +46,20 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
  const failureMessage=failure.key===key?failure.message:'';
  const error=snapshot.key===key?'':failureMessage;
  const loading=valid&&snapshot.key!==key&&!error;
+ const readBoardId=workspaceInbox?'':bid;
  const reload=React.useCallback(async(cancelled:()=>boolean=()=>false)=>{
   if(!valid)return;const version=++generation.current;
   let saved:string|undefined;
   try{saved=localStorage.getItem('ent-visitor:'+wid)??undefined;}catch{}
   try{
-   const result=await (workspaceInbox?loadWorkspaceFeedbackAction(wid):loadFeedbackAction(wid,bid,saved));
+   const result=await (workspaceInbox?loadWorkspaceFeedbackAction(wid):loadFeedbackAction(wid,readBoardId,saved));
    if(cancelled()||busy.current||scope.current!==key||generation.current!==version)return;
    if(!result.ok)throw Error(result.error.message);
    token.current=result.data.guestToken;
    if(result.data.guestToken){try{localStorage.setItem('ent-visitor:'+wid,result.data.guestToken);}catch{}}
    setFailure({key,message:''});setSnapshot({key,items:result.data.items});
   }catch(error){if(!cancelled()&&scope.current===key&&generation.current===version)setFailure({key,message:error instanceof Error?error.message:'Feedback could not be loaded. Try again.'});}
- },[valid,key,wid,bid,workspaceInbox]);
+ },[valid,key,wid,readBoardId,workspaceInbox]);
  React.useEffect(()=>{
   const controller=new AbortController();
   // Skip an already-cleaned-up Strict Mode pass before starting visitor bootstrap.
@@ -75,7 +76,7 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
  },[reload,wid]);
  function retry(){setFailure({key,message:''});void reload();}
  function mutate(input:FeedbackCommand):Promise<MutationData>{
-  const fingerprint=key+JSON.stringify(input),existing=queued.current.get(fingerprint);
+  const fingerprint=key+(input.type==='create'?':'+bid:'')+JSON.stringify(input),existing=queued.current.get(fingerprint);
   if(existing)return existing;
   queuedCount.current++;setPending(true);
   const task=queue.current.run(async()=>{
@@ -88,7 +89,7 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
  async function executeMutation(input:FeedbackCommand){
   if(!valid||snapshot.key!==key)throw Error('Wait for this board to load, then try again.');
   const targetBoard=input.type==='create'?bid:items.find(item=>item.id===input.id)?.boardId??bid;
-  const fingerprint=key+JSON.stringify(input);
+  const fingerprint=key+(input.type==='create'?':'+bid:'')+JSON.stringify(input);
   let command=input;
   if(input.type==='create'||input.type==='comment'){
    const requestId=retries.current.get(fingerprint)??crypto.randomUUID();

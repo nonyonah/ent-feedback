@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import {MarketingHeader} from './marketing-header';
+import {MarketingFooter} from './marketing-footer';
 import {billingPlan} from '@/lib/billing';
 import typeStyles from './marketing-type.module.css';
 import Link from 'next/link';
@@ -33,10 +34,10 @@ export function PricingPage(){
     <TabsPanel value={annual?'yearly':'monthly'}>
    <section className={s.planGrid} aria-label="Subscription plan">
     <article className={s.plan}><div className={s.planTop}><h2>Essentials</h2><span>One workspace</span></div><p className={s.price}>${annual?'5.83':'7'}<span> / month</span></p><p className={s.billingNote}>{annual?'$70 billed yearly. Save $14 per year.':'$7 billed monthly.'}</p><div className={s.rule}/><p className={s.includeLabel}>All the essentials, together.</p><ul>{included.map(feature=><li key={feature}><CheckIcon aria-hidden="true" size={15}/>{feature}</li>)}</ul><Button size="lg" render={<Link href={signup+'&next='+encodeURIComponent('/dashboard/settings/billing?interval='+(annual?'yearly':'monthly'))}/>}>Start for free</Button><p className={s.draft}>{billingPlan.trialDays}-day free trial · Card required.</p></article>
-    <div className={s.valueGrid}><article><span className={s.number}>FREE</span><h2>A home for your first ideas.</h2><p>2 boards, unlimited posts and voters, and a small Powered by badge. No card required.</p><Button variant="outline" render={<Link href={signup}/>}>Get started free</Button></article><article><span className={s.number}>02</span><h2>Understand what matters.</h2><p>Votes, tags, and conversations give you the context to choose what comes next.</p></article><article><span className={s.number}>03</span><h2>Keep people in the loop.</h2><p>Reply with context and share progress, from an open suggestion to a shipped improvement.</p></article></div>
+    <div className={s.valueGrid}><article><span className={s.number}>FREE</span><h2>A home for your first ideas.</h2><p>2 boards, unlimited posts and voters, and a small Powered by badge. No card required.</p></article><article><span className={s.number}>02</span><h2>Understand what matters.</h2><p>Votes, tags, and conversations give you the context to choose what comes next.</p></article><article><span className={s.number}>03</span><h2>Keep people in the loop.</h2><p>Reply with context and share progress, from an open suggestion to a shipped improvement.</p></article></div>
    </section></TabsPanel></Tabs>
    <section className={s.faq} aria-labelledby="questions"><div className={s.faqHeading}><h2 id="questions">A few things to know.</h2><p>Clear answers before you get started.</p></div><div className={s.faqGrid}>{questions.map(([title,body])=><article key={title}><h3>{title}</h3><p>{body}</p></article>)}</div></section>
   </div>
-  <footer className={s.footer}><div><Link href="/" aria-label="Ent Feedback home"><BrandLogo/></Link><p>A little feedback.<br/>A better way forward.</p></div><nav aria-label="Footer navigation"><Link href="/">Product</Link><Link href="/pricing" aria-current="page">Pricing</Link><Link href="/auth?intent=workspace">Log in</Link><Link href={signup}>Create a workspace</Link></nav><span>© {new Date().getUTCFullYear()} Ent Feedback</span></footer>
+  <MarketingFooter/>
  </main>;
 }

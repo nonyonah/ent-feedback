@@ -1,6 +1,6 @@
 import "server-only";
+import {buildBillingSummary,type BillingSummary} from "@/server/billing/summary";
 import {consumeRateLimit} from "@/server/rate-limit";
-import {getWorkspaceEntitlements} from "@/server/billing/access";
 import {requireFeature} from "@/server/features";
 import {normalizeWorkspaceName,validNewWorkspaceDomain} from "@/lib/workspace-domain";
 
@@ -15,6 +15,7 @@ import {
   invitations,
   users,
   workspaceMembers,
+  workspaceSubscriptions,
   workspaces,
 } from "@/server/db/schema";
 import { sendInvitationEmail } from "@/server/email";
@@ -47,6 +48,7 @@ export type WorkspaceSummary = {
   hideAttribution: boolean;
   role: WorkspaceRole;
   boards: WorkspaceBoardSummary[];
+  billing?: BillingSummary;
 };
 
 export type WorkspaceMemberSummary = {
@@ -147,16 +149,18 @@ export async function listWorkspacesForUser(userId: string): Promise<WorkspaceSu
     .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.status, "active")))
     .orderBy(asc(workspaces.createdAt), asc(workspaces.id));
 
-  const boardMap = await loadBoardsByWorkspace(
-    db,
-    rows.map((row) => row.id),
-  );
-
-  return Promise.all(rows.map(async (row) => ({
-    ...row,
-    hideAttribution:(await getWorkspaceEntitlements(row.id)).hideAttribution,
-    boards: boardMap.get(row.id) ?? [],
-  })));
+  if(!rows.length)return [];
+  const ids=rows.map(row=>row.id);
+  const [boardMap,subscriptions]=await Promise.all([
+    loadBoardsByWorkspace(db,ids),
+    db.select().from(workspaceSubscriptions).where(inArray(workspaceSubscriptions.workspaceId,ids)),
+  ]);
+  const subscriptionMap=new Map(subscriptions.map(row=>[row.workspaceId,row]));
+  return rows.map(row=>{
+    const workspaceBoards=boardMap.get(row.id)??[];
+    const billing=buildBillingSummary(subscriptionMap.get(row.id),workspaceBoards.length,row.role==='owner');
+    return {...row,hideAttribution:billing.hideAttribution,boards:workspaceBoards,billing};
+  });
 }
 
 export async function checkWorkspaceAvailability(name:string,handle:string){

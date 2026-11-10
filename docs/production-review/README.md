@@ -1,5 +1,7 @@
 # Production review — 9 November 2026
 
+Follow-up: [10 November release checks](../release-checks/README.md). Data export is deferred; legal routes and additional lifecycle coverage have now been added.
+
 Status: **Hold production rollout until the open deployment and billing checks below are completed.** This is a code and sampled-browser review, not a penetration test or a blanket security certification.
 
 ## Scope and evidence
@@ -38,8 +40,8 @@ References: AGENTS.md, `docs/feedback-board-design-system.md`, previous interfac
 | High | Email scheduler and delivery | Worker config/secret exist and the read-only readiness check found no queued jobs. No deployment host or recurring scheduler is configured in this repo. Schedule maintenance and verify a real inbox delivery after deliberately switching from sandbox. |
 | High | Subscription lifecycle | Real sandbox checkout and trial webhook were verified. Renewal, payment failure/recovery, cancel-at-period-end and portal cancellation still need end-to-end provider tests. Automated lifecycle tests use provider fixtures. Do not cancel a user’s trial merely to perform this review. |
 | Medium / environment caveat | Production build | Default Turbopack build failed because the environment denied its CSS worker binding a port. The supported Webpack fallback completed successfully, including TypeScript and all 42 static pages. The normal Turbopack command still needs verification on the deployment host. Validate the normal build on the deployment host. |
-| Medium | Data export | Paid entitlement is defined and UI says Coming soon. Export itself is not implemented; this was explicitly reserved as the next task. Do not advertise it as already available. |
-| Medium | Legal / trust pages | No Privacy or Terms routes were found in the current app. Product-approved content and footer links are still needed. This review did not draft legal terms. |
+| Deferred | Data export | Deferred by the user on 10 November. Paid entitlement remains defined; UI says Coming soon. Export is not an active release task and must not be advertised as available. |
+| Review pending | Legal / trust pages | Privacy and Terms routes added on 10 November, using Rift Labs, Nigeria and the supplied support email. Marketing and Clerk links are configured. Operator/legal review of policy details remains before release. |
 | Medium | Keyboard and assistive technology depth | Borderless public-composer inputs intentionally suppress outlines per the requested design. Complete a keyboard/screen-reader pass, with an agreed visible focus treatment that preserves that design. Full screen-reader, zoom/RTL and payment-overlay keyboard certification were not performed in this final sample. |
 | Medium | Scale and operations | Feedback reads currently fetch the full workspace/board and its replies/history. Add pagination/virtualization before large-scale usage; unlimited stored posts does not imply bounded query cost. Verify backups/restores, alerting, webhook replay and scheduled reconciliation operationally. |
 
@@ -54,3 +56,14 @@ Runtime headers were verified on the live local app: pricing returns `frame-ance
 Keyboard sampling verified feedback-dialog title autofocus, Escape dismissal and return of focus to its trigger. Billing tabs passed manual keyboard activation (ArrowRight then Enter).
 
 Final interaction checks passed: annual tab keyboard selection, composer autofocus, Escape/focus restoration, persistent error toast visible after 5.5 seconds, and explicit toast dismissal. No browser exceptions were observed in those checks. Final targeted lint, full lint and TypeScript checks passed. Database schema consistency and whitespace checks passed.
+
+## Tomorrow — 11 November 2026
+
+1. **Mintlify documentation:** set up the documentation site and cover getting started, workspaces/boards, feedback types and statuses, widget installation, notifications, and Free/Essentials billing. Keep data export, integrations and admin roles clearly marked as unavailable or coming soon.
+2. **Product analytics:** evaluate PostHog versus Mixpanel, choose one, and integrate a small event plan for registration/onboarding, workspace and board creation, feedback submission, widget usage and trial/checkout conversion. Exclude feedback text, attachments, email addresses and payment details from event payloads; review consent, privacy notice and environment separation before enabling production collection.
+3. **Deployment:** continue the Cloudflare backend and Brimble frontend plan, verify Next.js compatibility and production builds, then configure permanent domains and production services. See [deployment assessment](../deployment/cloudflare-brimble.md).
+4. **Notifications:** deploy the recurring worker and verify preference-aware delivery in a real inbox using the agreed sandbox setup first.
+5. **Billing acceptance:** test hosted management/cancellation, renewal and payment failure/recovery with dedicated sandbox subscriptions; confirm webhook recovery and reconciliation.
+6. **Final acceptance:** manually test native mobile and screen-reader behavior, review legal pages, and verify backups/restores, monitoring and release configuration. Public-board keyboard, RTL, enlarged-text and reduced-motion fixture checks are now recorded in [the public-board audit](../public-board-audit/README.md).
+
+**Still deferred:** data export. Integrations, custom domains, and team roles/permissions remain outside v1; the analytics integration above is internal product instrumentation, not a customer-facing integration feature.

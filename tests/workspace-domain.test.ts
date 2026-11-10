@@ -9,3 +9,17 @@ test('public addresses use the product namespace and preserve legacy links befor
 test('new workspace domains need five characters; existing shorter URLs remain routable',()=>{assert.equal(validNewWorkspaceDomain('acme'),false);assert.equal(validNewWorkspaceDomain('acme5'),true);assert.equal(workspaceHandleFromHost('acme.feedback.riftlabs.xyz','feedback.riftlabs.xyz'),'acme');});
 
 test('Share displays the workspace domain before activation and honors the configured base domain',()=>{const previous=process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN;try{delete process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN;assert.equal(workspaceDomainAddress('acme-feedback','/boards/product'),'https://acme-feedback.feedback.riftlabs.xyz/boards/product');process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN='boards.example.com';assert.equal(workspaceDomainAddress('acme-feedback','/boards/product'),'https://acme-feedback.boards.example.com/boards/product');}finally{if(previous===undefined)delete process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN;else process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN=previous;}});
+
+
+test('feedback links open the workspace detail route without a legacy redirect', async()=>{
+ const {feedbackHref}=await import('../src/lib/project-links');
+ const previous=process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN;
+ try {
+  delete process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN;
+  assert.equal(feedbackHref({slug:'acme'},'post/one'),'/p/acme/items/post%2Fone');
+  process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN='feedback.riftlabs.xyz';
+  assert.equal(feedbackHref({slug:'acme'},'post-1'),'https://acme.feedback.riftlabs.xyz/items/post-1');
+ } finally {
+  if(previous===undefined)delete process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN;else process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN=previous;
+ }
+});

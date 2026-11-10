@@ -20,7 +20,7 @@ async function DashboardShell({ children }: { children: React.ReactNode }) {
   const {progress,workspaces}=await getRegistrationState();
   if(!workspaces.length||(!progress.complete&&progress.workspaceId))redirect("/registration");
 
-  const billing=Object.fromEntries(await Promise.all(workspaces.map(async workspace=>[workspace.id,await readBillingSummary(workspace.id,workspace.role==='owner')])));
+  const billing=Object.fromEntries(await Promise.all(workspaces.map(async workspace=>[workspace.id,workspace.billing??await readBillingSummary(workspace.id,workspace.role==='owner')])));
 
   return (
     <>

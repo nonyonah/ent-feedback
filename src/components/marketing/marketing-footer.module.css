@@ -1,0 +1,15 @@
+.footer{background:var(--soft);color:var(--ink);font-size:13px;font-weight:450;line-height:1.6}
+.inner,.bottom{width:calc(100% - 64px);max-width:1080px;margin-inline:auto}
+.inner{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,max-content);gap:32px 50px;padding-block:46px 38px}
+.brand{display:inline-flex;align-items:center}.brand img{width:62px;height:62px}
+.statement{font-size:22px;line-height:1.3;letter-spacing:-.035em;font-weight:520;margin-top:17px}
+.description{color:var(--muted);font-size:13px;line-height:1.6;margin-top:12px}
+.footer nav{display:flex;flex-direction:column;align-items:flex-start;padding-top:8px;gap:0}
+.footer nav h2{font-size:12px;font-weight:500;line-height:1.6;margin-bottom:8px}
+.footer a{color:var(--muted);text-decoration:none}.footer a:hover{color:var(--ink)}
+.footer a:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+.footer nav a{display:inline-flex;align-items:center;min-height:28px}
+.bottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 20px;border-top:1px solid var(--line);padding-block:18px 22px;font-size:12px;color:var(--muted)}
+.bottom a{display:inline-flex;align-items:center;min-height:32px}.bottom>span{align-self:center}
+@media(hover:none),(pointer:coarse){.footer nav a,.bottom a{min-height:44px}}
+@media(max-width:600px){.inner,.bottom{width:calc(100% - 40px)}.inner{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 25px;padding-block:30px}.identity{grid-column:1/-1}.statement{font-size:24px}.brand img{width:57px;height:57px}.bottom{font-size:11px}.footer nav a{min-height:32px}}

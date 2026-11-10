@@ -20,6 +20,8 @@
     "Classification failure keeps dialog open",
     "Classification failure retains selected tags",
     "Classification retry closes dialog and confirms with toast",
+    "Board switch reuses the workspace inbox without reloading",
+    "Board switch keeps the loaded workspace snapshot",
     "Background refresh failure retains existing feedback",
     "Background failure does not become initial error",
     "Background retry restores fresh state",

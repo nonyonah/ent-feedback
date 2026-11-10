@@ -2,12 +2,12 @@
 
 import * as React from 'react';
 import {MarketingHeader} from './marketing-header';
+import {MarketingFooter} from './marketing-footer';
 import typeStyles from './marketing-type.module.css';
 import Link from 'next/link';
 import Image from 'next/image';
 import {Button} from '@/components/ui/button';
 import {FeatureBento,ConversationPreview} from './feature-bento';
-import {BrandLogo} from '@/components/feedback/brand-logo';
 import {XIcon, ArrowSquareOutIcon} from '@/components/icons';
 import styles from './landing-page.module.css';
 
@@ -41,7 +41,7 @@ export function LandingPage({composition="centered"}:{composition?:"centered"|"s
  React.useEffect(()=>{let frame=0;let freeze:HTMLStyleElement|null=null;const observer=new MutationObserver(()=>{freeze?.remove();cancelAnimationFrame(frame);freeze=document.createElement('style');freeze.textContent='*,*::before,*::after{transition:none !important}';document.head.appendChild(freeze);void document.documentElement.offsetHeight;frame=requestAnimationFrame(()=>{freeze?.remove();freeze=null;});});observer.observe(document.documentElement,{attributes:true,attributeFilter:['class']});return()=>{observer.disconnect();cancelAnimationFrame(frame);freeze?.remove();};},[]);
 
  return <main id="top" ref={landing} className={`${typeStyles.typeSystem} ${styles.landing} ${composition==="split"?styles.split:""}`}>
-  <MarketingHeader page="product"/>
+  <MarketingHeader page="product" showFeatures/>
   <section className={styles.hero}>
    <h1>Build what your<br/> users need.</h1>
    <p className={styles.intro}>Collect ideas, bugs, and requests in one place. Understand what matters, and keep your users in the loop.</p>
@@ -65,9 +65,7 @@ export function LandingPage({composition="centered"}:{composition?:"centered"|"s
    <div className={styles.storyCopy}><p className={styles.sectionLabel}>Close the loop</p><h2>Keep the conversation<br/> moving forward.</h2><p>Acknowledge an idea, ask a question, or share an update. Replies and status changes keep everyone on the same page.</p></div>
    <div className={styles.progressMedia} aria-hidden="true" inert><ConversationPreview/></div>
   </section>
-  <section className={styles.finalCta} data-reveal><div className={styles.bannerCopy}><h2>Good ideas are out there.<br/><span>Give them a way in.</span></h2><p>A board for your users. A clearer picture for you.</p></div><Button size="lg" render={<Link href={signup}/>}>Create your workspace</Button><ul className={styles.ctaDetails}><li>Public feedback board</li><li>In-app widget</li><li>One place to respond</li></ul></section>
-  <footer className={styles.footer}>
-   <div className={styles.footerInner}><div className={styles.footerIdentity}><Link href="/" className={styles.brand} aria-label="Ent Feedback home"><BrandLogo/></Link><p className={styles.footerStatement}>A little feedback.<br/>A better way forward.</p><p>Ideas, conversations, and progress.<br/>All in one place.</p></div><nav aria-label="Product links"><h2>Product</h2><a href="#product">Overview</a><a href="#features">Features</a><Link href="/pricing">Pricing</Link></nav><nav aria-label="Account links"><h2>Account</h2><Link href="/auth?intent=workspace">Log in</Link><Link href={signup}>Sign up</Link></nav></div><div className={styles.footerBottom}><span>© {new Date().getUTCFullYear()} Ent Feedback</span><a href="#top">Back to top ↑</a></div>
-  </footer>
+  <section className={styles.finalCta} data-reveal><div className={styles.bannerCopy}><h2>Good ideas are out there.<br/><span>Give them a way in.</span></h2><p>A board for your users. A clearer picture for you.</p></div><Button size="lg" render={<Link href={signup}/>}>Create your workspace</Button></section>
+  <MarketingFooter onLandingPage/>
  </main>;
 }

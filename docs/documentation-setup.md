@@ -70,3 +70,9 @@ Add the verification records at the DNS provider:
 | TXT | `_cf-custom-hostname.ent` | `3fde8bc6-cf4e-433f-ac69-204bfcf1b434` |
 
 Keep the existing application DNS for `ent`. Do **not** add Mintlify's suggested root CNAME: it would send the entire app domain to Mintlify. The app proxy handles `/docs` instead. These are public domain-verification records, not API secrets. DNS verification, the Git-backed Mintlify build and deployment of the app proxy remain separate checks.
+
+## Publication recheck
+
+The upstream `https://ent-docs.mintlify.site/docs` returned HTTP 200 but still rendered **Mintlify Starter Kit**, not the Ent pages, during the follow-up check on 11 November. The connected production source needs verification: `nonyonah/ent-feedback`, branch `main`, directory `documentation`, followed by a successful deployment. A responding hostname alone is not publication evidence.
+
+`https://ent.riftlabs.xyz/docs` did not resolve in the same check. Main application DNS/deployment and Mintlify domain verification remain outstanding. Do not describe the public documentation URL as live until the Ent content, assets, navigation and search are verified there.

@@ -15,3 +15,11 @@ test('permanent HTTPS origins pass; localhost, userinfo and paths do not',()=>{
 test('configuration presence never claims deployment and delivery are verified',()=>{
  assert.deepEqual(productionReadiness({}).filter(check=>check.status==='manual').map(check=>check.id),['provider-verification','scheduler','release-acceptance']);
 });
+
+test('release checks reject sandbox email and enabled lifecycle without unsubscribe signing',()=>{
+ const sandbox=productionReadiness({SENDBYTE_API_KEY:'sk_test_fixture',EMAIL_FROM:'Ent <team@example.com>'});
+ assert.equal(sandbox.find(c=>c.id==='email')?.status,'blocked');
+ const live=productionReadiness({SENDBYTE_API_KEY:'sk_live_fixture',EMAIL_FROM:'Ent <team@example.com>',LIFECYCLE_EMAILS_ENABLED:'true'});
+ assert.equal(live.find(c=>c.id==='email')?.status,'pass');
+ assert.equal(live.find(c=>c.id==='lifecycle-unsubscribe-secret')?.status,'blocked');
+});

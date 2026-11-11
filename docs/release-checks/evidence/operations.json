@@ -1,0 +1,98 @@
+{
+  "date": "2026-11-11",
+  "status": "HOLD",
+  "unitTests": {
+    "passed": 57,
+    "failed": 0
+  },
+  "billingDatabase": "passed; real PostgreSQL fixtures rolled back, Bachs mocked",
+  "notificationDatabase": "passed; fixtures rolled back, email mocked",
+  "sandboxProducts": {
+    "environment": "sandbox",
+    "checks": [
+      {
+        "interval": "monthly",
+        "trial": false,
+        "passed": true
+      },
+      {
+        "interval": "monthly",
+        "trial": true,
+        "passed": true
+      },
+      {
+        "interval": "yearly",
+        "trial": false,
+        "passed": true
+      },
+      {
+        "interval": "yearly",
+        "trial": true,
+        "passed": true
+      }
+    ]
+  },
+  "productionDependencies": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "runtimeHeaders": [
+    {
+      "path": "/",
+      "status": 200,
+      "framing": "frame-ancestors 'self'",
+      "nosniff": "nosniff",
+      "referrer": "strict-origin-when-cross-origin",
+      "hsts": true
+    },
+    {
+      "path": "/pricing",
+      "status": 200,
+      "framing": "frame-ancestors 'self'",
+      "nosniff": "nosniff",
+      "referrer": "strict-origin-when-cross-origin",
+      "hsts": true
+    },
+    {
+      "path": "/privacy",
+      "status": 200,
+      "framing": "frame-ancestors 'self'",
+      "nosniff": "nosniff",
+      "referrer": "strict-origin-when-cross-origin",
+      "hsts": true
+    },
+    {
+      "path": "/embed",
+      "status": 200,
+      "framing": "frame-ancestors *",
+      "nosniff": "nosniff",
+      "referrer": "strict-origin-when-cross-origin",
+      "hsts": true
+    }
+  ],
+  "storage": "unique test object written/read/deleted; deletion verified",
+  "productionBuild": {
+    "webpack": "passed; 45 static pages generated",
+    "turbopack": "blocked by execution-environment CSS worker port binding"
+  },
+  "interactionChecks": 27,
+  "notVerified": [
+    "Hosted sandbox renewal, payment failure/recovery and cancellation with signed webhook delivery",
+    "Native iOS VoiceOver and Android TalkBack",
+    "Production deployment and permanent DNS",
+    "Production database/storage isolation and backup restore rehearsal",
+    "Deployed recurring scheduler, failed-job/webhook alerting and reconciliation"
+  ],
+  "mobileAccessibility": {
+    "scenarios": 84,
+    "detectedViolations": 0,
+    "overflows": 0,
+    "sampledContrastFailures": 0,
+    "browserErrors": 0,
+    "nativeScreenReader": "not verified"
+  }
+}

@@ -48,3 +48,8 @@ next-env.d.ts
 /documentation/.mintlify/
 /documentation/node_modules/
 /documentation/.next/
+
+# Isolated Cloudflare scheduler tooling and local secrets
+/tools/notification-scheduler/node_modules/
+/tools/notification-scheduler/.wrangler/
+/tools/notification-scheduler/.dev.vars*

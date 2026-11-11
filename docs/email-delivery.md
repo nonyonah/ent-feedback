@@ -32,3 +32,11 @@ Each run claims up to three jobs using database row locks and `SKIP LOCKED`. A t
 A local scheduler secret has been generated in `.env.local`; set it separately in the deployed app and HTTP scheduler. No persistent scheduler is installed while hosting is undecided. The notification HTTP route handles one job per call within its execution budget; storage cleanup is available through the maintenance command.
 
 The opt-in `node scripts/send-test-email.mjs --to recipient@example.com` sends a real email. It is not part of the test suite. A single authorized smoke test was accepted by Sendbyte on 6 November 2026; inbox delivery still requires recipient confirmation.
+
+## 11 November: lifecycle and scheduler implementation
+
+See [lifecycle email setup and verification](email-lifecycle.md). Welcome, unfinished setup, first-board and inactivity flows are implemented behind an explicit enable flag, with separate opt-out. A disabled-by-default Cloudflare cron Worker now exists in `tools/notification-scheduler`; it has passed a dry run but is not deployed. The application route now processes bounded activity and lifecycle batches. Sandbox acceptance was verified again; real inbox acceptance awaits live sender configuration and confirmation.
+
+## Live inbox result
+
+On 11 November, a live reply test from the verified `team@riftlabs.xyz` sender was accepted and confirmed in the recipient's inbox. The test did not change the saved sender. A subsequent configuration check found it updated to the verified `riftlabs.xyz` domain, and readiness passed. See [the acceptance record](email-lifecycle.md#real-inbox-acceptance--confirmed-11-november). Check the configured sender with `node scripts/check-email-readiness.mjs` before enabling scheduled mail.

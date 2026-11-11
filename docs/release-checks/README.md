@@ -28,3 +28,7 @@ Privacy notice reference: [NDPC guidance on the Nigeria Data Protection Act](htt
 Additional browser verification passed: landing, pricing, Privacy and Terms at 320/768/1440 in both themes (24 visits, no overflow or runtime errors). Keyboard billing-tab selection, composer autofocus, Escape/focus restoration and persistent error-toast dismissal also passed. Native screen-reader testing remains distinct from these browser checks.
 
 Next session: [11 November task list](../production-review/README.md#tomorrow--11-november-2026), including Mintlify documentation and PostHog/Mixpanel selection. The latest public-board fixture matrix passed 48 scenarios plus 11 interaction checks; the Node suite now has 43 passing tests.
+
+## Latest gate
+
+See [11 November production gate](2026-11-11.md) for billing lifecycle tests, the expanded mobile/WCAG matrix, runtime headers, storage and the remaining release blockers. This supersedes older test counts and email-delivery status above. Production rollout is still on hold.

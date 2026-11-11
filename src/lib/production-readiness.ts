@@ -14,9 +14,10 @@ export function productionReadiness(env:Record<string,string|undefined>):Check[]
  add('bachs-live',Boolean(env.BACHS_API_KEY?.startsWith('sk_live_')),'Use a live Bachs API key.');
  add('bachs-webhook',Boolean(env.BACHS_WEBHOOK_SECRET&&env.BACHS_ORGANIZATION_ID),'Configure the live Bachs webhook secret and organization.');
  add('bachs-products',['BACHS_MONTHLY_PRODUCT_ID','BACHS_YEARLY_PRODUCT_ID','BACHS_MONTHLY_TRIAL_PRODUCT_ID','BACHS_YEARLY_TRIAL_PRODUCT_ID'].every(key=>env[key]?.startsWith('prod_')),'Configure monthly/yearly products with and without trials.');
- add('email',Boolean(env.SENDBYTE_API_KEY&&env.EMAIL_FROM),'Configure Sendbyte and the sender address.');
+ add('email',Boolean(env.SENDBYTE_API_KEY?.startsWith('sk_live_')&&env.EMAIL_FROM),'Use a live Sendbyte key and a verified sender; sandbox cannot deliver to an inbox.');
  add('storage',['R2_ACCOUNT_ID','R2_ACCESS_KEY_ID','R2_SECRET_ACCESS_KEY','R2_BUCKET'].every(key=>Boolean(env[key])),'Configure the production R2 bucket and credentials.');
  add('scheduler-secret',(env.CRON_SECRET?.length??0)>=32,'Configure a scheduler secret with at least 32 characters.');
+ if(env.LIFECYCLE_EMAILS_ENABLED==='true')add('lifecycle-unsubscribe-secret',(env.EMAIL_UNSUBSCRIBE_SECRET?.length??0)>=32,'Configure a separate unsubscribe signing secret before enabling lifecycle email.');
  checks.push({id:'provider-verification',status:'manual',message:'Verify live product prices/trials, sender domain, webhook delivery, and production database/storage isolation.'},{id:'scheduler',status:'manual',message:'Deploy the recurring worker and verify a real notification reaches the recipient inbox.'},{id:'release-acceptance',status:'manual',message:'Complete subscription lifecycle, legal pages, mobile, keyboard and screen-reader acceptance checks.'});
  return checks;
 }

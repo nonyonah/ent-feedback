@@ -21,6 +21,8 @@ const serverEnvSchema = z.object({
   R2_PUBLIC_BASE_URL: z.url().optional(),
   CRON_SECRET: z.string().min(32).optional(),
   SENDBYTE_API_KEY: z.string().min(1).optional(),
+  LIFECYCLE_EMAILS_ENABLED: z.enum(["true","false"]).default("false"),
+  EMAIL_UNSUBSCRIBE_SECRET: z.string().min(32).optional(),
   EMAIL_FROM: z.string().min(1).optional(),
   BACHS_RETURN_ORIGIN:z.url().optional(),
   BACHS_API_KEY:z.string().optional(),

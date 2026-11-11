@@ -6,7 +6,7 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
-    files:["docs/interface-audit/**/*.cjs"],
+    files:["docs/interface-audit/**/*.cjs","docs/analytics/evidence/*.cjs","docs/public-board-audit/evidence/*.cjs"],
     rules:{"@typescript-eslint/no-require-imports":"off"},
   },
   // Override default ignores of eslint-config-next.
@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "tools/notification-scheduler/worker-configuration.d.ts",
+    "tools/notification-scheduler/.wrangler/**",
   ]),
   {
     files: [

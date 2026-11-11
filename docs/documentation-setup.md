@@ -20,7 +20,7 @@ Preview uses http://localhost:3001, leaving port 3000 for the app. The scripts p
 
 ## Publish at /docs
 
-1. Connect the Ent Mintlify project to **nonyonah/ent-feedback**, production branch `main`, content directory **`documentation`**. Keep the existing Hedwig project unchanged.
+1. Connect the Ent Mintlify project to **nonyonah/ent-feedback**, production branch `main`, enable **docs.json is in a subdirectory** in Git Settings and set its path to **`/documentation`** (no trailing slash). Keep the existing Hedwig project unchanged.
 2. In the Ent project's custom-domain settings, register **ent.riftlabs.xyz/docs**, with base path **/docs** and reverse-proxy hosting. The repository directory does not configure this public base path.
 3. Set **MINTLIFY_ORIGIN** in the app's local/hosting environment to the Ent project's exact HTTPS origin, `https://ent-docs.mintlify.site`. This is server-only configuration, not a token. Restart/redeploy the app after changes.
 4. Push the reviewed docs to the connected branch and let Mintlify build them with its /docs base path.
@@ -76,3 +76,7 @@ Keep the existing application DNS for `ent`. Do **not** add Mintlify's suggested
 The upstream `https://ent-docs.mintlify.site/docs` returned HTTP 200 but still rendered **Mintlify Starter Kit**, not the Ent pages, during the follow-up check on 11 November. The connected production source needs verification: `nonyonah/ent-feedback`, branch `main`, directory `documentation`, followed by a successful deployment. A responding hostname alone is not publication evidence.
 
 `https://ent.riftlabs.xyz/docs` did not resolve in the same check. Main application DNS/deployment and Mintlify domain verification remain outstanding. Do not describe the public documentation URL as live until the Ent content, assets, navigation and search are verified there.
+
+## Resolving “unable to find docs.json”
+
+`documentation/docs.json` exists in the pushed main branch. In Mintlify **Git Settings**, enable **docs.json is in a subdirectory** and enter **`/documentation`**, without a trailing slash. Confirm repository `nonyonah/ent-feedback` and branch `main`, then Save to trigger deployment. This repository path is independent of the public `/docs` base path. Do not use `/docs` or `/documentation/docs.json` as the source-directory setting.

@@ -8,6 +8,8 @@ import { config } from 'dotenv';
 import esbuild from 'esbuild';
 config({path:'.env.local',quiet:true});
 const sandbox=Boolean(process.env.SENDBYTE_API_KEY?.startsWith('sk_test_'));
+if(process.argv.includes('--live-only')&&!process.env.SENDBYTE_API_KEY?.startsWith('sk_live_')){console.error('Live-only check requires a live key. No email sent.');process.exit(1);}
+if(process.argv.includes('--sandbox-only')&&!sandbox){console.error('Sandbox-only check refused a non-sandbox key. No email sent.');process.exit(1);}
 if(sandbox&&!process.argv.includes('--allow-sandbox')){
  console.error('Sandbox key detected. Sendbyte simulates success but delivers no email. Configure an sk_live_ key and a verified sender domain for this test.');
  process.exit(1);

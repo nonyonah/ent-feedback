@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
 const output=join(mkdtempSync(join(tmpdir(),'ent-notification-route-')),'route.cjs');
-await esbuild.build({entryPoints:['src/app/api/internal/notification-jobs/route.ts'],bundle:true,platform:'node',format:'cjs',outfile:output,plugins:[{name:'worker',setup(b){b.onResolve({filter:/@\/server\/notification-worker/},()=>({path:'worker',namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:'export async function processNotificationJobs(){global.workerCalls++;return {configured:true,succeeded:1,retried:0,failed:0}}',loader:'js'}));}}]});
+await esbuild.build({entryPoints:['src/app/api/internal/notification-jobs/route.ts'],bundle:true,platform:'node',format:'cjs',outfile:output,plugins:[{name:'worker',setup(b){b.onResolve({filter:/@\/server\/(notification-worker|lifecycle-email-worker)/},()=>({path:'worker',namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:'export async function processNotificationJobs(){global.workerCalls++;return {configured:true,succeeded:1,retried:0,failed:0}};export async function enqueueLifecycleEmails(){return {enabled:false,queued:0}};export async function processLifecycleEmails(){return {configured:false}}',loader:'js'}));}}]});
 const {POST}=createRequire(import.meta.url)(output);
 const previous=process.env.CRON_SECRET;
 global.workerCalls=0;

@@ -67,3 +67,9 @@ Final interaction checks passed: annual tab keyboard selection, composer autofoc
 6. **Final acceptance:** manually test native mobile and screen-reader behavior, review legal pages, and verify backups/restores, monitoring and release configuration. Public-board keyboard, RTL, enlarged-text and reduced-motion fixture checks are now recorded in [the public-board audit](../public-board-audit/README.md).
 
 **Still deferred:** data export. Integrations, custom domains, and team roles/permissions remain outside v1; the analytics integration above is internal product instrumentation, not a customer-facing integration feature.
+
+## 11 November: email follow-up
+
+Lifecycle email templates, approved schedule, a separate opt-out, database-backed eligibility/retries and an isolated Cloudflare cron scheduler have been added. See [email lifecycle and delivery verification](../email-lifecycle.md). Development migration and rollback-only worker tests passed. The scheduler remains disabled/undeployed, and lifecycle sending defaults off. A Sendbyte sandbox reply was accepted; live inbox delivery remains pending the user's sender configuration. Documentation is drafted and pushed; Mintlify accepted the `/docs` base path, while app deployment and domain verification remain operational tasks.
+
+Live reply-email acceptance was subsequently verified on 11 November: the provider reported non-sandbox delivery and the recipient confirmed inbox arrival. This used a temporary sender override on the verified `riftlabs.xyz` domain. A subsequent readiness check found the saved sender updated to the verified `riftlabs.xyz` domain. Scheduled application mail still awaits worker deployment and activation. See the lifecycle acceptance record for the message ID and remaining checks.

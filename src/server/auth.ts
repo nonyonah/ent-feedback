@@ -6,7 +6,7 @@ import { cache } from "react";
 
 import { getDb } from "@/server/db/client";
 import { isUniqueViolation } from "@/server/db/errors";
-import { users } from "@/server/db/schema";
+import { users, lifecycleEmailState } from "@/server/db/schema";
 import { ServiceError } from "@/server/result";
 
 export type AppUser = typeof users.$inferSelect;
@@ -96,7 +96,13 @@ export const getOptionalAppUser = cache(async (): Promise<AppUser | null> => {
     return null;
   }
 
-  return upsertAppUser(userId);
+  const user = await upsertAppUser(userId);
+  // A public-board participant receives no workspace setup reminders unless they start setup.
+  // Existing accounts enroll on their next visit; this does not backfill a welcome campaign.
+  const now = new Date();
+  await getDb().insert(lifecycleEmailState).values({userId:user.id,lastActiveAt:now,welcomeEligible:now.getTime()-user.createdAt.getTime()<60_000})
+    .onConflictDoUpdate({target:lifecycleEmailState.userId,set:{lastActiveAt:now}});
+  return user;
 });
 
 export const requireAppUser = cache(async (): Promise<AppUser> => {

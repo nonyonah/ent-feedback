@@ -80,6 +80,17 @@ export const users = pgTable(
   ],
 );
 
+// Account-level lifecycle mail, deliberately independent of feedback preferences.
+export const lifecycleEmailState = pgTable("lifecycle_email_state", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, {onDelete:"cascade"}),
+  enrolledAt: timestamp("enrolled_at", {withTimezone:true}).notNull().defaultNow(),
+  lastActiveAt: timestamp("last_active_at", {withTimezone:true}).notNull().defaultNow(),
+  onboardingStartedAt: timestamp("onboarding_started_at", {withTimezone:true}),
+  onboardingCompletedAt: timestamp("onboarding_completed_at", {withTimezone:true}),
+  optedOutAt: timestamp("opted_out_at", {withTimezone:true}),
+  welcomeEligible: boolean("welcome_eligible").notNull().default(false),
+}, table => [index("lifecycle_email_state_active_idx").on(table.lastActiveAt)]);
+
 export const workspaces = pgTable(
   "workspaces",
   {

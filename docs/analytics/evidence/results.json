@@ -1,0 +1,20 @@
+{
+  "results": [
+    "No SDK requests before consent",
+    "Declining prevents collection",
+    "Real SDK sends explicit events with project token and no content/URL properties",
+    "Unrelated preference changes do not duplicate pageviews",
+    "Sign-in identifies with a hash and links the consented guest session without raw account data",
+    "Account switching resets identity before identifying the next account",
+    "Sign-out resumes a fresh guest identity",
+    "Auth loading suppresses events instead of attributing them to the previous account",
+    "Withdrawing consent stops new events",
+    "Consent panel fits 320px viewport",
+    "Footer analytics control matches neighboring link typography, color, decoration and target height",
+    "Embedded routes neither prompt nor collect",
+    "New Global Privacy Control signal blocks previously saved consent",
+    "Privacy-signal card appears automatically and explicit Allow enables analytics",
+    "Declining clears the privacy-signal acknowledgement"
+  ],
+  "errors": []
+}

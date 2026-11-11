@@ -1,0 +1,53 @@
+{
+  "results": [
+    {
+      "path": "/",
+      "width": 390,
+      "status": 200,
+      "title": "Welcome to Ent",
+      "scrollWidth": 390,
+      "brokenImages": []
+    },
+    {
+      "path": "/",
+      "width": 1440,
+      "status": 200,
+      "title": "Welcome to Ent",
+      "scrollWidth": 1440,
+      "brokenImages": []
+    },
+    {
+      "path": "/widget/install",
+      "width": 390,
+      "status": 200,
+      "title": "Install the widget",
+      "scrollWidth": 390,
+      "brokenImages": []
+    },
+    {
+      "path": "/widget/install",
+      "width": 1440,
+      "status": 200,
+      "title": "Install the widget",
+      "scrollWidth": 1440,
+      "brokenImages": []
+    },
+    {
+      "path": "/account/billing",
+      "width": 390,
+      "status": 200,
+      "title": "Plans and billing",
+      "scrollWidth": 390,
+      "brokenImages": []
+    },
+    {
+      "path": "/account/billing",
+      "width": 1440,
+      "status": 200,
+      "title": "Plans and billing",
+      "scrollWidth": 1440,
+      "brokenImages": []
+    }
+  ],
+  "errors": []
+}

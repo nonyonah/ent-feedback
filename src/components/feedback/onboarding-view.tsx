@@ -1,4 +1,5 @@
 "use client";
+import {captureAnalytics} from "@/lib/analytics";
 import {ActionButton} from "@/components/ui/action-button";
 
 import * as React from "react";
@@ -138,6 +139,7 @@ export function OnboardingView({
               return;
             }
 
+            captureAnalytics("workspace_created");
             router.push("/dashboard/boards");
           }}
         >

@@ -15,7 +15,10 @@
     "jobs:check": "node scripts/run-maintenance.mjs --check",
     "jobs:run": "node scripts/run-maintenance.mjs",
     "widget:test": "node scripts/serve-widget-test.mjs",
-    "production:check": "node --import tsx scripts/check-production.mjs"
+    "production:check": "node --import tsx scripts/check-production.mjs",
+    "docs:dev": "cd documentation && npx --yes mint@4.3.16 dev --port 3001 --no-open",
+    "docs:validate": "cd documentation && npx --yes mint@4.3.16 validate",
+    "docs:check": "node --import tsx scripts/check-documentation.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1163.0",
@@ -38,6 +41,7 @@
     "esbuild": "^0.28.2",
     "next": "16.4.4",
     "pg": "^8.23.1",
+    "posthog-js": "^1.447.12",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1",

@@ -1,4 +1,5 @@
 "use client";
+import {captureAnalytics} from "@/lib/analytics";
 
 import * as React from "react";
 import {features} from "@/lib/features";
@@ -419,6 +420,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       const result=await createBoardAction(workspaceId,input);
       if(!result.ok)throw new Error(result.error.fieldErrors?.name?.[0]??result.error.message);
       const board=result.data;
+      captureAnalytics("board_created",{surface:"dashboard"});
       setBoards(current=>[...current,board]);
       if(activeWorkspaceRef.current===workspaceId)selectBoard(board.id);
       return board;

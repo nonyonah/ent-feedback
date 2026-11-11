@@ -1,0 +1,93 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Ent Feedback",
+  "description": "Set up your workspace, collect feedback and keep the conversation moving.",
+  "colors": {
+    "primary": "#212529",
+    "light": "#495057",
+    "dark": "#CED4DA"
+  },
+  "logo": {
+    "light": "/assets/logo.png",
+    "dark": "/assets/logo.png"
+  },
+  "favicon": "/assets/logo.png",
+  "appearance": {
+    "default": "system"
+  },
+  "fonts": {
+    "family": "Inter"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get started",
+        "pages": [
+          "index",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Collect and organize",
+        "pages": [
+          "guides/workspaces",
+          "guides/boards",
+          "guides/feedback",
+          "guides/conversations",
+          "guides/share"
+        ]
+      },
+      {
+        "group": "Widget",
+        "pages": [
+          "widget/install",
+          "widget/settings",
+          "widget/troubleshooting"
+        ]
+      },
+      {
+        "group": "Your account",
+        "pages": [
+          "account/notifications",
+          "account/appearance",
+          "account/billing",
+          "account/privacy"
+        ]
+      },
+      {
+        "group": "Help",
+        "pages": [
+          "troubleshooting",
+          "support"
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Contact support",
+        "href": "mailto:nonyonah@gmail.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Open Ent",
+      "href": "https://ent.riftlabs.xyz"
+    }
+  },
+  "footer": {
+    "links": [
+      {
+        "header": "Rift Labs",
+        "items": [
+          {
+            "label": "Contact support",
+            "href": "mailto:nonyonah@gmail.com"
+          }
+        ]
+      }
+    ]
+  }
+}

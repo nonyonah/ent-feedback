@@ -1,4 +1,5 @@
 'use client';
+import {AnalyticsPreferencesButton} from '@/components/analytics/analytics-provider';
 import * as React from 'react';
 import {useClerk,useUser} from '@clerk/nextjs';
 import {Avatar,AvatarFallback,AvatarImage} from '@/components/ui/avatar';
@@ -37,6 +38,7 @@ export function AccountSettings(){
   </form>
   <AccountGroup title="Appearance"><div className="flex items-center gap-4 px-4 py-3"><div className="min-w-0 flex-1"><p className="text-[13px] font-medium">Theme</p><p className="mt-0.5 text-[13px] leading-[1.5] text-muted-foreground">Match your system or pick a side.</p></div><Select items={themeOptions} value={theme} onValueChange={value=>{if(!value)return;try{if(value==='system')localStorage.removeItem('ent-theme');else localStorage.setItem('ent-theme',value);window.dispatchEvent(new Event('ent-theme-change'));}catch{toastManager.add({type:'error',title:'Theme could not be saved',description:'Your browser could not save this preference. Try again.'});}}}><SelectTrigger indicator="single" aria-label="Account theme" className="h-8 w-auto min-w-24 rounded-full border-0 bg-control-quiet px-3 shadow-none"><SelectValue/></SelectTrigger><SelectPopup>{themeOptions.map(option=><SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectPopup></Select></div></AccountGroup>
   <AccountGroup title="Settings"><div className="flex items-center gap-4 px-4 py-3"><div className="min-w-0 flex-1"><p className="text-[13px] font-medium">Sign-in method</p><p className="mt-0.5 text-[13px] leading-[1.5] text-muted-foreground">{methods.length?'Connected to '+methods.join(', ')+'.':'Your account uses email sign-in.'}</p></div><button type="button" className="shrink-0 text-[13px] font-medium text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring" disabled={!isLoaded} onClick={()=>openUserProfile()}>{methods.join(', ')||'Email'}</button></div></AccountGroup>
+  <AccountGroup title="Privacy"><div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><p className="text-[13px] text-muted-foreground">Control optional usage analytics on this browser.</p><AnalyticsPreferencesButton/></div></AccountGroup>
   <AccountGroup title="Danger zone"><button type="button" className="flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" disabled={!isLoaded} onClick={()=>openUserProfile()}><span className="text-[13px] font-medium text-destructive-foreground">Delete account</span><span className="text-[13px] leading-[1.5] text-muted-foreground">Review account deletion in your secure account settings before confirming.</span></button></AccountGroup>
  </div></SettingsPage>;
 }

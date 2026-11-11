@@ -43,3 +43,8 @@ next-env.d.ts
 
 # Local Elf activity and webhook configuration
 /.elf/
+
+# Local Mintlify preview cache (public docs are in documentation/)
+/documentation/.mintlify/
+/documentation/node_modules/
+/documentation/.next/

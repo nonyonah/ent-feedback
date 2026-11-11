@@ -1,10 +1,11 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import {workspaceBaseDomain,workspaceHandleFromHost} from "@/lib/workspace-domain";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest, type NextFetchEvent } from "next/server";
+import {documentationPath,documentationOrigin,documentationDestination,documentationRequestHeaders} from "@/lib/documentation-proxy";
 
 const protectedPrefixes = ["/dashboard", "/onboarding", "/registration"];
 
-export default clerkMiddleware(async (auth, request) => {
+const applicationProxy=clerkMiddleware(async (auth, request) => {
   const { pathname, search } = request.nextUrl;
   const domain=workspaceBaseDomain();
   const tenant=domain?workspaceHandleFromHost(request.headers.get("host")??"",domain):null;
@@ -40,8 +41,25 @@ export default clerkMiddleware(async (auth, request) => {
   }
 });
 
+
+export default function proxy(request:NextRequest,event:NextFetchEvent){
+  const path=request.nextUrl.pathname;
+  if(documentationPath(path)){
+    const base=workspaceBaseDomain();
+    const tenant=base?workspaceHandleFromHost(request.headers.get('host')??'',base):null;
+    if(tenant)return new NextResponse('Not found',{status:404});
+    const origin=documentationOrigin();
+    if(!origin)return new NextResponse('Documentation is temporarily unavailable.',{status:503,headers:{'Cache-Control':'no-store'}});
+    return NextResponse.rewrite(documentationDestination(path,request.nextUrl.search,origin),{request:{headers:documentationRequestHeaders(request.headers,origin)}});
+  }
+  return applicationProxy(request,event);
+}
+
 export const config = {
   matcher: [
+    "/docs/:path*",
+    "/_mintlify/:path*",
+    "/mintlify-assets/:path*",
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
   ],

@@ -1,4 +1,5 @@
 'use client';
+import {captureAnalytics} from '@/lib/analytics';
 import * as React from 'react';
 import {useSearchParams} from 'next/navigation';
 import {useBillingCache} from './billing-cache';
@@ -39,11 +40,12 @@ export function BillingSettings(){
    if(kind==='portal'){if(!portalTab||portalTab.closed)throw Error('The billing tab was closed. Please try again.');portalTab.location.replace(result.data.url);return;}
    overlay.current=await openBillingOverlay(result.data.url,event=>{
     if(event.type==='checkout.closed'){overlay.current=null;setPending(false);setAttempt(value=>value+1);}
-    if(event.type==='checkout.completed'){setAwaitingConfirmation(true);setAttempt(value=>value+1);}
+    if(event.type==='checkout.completed'){captureAnalytics('checkout_returned',{interval});setAwaitingConfirmation(true);setAttempt(value=>value+1);}
     if(['checkout.failed','checkout.error','checkout.expired'].includes(event.type)){
      toastManager.add({type:'error',title:event.type==='checkout.expired'?'Checkout expired':'Checkout could not be completed',description:'Please try again. Your subscription updates after billing confirmation.'});
     }
    });
+   captureAnalytics('checkout_opened',{interval});
   }catch(e){portalTab?.close();toastManager.add({type:'error',title:kind==='checkout'?'Checkout could not be opened':'Billing portal could not be opened',description:e instanceof Error?e.message:'Please try again.'});setPending(false);}
   finally{if(portalTimeout)clearTimeout(portalTimeout);if(kind==='portal')setPending(false);}
  }

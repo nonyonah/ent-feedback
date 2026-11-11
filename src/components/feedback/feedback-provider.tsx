@@ -1,4 +1,5 @@
 "use client";
+import {captureAnalytics} from "@/lib/analytics";
 
 import * as React from 'react';
 import {usePathname} from 'next/navigation';
@@ -103,6 +104,10 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
    const result=await new Promise<Awaited<ReturnType<typeof mutateFeedbackAction>>>((resolve,reject)=>React.startTransition(async()=>{try{resolve(await mutateFeedbackAction(wid,targetBoard,command,token.current,workspaceInbox));}catch(error){reject(error);}}));
    if(!result.ok)throw Error(Object.values(result.error.fieldErrors??{})[0]?.[0]??result.error.message);
    retries.current.delete(fingerprint);
+   const surface=workspaceInbox?'dashboard':'public_board';
+   if(command.type==='create')captureAnalytics('feedback_submitted',{surface,feedback_type:command.category??'feedback',has_attachment:Boolean(command.images?.length)});
+   if(command.type==='comment')captureAnalytics('comment_submitted',{surface,is_reply:Boolean(command.parentCommentId),has_attachment:Boolean(command.images?.length)});
+   if(command.type==='vote')captureAnalytics('vote_changed',{surface,active:command.active});
    if(command.type==='create'||command.type==='comment')uploader.current!.clear({workspaceId:wid,boardId:targetBoard,actorKey:key+':'+command.requestId});
    if(scope.current===key)setSnapshot({key,items:result.data.items});
    try{localStorage.setItem('ent-feedback-updated:'+wid,crypto.randomUUID());}catch{}

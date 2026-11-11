@@ -1,4 +1,6 @@
+import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 import { MotionPolicy } from "@/components/ui/motion-policy";
+import * as React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -31,6 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <MotionPolicy />
         <ClerkProvider signInUrl="/auth" signUpUrl="/auth?mode=signup" signInForceRedirectUrl="/auth/continue?intent=workspace" signUpForceRedirectUrl="/auth/continue?intent=workspace" appearance={clerkAppearance} afterSignOutUrl="/">
+          <React.Suspense fallback={null}><AnalyticsProvider /></React.Suspense>
           <ProjectProvider><FeedbackProvider>
             <ToastProvider position="bottom-right">
               <SiteHeader />

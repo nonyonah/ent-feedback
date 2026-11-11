@@ -1,0 +1,35 @@
+---
+title: "Widget troubleshooting"
+description: "Check the script, destination and host website."
+---
+
+## The launcher does not appear
+
+- Confirm the script is included once and the script URL opens successfully.
+- Use your Ent application origin, not the documentation domain.
+- Check the browser console for content-security-policy or network errors.
+- If your website has a content security policy, allow the Ent origin for both scripts and frames.
+
+## The launcher opens an empty or incorrect board
+
+Copy a fresh snippet from **Share → Widget embed** for the intended board. Check `data-project` and `data-board`; these are slugs, not display names.
+
+To isolate an iframe problem, open this URL using your real application origin and slugs:
+
+```text
+https://YOUR-ENT-APP/embed?project=YOUR-WORKSPACE-SLUG&board=YOUR-BOARD-SLUG
+```
+
+## Feedback is missing from the dashboard
+
+Check the selected workspace, board and status filters. Return to the dashboard or refresh the page. A guest vote and a signed-in vote can belong to different identities, even on the same computer.
+
+## The launcher uses the wrong theme
+
+Check for a fixed `data-theme` attribute on the script. Without one, the launcher follows the host page’s explicit theme first, then the device theme. Update the host page’s HTML theme class or attribute when your app changes theme.
+
+## Test locally
+
+Run Ent and your other website on different local ports. The widget’s script must point to Ent’s port, not the host website’s port. Use a public HTTPS application URL when the host site is deployed.
+
+If the issue continues, [contact support](/support) with the page URL and steps to reproduce it. Do not include API keys or private account information.

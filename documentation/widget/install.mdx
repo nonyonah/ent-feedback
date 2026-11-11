@@ -1,0 +1,63 @@
+---
+title: "Install the widget"
+description: "Add feedback collection to your website with one script."
+---
+
+## Get the snippet
+
+Choose the workspace and board in Ent, then open **Share → Widget embed**. Copy the generated installation code. It contains the correct application origin, workspace slug and board slug.
+
+Paste it once into your website, usually immediately before the closing `</body>` tag:
+
+```html
+<script
+  src="https://YOUR-ENT-APP/widget.js"
+  data-project="YOUR-WORKSPACE-SLUG"
+  data-board="YOUR-BOARD-SLUG"
+  defer
+></script>
+```
+
+Replace all three placeholders, or use the generated snippet unchanged. No private API key belongs in this code.
+
+## Install in Next.js
+
+Add `next/script` to your shared layout and use the same values as your generated snippet:
+
+```tsx
+import Script from "next/script";
+
+export function FeedbackWidget() {
+  return (
+    <Script
+      id="ent-feedback-widget-loader"
+      src="https://YOUR-ENT-APP/widget.js"
+      data-project="YOUR-WORKSPACE-SLUG"
+      data-board="YOUR-BOARD-SLUG"
+      strategy="afterInteractive"
+    />
+  );
+}
+```
+
+Render `FeedbackWidget` once in the shared layout. Do not add a second copy on each page.
+
+## Appearance
+
+By default, the launcher follows the host page’s light/dark theme and falls back to the device theme. It recognizes `html.dark`, `html.light`, `data-theme` and `data-color-scheme`.
+
+To lock the launcher, add `data-theme="light"` or `data-theme="dark"` to the installation script. The widget’s content also uses the workspace’s configured appearance.
+
+## Verify the installation
+
+1. Open the host website and select **Submit feedback**.
+2. Confirm the workspace name and correct board load.
+3. Submit a uniquely named test post.
+4. Open the same board in Ent’s dashboard and confirm it arrived.
+5. Close and reopen the widget using the launcher.
+
+<Warning>
+A deployed website needs a publicly reachable HTTPS Ent application URL. A localhost URL points to the visitor’s computer and is suitable only for local testing. The documentation domain is not the widget script’s application origin.
+</Warning>
+
+The widget does not provide host-user sign-in or SSO through script attributes. Visitor details are self-declared. Ent’s optional product analytics is not loaded inside the embedded widget.

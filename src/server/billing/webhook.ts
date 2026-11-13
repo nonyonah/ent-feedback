@@ -10,6 +10,8 @@ import {billingPlan,type BillingInterval} from '@/lib/billing';
 
 const snapshot=z.object({id:z.string().startsWith('sub_'),status:z.enum(['trialing','active','past_due','unpaid','canceled','paused']),customer:z.object({customer_id:z.string().startsWith('cust_')}),product_id:z.string().startsWith('prod_').optional(),product:z.object({id:z.string().startsWith('prod_')}).optional(),currency:z.literal('USD'),amount:z.string(),billing_cycle:z.object({interval:z.enum(['month','year']),frequency:z.literal(1)}),quantity:z.literal(1),current_period_end:z.iso.datetime({offset:true}),trial_end:z.iso.datetime({offset:true}).nullable().optional(),cancel_at_period_end:z.boolean().optional(),metadata:z.record(z.string(),z.unknown()).optional()}).refine(value=>Boolean(value.product_id||value.product?.id),{message:'Missing subscription product',path:['product']}).refine(value=>!value.product_id||!value.product||value.product_id===value.product.id,{message:'Subscription product mismatch',path:['product']}).transform(value=>({...value,product_id:value.product_id??value.product!.id}));
 const supported=new Set(['customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','invoice.paid','invoice.payment_failed']);
+/** Raised when another webhook wrote newer provider state while this one waited for the lock. */
+const staleSnapshot=Error('Stale billing snapshot');
 export async function applyBillingEvent(event:WebhookEvent){
  if(event.organization_id!==getServerEnv().BACHS_ORGANIZATION_ID)throw Error('Billing organization mismatch');
  if(!supported.has(event.type))return;
@@ -18,30 +20,41 @@ export async function applyBillingEvent(event:WebhookEvent){
  if(event.type.startsWith('invoice.')&&!rawId)return;
  const subscriptionId=z.string().startsWith('sub_').parse(rawId);
  const db=getDb();
- // Event IDs are unique, but the current provider snapshot also protects against out-of-order deliveries.
- await db.transaction(async tx=>{
-  const [receipt]=await tx.insert(billingWebhookEvents).values({id:event.id,type:event.type}).onConflictDoNothing().returning();if(!receipt)return;
-  const remote=await bachsClient().subscriptions.get(subscriptionId);
-  const candidate=snapshot.parse(remote);
+ // Provider calls happen outside the transaction. Holding a pooled connection
+ // and a workspace row lock across network calls blocks every other request
+ // for that workspace and can exhaust the pool.
+ for(let attempt=0;attempt<3;attempt++){
+  const fetchedAt=new Date();
+  const candidate=snapshot.parse(await bachsClient().subscriptions.get(subscriptionId));
   if(candidate.id!==subscriptionId)throw Error('Subscription identity mismatch');
-  const [known]=await tx.select().from(workspaceSubscriptions).where(eq(workspaceSubscriptions.subscriptionId,subscriptionId)).limit(1);
-  const attemptId=z.uuid().safeParse(candidate.metadata?.checkout_attempt_id);
-  const [attempt]=attemptId.success?await tx.select().from(billingCheckouts).where(eq(billingCheckouts.id,attemptId.data)).limit(1):[];
-  const workspaceId=known?.workspaceId??attempt?.workspaceId;
-  if(!workspaceId)throw Error('Subscription has no checkout binding');
-  await tx.select({id:workspaces.id}).from(workspaces).where(eq(workspaces.id,workspaceId)).for('update');
-  const [current]=await tx.select().from(workspaceSubscriptions).where(eq(workspaceSubscriptions.workspaceId,workspaceId)).limit(1);
-  if(!known&&attempt){const [latestAttempt]=await tx.select({id:billingCheckouts.id}).from(billingCheckouts).where(eq(billingCheckouts.workspaceId,workspaceId)).orderBy(desc(billingCheckouts.createdAt)).limit(1);if(latestAttempt?.id!==attempt.id)return;}
-  if(current?.subscriptionId&&current.subscriptionId!==subscriptionId&&current.status!=='canceled')throw Error('Workspace already has another subscription');
-  if(!known&&(!attempt||candidate.metadata?.workspace_id!==workspaceId||attempt.productId!==candidate.product_id))throw Error('Checkout binding mismatch');
-  // Fetch once more under the workspace lock; a concurrent webhook cannot write an older fetched state afterwards.
-  const latest=snapshot.parse(await bachsClient().subscriptions.get(subscriptionId));
-  if(latest.id!==subscriptionId||latest.customer.customer_id!==candidate.customer.customer_id)throw Error('Subscription identity changed');
-  const interval:BillingInterval=latest.billing_cycle.interval==='month'?'monthly':'yearly';
-  if(![billingProduct(interval,false),billingProduct(interval,true)].includes(latest.product_id)||Number(latest.amount)!==Number(interval==='monthly'?billingPlan.monthly:billingPlan.yearly))throw Error('Unexpected billing plan');
-  if(latest.status==='trialing'&&!latest.trial_end)throw Error('Missing trial end');
-  const values={customerId:latest.customer.customer_id,subscriptionId,status:latest.status,interval,trialUsed:true,trialEnd:latest.trial_end?new Date(latest.trial_end):null,periodEnd:new Date(latest.current_period_end),cancelAtPeriodEnd:latest.cancel_at_period_end??false,updatedAt:new Date()};
-  await tx.insert(workspaceSubscriptions).values({workspaceId,...values}).onConflictDoUpdate({target:workspaceSubscriptions.workspaceId,set:values});
-  if(attempt)await tx.update(billingCheckouts).set({status:'completed',checkoutUrl:null,updatedAt:new Date()}).where(and(eq(billingCheckouts.id,attempt.id),eq(billingCheckouts.workspaceId,workspaceId)));
- });
+  try{
+   await db.transaction(async tx=>{
+    // Event IDs are unique, but the current provider snapshot also protects against out-of-order deliveries.
+    const [receipt]=await tx.insert(billingWebhookEvents).values({id:event.id,type:event.type}).onConflictDoNothing().returning();if(!receipt)return;
+    const [known]=await tx.select().from(workspaceSubscriptions).where(eq(workspaceSubscriptions.subscriptionId,subscriptionId)).limit(1);
+    const attemptId=z.uuid().safeParse(candidate.metadata?.checkout_attempt_id);
+    const [checkout]=attemptId.success?await tx.select().from(billingCheckouts).where(eq(billingCheckouts.id,attemptId.data)).limit(1):[];
+    const workspaceId=known?.workspaceId??checkout?.workspaceId;
+    if(!workspaceId)throw Error('Subscription has no checkout binding');
+    await tx.select({id:workspaces.id}).from(workspaces).where(eq(workspaces.id,workspaceId)).for('update');
+    const [current]=await tx.select().from(workspaceSubscriptions).where(eq(workspaceSubscriptions.workspaceId,workspaceId)).limit(1);
+    // Another webhook wrote after this snapshot was fetched. Roll back and fetch again.
+    if(current&&current.updatedAt>fetchedAt)throw staleSnapshot;
+    if(!known&&checkout){const [latestAttempt]=await tx.select({id:billingCheckouts.id}).from(billingCheckouts).where(eq(billingCheckouts.workspaceId,workspaceId)).orderBy(desc(billingCheckouts.createdAt)).limit(1);if(latestAttempt?.id!==checkout.id)return;}
+    if(current?.subscriptionId&&current.subscriptionId!==subscriptionId&&current.status!=='canceled')throw Error('Workspace already has another subscription');
+    if(current?.customerId&&current.customerId!==candidate.customer.customer_id)throw Error('Subscription identity changed');
+    if(!known&&(!checkout||candidate.metadata?.workspace_id!==workspaceId||checkout.productId!==candidate.product_id))throw Error('Checkout binding mismatch');
+    const interval:BillingInterval=candidate.billing_cycle.interval==='month'?'monthly':'yearly';
+    if(![billingProduct(interval,false),billingProduct(interval,true)].includes(candidate.product_id)||Number(candidate.amount)!==Number(interval==='monthly'?billingPlan.monthly:billingPlan.yearly))throw Error('Unexpected billing plan');
+    if(candidate.status==='trialing'&&!candidate.trial_end)throw Error('Missing trial end');
+    const values={customerId:candidate.customer.customer_id,subscriptionId,status:candidate.status,interval,trialUsed:true,trialEnd:candidate.trial_end?new Date(candidate.trial_end):null,periodEnd:new Date(candidate.current_period_end),cancelAtPeriodEnd:candidate.cancel_at_period_end??false,updatedAt:new Date()};
+    await tx.insert(workspaceSubscriptions).values({workspaceId,...values}).onConflictDoUpdate({target:workspaceSubscriptions.workspaceId,set:values});
+    if(checkout)await tx.update(billingCheckouts).set({status:'completed',checkoutUrl:null,updatedAt:new Date()}).where(and(eq(billingCheckouts.id,checkout.id),eq(billingCheckouts.workspaceId,workspaceId)));
+   });
+   return;
+  }catch(error){
+   if(error!==staleSnapshot)throw error;
+  }
+ }
+ throw Error('Billing state kept changing while applying the event');
 }

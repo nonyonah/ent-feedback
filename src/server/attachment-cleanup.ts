@@ -13,22 +13,30 @@ export async function cleanExpiredAttachments(limit = 10) {
   const counts = { configured: true, deleted: 0, failed: 0 };
   // Claim one expired row at a time. Linking the same row waits on this lock and
   // then rejects the missing record, so an upload cannot be attached as it expires.
+  // The storage delete runs outside the transaction: holding a pooled
+  // connection across a network call can exhaust the pool.
   for (let i = 0; i < Math.min(10, Math.max(1, limit)); i++) {
-    const found = await db.transaction(async tx => {
+    const claimed = await db.transaction(async tx => {
       const [row] = await tx.select().from(attachments).where(and(eq(attachments.status, "pending"), lt(attachments.expiresAt, new Date())))
         .orderBy(asc(attachments.expiresAt), asc(attachments.id)).limit(1).for("update", { skipLocked: true });
-      if (!row) return false;
-      try {
-        await deleteImage(row.storageKey);
-        await tx.delete(attachments).where(eq(attachments.id, row.id));
-        counts.deleted++;
-      } catch {
-        // Keep the row for the next cleanup run; never lose its storage key.
-        counts.failed++;
-      }
-      return true;
+      if (!row) return null;
+      // Mark the row as expired while the lock is held so a concurrent link
+      // cannot attach it, then delete the object and the row outside the lock.
+      await tx.update(attachments).set({ status: "expired", updatedAt: new Date() }).where(eq(attachments.id, row.id));
+      return { id: row.id, storageKey: row.storageKey };
     });
-    if (!found || counts.failed) break;
+    if (!claimed) break;
+    try {
+      await deleteImage(claimed.storageKey);
+      await db.delete(attachments).where(eq(attachments.id, claimed.id));
+      counts.deleted++;
+    } catch {
+      // Keep the row for the next cleanup run; never lose its storage key.
+      // Restore it to pending so the next run retries the same expired row.
+      await db.update(attachments).set({ status: "pending", updatedAt: new Date() }).where(eq(attachments.id, claimed.id)).catch(() => {});
+      counts.failed++;
+    }
+    if (counts.failed) break;
   }
   return counts;
 }

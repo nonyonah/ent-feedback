@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, eq } from "drizzle-orm";
 
-import type { Database } from "@/server/db/client";
+import type { Queryable } from "@/server/db/client";
 import { workspaceMembers } from "@/server/db/schema";
 import { ServiceError } from "@/server/result";
 
@@ -23,7 +23,7 @@ export type WorkspaceMembership = {
 };
 
 export async function findActiveWorkspaceMembership(
-  db: Database,
+  db: Queryable,
   workspaceId: string,
   userId: string,
 ): Promise<WorkspaceMembership | null> {
@@ -48,7 +48,7 @@ export async function findActiveWorkspaceMembership(
 }
 
 export async function requireWorkspaceRole(
-  db: Database,
+  db: Queryable,
   input: { workspaceId: string; userId: string; minimumRole: WorkspaceRole },
 ): Promise<WorkspaceMembership> {
   const membership = await findActiveWorkspaceMembership(db, input.workspaceId, input.userId);

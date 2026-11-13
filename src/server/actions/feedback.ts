@@ -90,7 +90,7 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
   if(!post)throw new ServiceError('not_found','This feedback is no longer available. Refresh the board.');
   if(value.type==='category'){
    if(!who.user)throw new ServiceError('unauthenticated','Sign in to change your feedback type.');
-   if(post.authorUserId!==who.user.id)await requireWorkspaceRole(getDb(),{workspaceId:wid,userId:who.user.id,minimumRole:'admin'});
+   if(post.authorUserId!==who.user.id)await requireWorkspaceRole(tx,{workspaceId:wid,userId:who.user.id,minimumRole:'admin'});
    await tx.update(feedback).set({category:value.category,updatedAt:new Date()}).where(eq(feedback.id,post.id));
   }
   if(value.type==='comment'){

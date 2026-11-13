@@ -8,7 +8,7 @@ import { createHash, randomBytes } from "node:crypto";
 
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 
-import { getDb, type Database } from "@/server/db/client";
+import { getDb, type Queryable } from "@/server/db/client";
 import { isUniqueViolation } from "@/server/db/errors";
 import {
   boards,
@@ -88,7 +88,7 @@ function newInvitationToken(): { token: string; tokenHash: string } {
 }
 
 async function loadBoardsByWorkspace(
-  db: Database,
+  db: Queryable,
   workspaceIds: string[],
 ): Promise<Map<string, WorkspaceBoardSummary[]>> {
   const grouped = new Map<string, WorkspaceBoardSummary[]>();
@@ -163,11 +163,58 @@ export async function listWorkspacesForUser(userId: string): Promise<WorkspaceSu
   });
 }
 
-export async function checkWorkspaceAvailability(name:string,handle:string){
-  const db=getDb();
-  const [existingName]=await db.select({id:workspaces.id}).from(workspaces).where(sql`lower(regexp_replace(btrim(${workspaces.name}), '[[:space:]]+', ' ', 'g')) = lower(${normalizeWorkspaceName(name)})`).limit(1);
-  const [existingHandle]=await db.select({id:workspaces.id}).from(workspaces).where(eq(workspaces.handle,handle)).limit(1);
-  return {nameAvailable:!existingName,handleAvailable:validNewWorkspaceDomain(handle)&&!existingHandle};
+export async function checkWorkspaceAvailability(name:string,handle:string,db:Queryable=getDb()){
+ const [existingName]=await db.select({id:workspaces.id}).from(workspaces).where(sql`lower(regexp_replace(btrim(${workspaces.name}), '[[:space:]]+', ' ', 'g')) = lower(${normalizeWorkspaceName(name)})`).limit(1);
+ const [existingHandle]=await db.select({id:workspaces.id}).from(workspaces).where(eq(workspaces.handle,handle)).limit(1);
+ return {nameAvailable:!existingName,handleAvailable:validNewWorkspaceDomain(handle)&&!existingHandle};
+}
+
+/** Insert a workspace, its owner membership and its first board on one connection. */
+async function insertWorkspace(tx:Queryable,input:{userId:string;name:string;handle:string;website?:string|null}){
+ const [workspace]=await tx.insert(workspaces).values({
+  name: normalizeWorkspaceName(input.name),
+  accentColor:"#212529",
+  handle: input.handle,
+  website: input.website ?? null,
+ }).returning();
+ await tx.insert(workspaceMembers).values({workspaceId:workspace.id,userId:input.userId,role:"owner"});
+ const [board]=await tx.insert(boards).values({
+  workspaceId:workspace.id,
+  handle:"product",
+  name:"Product feedback",
+  description:"Help shape what we build next.",
+  color:"#737373",
+  position:0,
+ }).returning();
+ return {
+  id:workspace.id,
+  name:workspace.name,
+  handle:workspace.handle,
+  description:workspace.description,
+  website:workspace.website,
+  accentColor:workspace.accentColor,
+  logoUrl:workspace.logoUrl,
+  theme:workspace.theme,
+  hideAttribution:workspace.hideAttribution,
+  role:"owner" as const,
+  boards:[{
+   id:board.id,
+   name:board.name,
+   handle:board.handle,
+   description:board.description,
+   color:board.color,
+   emoji:board.emoji,
+   position:board.position,
+  }],
+ };
+}
+
+function workspaceConflict(error:unknown):ServiceError{
+ let current:unknown=error;
+ let constraint='';
+ for(let depth=0;depth<4&&current;depth++){if(typeof current==='object'&&current!==null){constraint=String(('constraint' in current?current.constraint:undefined)??constraint);current='cause' in current?current.cause:undefined;}else break;}
+ if(constraint==='workspaces_name_normalized_unique')return new ServiceError('conflict','That workspace name is already taken.',{fieldErrors:{name:['Choose a different workspace name.']}});
+ return new ServiceError('conflict','That workspace subdomain is already taken.',{fieldErrors:{handle:['Choose a different subdomain.']}});
 }
 
 export async function createWorkspaceForUser(input: {
@@ -183,70 +230,49 @@ export async function createWorkspaceForUser(input: {
   if(!availability.handleAvailable)throw new ServiceError("conflict","That workspace subdomain is unavailable.",{fieldErrors:{handle:["Choose a different subdomain."]}});
 
   try {
+    return await db.transaction(async (tx) => insertWorkspace(tx,input));
+  } catch (error) {
+    if (isUniqueViolation(error)) throw workspaceConflict(error);
+    throw error;
+  }
+}
+
+/**
+ * Create the account's first workspace exactly once.
+ *
+ * Two concurrent registration submissions would otherwise both observe "no
+ * workspace yet" and each create one, leaving the new account owning two
+ * workspaces. An advisory lock serializes the submissions for this account,
+ * and the second one then returns the workspace the first one created.
+ */
+export async function createFirstWorkspaceForUser(input: {
+  userId: string;
+  name: string;
+  handle: string;
+  website?: string | null;
+}): Promise<WorkspaceSummary> {
+  const db = getDb();
+  await consumeRateLimit("workspace-create:"+input.userId,10,3600);
+  try {
     return await db.transaction(async (tx) => {
-      const [workspace] = await tx
-        .insert(workspaces)
-        .values({
-          name: normalizeWorkspaceName(input.name),
-          accentColor: "#212529",
-          handle: input.handle,
-          website: input.website ?? null,
-        })
-        .returning();
-
-      await tx.insert(workspaceMembers).values({
-        workspaceId: workspace.id,
-        userId: input.userId,
-        role: "owner",
-      });
-
-      const [board] = await tx
-        .insert(boards)
-        .values({
-          workspaceId: workspace.id,
-          handle: "product",
-          name: "Product feedback",
-          description: "Help shape what we build next.",
-          color: "#737373",
-          position: 0,
-        })
-        .returning();
-
-      return {
-        id: workspace.id,
-        name: workspace.name,
-        handle: workspace.handle,
-        description: workspace.description,
-        website: workspace.website,
-        accentColor: workspace.accentColor,
-        logoUrl: workspace.logoUrl,
-        theme: workspace.theme,
-        hideAttribution: workspace.hideAttribution,
-        role: "owner" as const,
-        boards: [
-          {
-            id: board.id,
-            name: board.name,
-            handle: board.handle,
-            description: board.description,
-            color: board.color,
-            emoji: board.emoji,
-            position: board.position,
-          },
-        ],
-      };
+      // Serialize concurrent registrations for this account. Transaction scoped,
+      // so the lock is released on commit or rollback.
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${'ent:first-workspace:'+input.userId},0))`);
+      const [owned]=await tx.select({id:workspaces.id}).from(workspaces)
+       .innerJoin(workspaceMembers,and(eq(workspaceMembers.workspaceId,workspaces.id),eq(workspaceMembers.userId,input.userId),eq(workspaceMembers.role,'owner'),eq(workspaceMembers.status,'active')))
+       .orderBy(asc(workspaces.createdAt)).limit(1);
+      if(owned){
+       const boardMap=await loadBoardsByWorkspace(tx,[owned.id]);
+       const [workspace]=await tx.select().from(workspaces).where(eq(workspaces.id,owned.id)).limit(1);
+       return {...workspace,role:'owner' as const,boards:boardMap.get(owned.id)??[]};
+      }
+      const availability=await checkWorkspaceAvailability(input.name,input.handle,tx);
+      if(!availability.nameAvailable)throw new ServiceError('conflict','That workspace name is already taken.',{fieldErrors:{name:['Choose a different workspace name.']}});
+      if(!availability.handleAvailable)throw new ServiceError('conflict','That workspace subdomain is unavailable.',{fieldErrors:{handle:['Choose a different subdomain.']}});
+      return insertWorkspace(tx,input);
     });
   } catch (error) {
-    if (isUniqueViolation(error)) {
-      let current:unknown=error;
-      let constraint='';
-      for(let depth=0;depth<4&&current;depth++) { if(typeof current==='object'&&current!==null){constraint=String(('constraint' in current?current.constraint:undefined)??constraint);current='cause' in current?current.cause:undefined;}else break; }
-      if(constraint==='workspaces_name_normalized_unique')throw new ServiceError('conflict','That workspace name is already taken.',{fieldErrors:{name:['Choose a different workspace name.']}});
-      throw new ServiceError("conflict", "That workspace subdomain is already taken.", {
-        fieldErrors: { handle: ["Choose a different subdomain."] },
-      });
-    }
-
+    if (isUniqueViolation(error)) throw workspaceConflict(error);
     throw error;
   }
 }

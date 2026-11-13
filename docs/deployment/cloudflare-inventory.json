@@ -1,0 +1,828 @@
+{
+  "generatedAt": "2026-11-11T17:20:39.500Z",
+  "scope": "Current working tree; static inventory, not a successful Workers compatibility test",
+  "serverModules": 40,
+  "serverActionModules": 9,
+  "exportedActionFunctions": 33,
+  "entries": [
+    {
+      "file": "src/server/actions/account.ts",
+      "serverAction": true,
+      "exports": [
+        "saveAccountProfileAction"
+      ],
+      "imports": [
+        "@clerk/nextjs/server",
+        "drizzle-orm",
+        "zod",
+        "@/server/auth",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/result"
+      ],
+      "risks": [
+        "Next.js request-context coupling",
+        "Node database singleton dependency; inject request/transaction handle",
+        "Clerk identity must be verified in Worker, then passed explicitly"
+      ]
+    },
+    {
+      "file": "src/server/actions/billing.ts",
+      "serverAction": true,
+      "exports": [
+        "loadBillingAction",
+        "checkoutAction",
+        "portalAction"
+      ],
+      "imports": [
+        "zod",
+        "@/server/auth",
+        "@/server/db/client",
+        "@/server/services/access",
+        "@/server/result",
+        "@/server/billing/service",
+        "@/server/billing/summary"
+      ],
+      "risks": [
+        "Node database singleton dependency; inject request/transaction handle",
+        "Clerk identity must be verified in Worker, then passed explicitly"
+      ]
+    },
+    {
+      "file": "src/server/actions/boards.ts",
+      "serverAction": true,
+      "exports": [
+        "createBoardAction",
+        "renameBoardAction",
+        "reorderBoardsAction"
+      ],
+      "imports": [
+        "@/server/billing/access",
+        "drizzle-orm",
+        "zod",
+        "@/server/auth",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/services/access",
+        "@/server/result"
+      ],
+      "risks": [
+        "Node database singleton dependency; inject request/transaction handle",
+        "Clerk identity must be verified in Worker, then passed explicitly"
+      ]
+    },
+    {
+      "file": "src/server/actions/feedback.ts",
+      "serverAction": true,
+      "exports": [
+        "loadFeedbackAction",
+        "mutateFeedbackAction",
+        "loadFollowingAction",
+        "loadWorkspaceFeedbackAction",
+        "loadTagsAction",
+        "createTagAction"
+      ],
+      "imports": [
+        "node:crypto",
+        "drizzle-orm",
+        "zod",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/auth",
+        "@/server/services/access",
+        "@/server/feedback-access",
+        "@/server/attachment-links",
+        "@/server/activity",
+        "@/server/rate-limit",
+        "@/server/result"
+      ],
+      "risks": [
+        "Node database singleton dependency; inject request/transaction handle",
+        "Clerk identity must be verified in Worker, then passed explicitly"
+      ]
+    },
+    {
+      "file": "src/server/actions/integrations.ts",
+      "serverAction": true,
+      "exports": [
+        "listConnectionsAction",
+        "connectIntegrationAction",
+        "disconnectIntegrationAction"
+      ],
+      "imports": [
+        "@/server/features",
+        "next/headers",
+        "node:crypto",
+        "drizzle-orm",
+        "zod",
+        "@/server/auth",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/services/access",
+        "@/server/result",
+        "@/server/integrations",
+        "@/server/integration-crypto"
+      ],
+      "risks": [
+        "Next.js request-context coupling",
+        "Node database singleton dependency; inject request/transaction handle",
+        "Clerk identity must be verified in Worker, then passed explicitly"
+      ]
+    },
+    {
+      "file": "src/server/actions/notifications.ts",
+      "serverAction": true,
+      "exports": [
+        "loadNotificationsAction",
+        "markNotificationsReadAction"
+      ],
+      "imports": [
+        "drizzle-orm",
+        "zod",
+        "@/server/auth",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/result",
+        "@/server/activity"
+      ],
+      "risks": [
+        "Node database singleton dependency; inject request/transaction handle",
+        "Clerk identity must be verified in Worker, then passed explicitly"
+      ]
+    },
+    {
+      "file": "src/server/actions/registration.ts",
+      "serverAction": true,
+      "exports": [
+        "saveRegistrationProfileAction",
+        "createRegistrationWorkspaceAction",
+        "advanceRegistrationAction",
+        "completeRegistrationAction"
+      ],
+      "imports": [
+        "@/server/features",
+        "@/lib/workspace-domain",
+        "@clerk/nextjs/server",
+        "zod",
+        "drizzle-orm",
+        "@/server/auth",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/result",
+        "@/server/onboarding",
+        "@/server/services/access",
+        "@/server/actions/workspaces"
+      ],
+      "risks": [
+        "Next.js request-context coupling",
+        "Node database singleton dependency; inject request/transaction handle",
+        "Clerk identity must be verified in Worker, then passed explicitly"
+      ]
+    },
+    {
+      "file": "src/server/actions/settings.ts",
+      "serverAction": true,
+      "exports": [
+        "loadSettingsAction",
+        "saveBrandingAction",
+        "saveWidgetSettingsAction",
+        "saveNotificationSettingsAction",
+        "loadNotificationSettingsAction"
+      ],
+      "imports": [
+        "@/server/billing/access",
+        "next/cache",
+        "drizzle-orm",
+        "zod",
+        "@/server/auth",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/services/access",
+        "@/server/result",
+        "@/server/db/errors",
+        "@/lib/workspace-domain"
+      ],
+      "risks": [
+        "Next.js request-context coupling",
+        "Node database singleton dependency; inject request/transaction handle",
+        "Clerk identity must be verified in Worker, then passed explicitly"
+      ]
+    },
+    {
+      "file": "src/server/actions/workspaces.ts",
+      "serverAction": true,
+      "exports": [
+        "createWorkspaceAction",
+        "createFirstWorkspaceAction",
+        "inviteMembersAction",
+        "cancelInvitationAction",
+        "acceptInvitationAction",
+        "checkWorkspaceAvailabilityAction"
+      ],
+      "imports": [
+        "@/server/rate-limit",
+        "@/server/features",
+        "next/cache",
+        "zod",
+        "@/lib/workspace-domain",
+        "@/server/auth",
+        "@/server/result",
+        "@/server/services/workspaces"
+      ],
+      "risks": [
+        "Next.js request-context coupling",
+        "Clerk identity must be verified in Worker, then passed explicitly"
+      ]
+    },
+    {
+      "file": "src/server/activity.ts",
+      "serverAction": false,
+      "exports": [
+        "activityLabel",
+        "wantsActivity",
+        "publishActivity"
+      ],
+      "imports": [
+        "server-only",
+        "drizzle-orm",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/env"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle",
+        "process.env configuration must become explicit Worker bindings"
+      ]
+    },
+    {
+      "file": "src/server/attachment-cleanup.ts",
+      "serverAction": false,
+      "exports": [
+        "cleanExpiredAttachments"
+      ],
+      "imports": [
+        "server-only",
+        "drizzle-orm",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/storage",
+        "@/server/env"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle",
+        "process.env configuration must become explicit Worker bindings"
+      ]
+    },
+    {
+      "file": "src/server/attachment-links.ts",
+      "serverAction": false,
+      "exports": [
+        "linkAttachments"
+      ],
+      "imports": [
+        "server-only",
+        "drizzle-orm",
+        "@/server/db/client",
+        "@/server/feedback-access",
+        "@/server/db/schema",
+        "@/server/result"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle"
+      ]
+    },
+    {
+      "file": "src/server/auth.ts",
+      "serverAction": false,
+      "exports": [],
+      "imports": [
+        "server-only",
+        "@clerk/nextjs/server",
+        "drizzle-orm",
+        "react",
+        "@/server/db/client",
+        "@/server/db/errors",
+        "@/server/db/schema",
+        "@/server/result"
+      ],
+      "risks": [
+        "Next.js request-context coupling",
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle"
+      ]
+    },
+    {
+      "file": "src/server/billing/access.ts",
+      "serverAction": false,
+      "exports": [
+        "getWorkspaceEntitlements"
+      ],
+      "imports": [
+        "server-only",
+        "drizzle-orm",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/lib/plan-entitlements"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle"
+      ]
+    },
+    {
+      "file": "src/server/billing/client.ts",
+      "serverAction": false,
+      "exports": [
+        "bachsClient",
+        "billingProduct",
+        "billingReady",
+        "billingRedirect"
+      ],
+      "imports": [
+        "server-only",
+        "@bachs/sdk",
+        "@/server/env",
+        "@/server/result",
+        "@/lib/billing"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "process.env configuration must become explicit Worker bindings"
+      ]
+    },
+    {
+      "file": "src/server/billing/service.ts",
+      "serverAction": false,
+      "exports": [
+        "startCheckout",
+        "openBillingPortal"
+      ],
+      "imports": [
+        "server-only",
+        "node:crypto",
+        "drizzle-orm",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/auth",
+        "@/server/services/access",
+        "@/server/env",
+        "@/server/result",
+        "@/server/rate-limit",
+        "@/lib/billing",
+        "./client"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle",
+        "Clerk identity must be verified in Worker, then passed explicitly",
+        "process.env configuration must become explicit Worker bindings"
+      ]
+    },
+    {
+      "file": "src/server/billing/summary.ts",
+      "serverAction": false,
+      "exports": [
+        "readBillingSummary",
+        "buildBillingSummary"
+      ],
+      "imports": [
+        "server-only",
+        "drizzle-orm",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "./client",
+        "@/lib/plan-entitlements",
+        "@/lib/billing"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle"
+      ]
+    },
+    {
+      "file": "src/server/billing/webhook.ts",
+      "serverAction": false,
+      "exports": [
+        "applyBillingEvent"
+      ],
+      "imports": [
+        "server-only",
+        "zod",
+        "drizzle-orm",
+        "@bachs/sdk",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/env",
+        "./client",
+        "@/lib/billing"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle",
+        "process.env configuration must become explicit Worker bindings"
+      ]
+    },
+    {
+      "file": "src/server/db/client.ts",
+      "serverAction": false,
+      "exports": [
+        "getDb",
+        "getPool",
+        "closeDb"
+      ],
+      "imports": [
+        "server-only",
+        "drizzle-orm/node-postgres",
+        "drizzle-orm/node-postgres",
+        "drizzle-orm/pg-core",
+        "pg",
+        "@/server/env",
+        "@/server/db/schema"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "PostgreSQL connection lifetime/Hyperdrive review",
+        "process.env configuration must become explicit Worker bindings"
+      ]
+    },
+    {
+      "file": "src/server/db/errors.ts",
+      "serverAction": false,
+      "exports": [
+        "isUniqueViolation"
+      ],
+      "imports": [],
+      "risks": []
+    },
+    {
+      "file": "src/server/db/schema.ts",
+      "serverAction": false,
+      "exports": [],
+      "imports": [
+        "drizzle-orm",
+        "drizzle-orm/pg-core"
+      ],
+      "risks": [
+        "PostgreSQL connection lifetime/Hyperdrive review"
+      ]
+    },
+    {
+      "file": "src/server/email.ts",
+      "serverAction": false,
+      "exports": [
+        "sendInvitationEmail",
+        "sendActivityEmail",
+        "sendLifecycleEmail"
+      ],
+      "imports": [
+        "server-only",
+        "@/server/env",
+        "@/server/result",
+        "@/server/emails/templates"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "process.env configuration must become explicit Worker bindings"
+      ]
+    },
+    {
+      "file": "src/server/emails/lifecycle-policy.ts",
+      "serverAction": false,
+      "exports": [
+        "eligibleLifecycleEmail"
+      ],
+      "imports": [
+        "./templates"
+      ],
+      "risks": []
+    },
+    {
+      "file": "src/server/emails/templates.ts",
+      "serverAction": false,
+      "exports": [
+        "escapeEmailHtml",
+        "emailLayout",
+        "lifecycleEmail",
+        "activityEmail"
+      ],
+      "imports": [],
+      "risks": []
+    },
+    {
+      "file": "src/server/emails/unsubscribe.ts",
+      "serverAction": false,
+      "exports": [
+        "lifecycleUnsubscribeToken",
+        "verifyLifecycleUnsubscribe"
+      ],
+      "imports": [
+        "node:crypto"
+      ],
+      "risks": []
+    },
+    {
+      "file": "src/server/env.ts",
+      "serverAction": false,
+      "exports": [
+        "getServerEnv",
+        "isClerkConfigured",
+        "requireProviderEnv"
+      ],
+      "imports": [
+        "server-only",
+        "zod"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry"
+      ]
+    },
+    {
+      "file": "src/server/features.ts",
+      "serverAction": false,
+      "exports": [
+        "requireFeature"
+      ],
+      "imports": [
+        "server-only",
+        "@/lib/features",
+        "@/server/result"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry"
+      ]
+    },
+    {
+      "file": "src/server/feedback-access.ts",
+      "serverAction": false,
+      "exports": [
+        "requireBoard",
+        "feedbackActor"
+      ],
+      "imports": [
+        "server-only",
+        "node:crypto",
+        "drizzle-orm",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/auth",
+        "@/server/rate-limit",
+        "@/server/result"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle",
+        "Clerk identity must be verified in Worker, then passed explicitly"
+      ]
+    },
+    {
+      "file": "src/server/image-validation.ts",
+      "serverAction": false,
+      "exports": [
+        "sanitizeImage"
+      ],
+      "imports": [
+        "server-only",
+        "sharp",
+        "@/server/result"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Native image processing; keep on Node initially or replace after compatibility proof"
+      ]
+    },
+    {
+      "file": "src/server/integration-crypto.ts",
+      "serverAction": false,
+      "exports": [
+        "seal",
+        "unseal",
+        "verifyOAuthState"
+      ],
+      "imports": [
+        "node:crypto"
+      ],
+      "risks": []
+    },
+    {
+      "file": "src/server/integrations.ts",
+      "serverAction": false,
+      "exports": [
+        "config",
+        "providerFetch",
+        "exchange"
+      ],
+      "imports": [
+        "server-only",
+        "zod",
+        "@/server/env",
+        "@/server/result"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "process.env configuration must become explicit Worker bindings"
+      ]
+    },
+    {
+      "file": "src/server/lifecycle-email-worker.ts",
+      "serverAction": false,
+      "exports": [
+        "enqueueLifecycleEmails",
+        "processLifecycleEmails"
+      ],
+      "imports": [
+        "server-only",
+        "drizzle-orm",
+        "zod",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/env",
+        "@/server/emails/lifecycle-policy",
+        "@/server/emails/unsubscribe",
+        "@/server/email"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle",
+        "process.env configuration must become explicit Worker bindings"
+      ]
+    },
+    {
+      "file": "src/server/notification-worker.ts",
+      "serverAction": false,
+      "exports": [
+        "processNotificationJobs"
+      ],
+      "imports": [
+        "server-only",
+        "drizzle-orm",
+        "zod",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/env",
+        "@/server/activity",
+        "@/server/email"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle",
+        "process.env configuration must become explicit Worker bindings"
+      ]
+    },
+    {
+      "file": "src/server/onboarding.ts",
+      "serverAction": false,
+      "exports": [
+        "getRegistrationState"
+      ],
+      "imports": [
+        "server-only",
+        "@clerk/nextjs/server",
+        "drizzle-orm",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/auth",
+        "@/server/services/workspaces"
+      ],
+      "risks": [
+        "Next.js request-context coupling",
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle",
+        "Clerk identity must be verified in Worker, then passed explicitly"
+      ]
+    },
+    {
+      "file": "src/server/public-workspace.ts",
+      "serverAction": false,
+      "exports": [],
+      "imports": [
+        "server-only",
+        "@/server/billing/access",
+        "react",
+        "drizzle-orm",
+        "@/server/db/client",
+        "@/server/db/schema"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle"
+      ]
+    },
+    {
+      "file": "src/server/rate-limit.ts",
+      "serverAction": false,
+      "exports": [
+        "consumeRateLimit"
+      ],
+      "imports": [
+        "server-only",
+        "node:crypto",
+        "drizzle-orm",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/result"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle"
+      ]
+    },
+    {
+      "file": "src/server/result.ts",
+      "serverAction": false,
+      "exports": [
+        "ok",
+        "fail",
+        "validationError",
+        "fromZodError",
+        "isAppError",
+        "toAppError",
+        "runService",
+        "toResponse"
+      ],
+      "imports": [
+        "server-only",
+        "zod"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry"
+      ]
+    },
+    {
+      "file": "src/server/services/access.ts",
+      "serverAction": false,
+      "exports": [
+        "findActiveWorkspaceMembership",
+        "requireWorkspaceRole",
+        "hasAtLeastRole"
+      ],
+      "imports": [
+        "server-only",
+        "drizzle-orm",
+        "@/server/db/client",
+        "@/server/db/schema",
+        "@/server/result"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle"
+      ]
+    },
+    {
+      "file": "src/server/services/workspaces.ts",
+      "serverAction": false,
+      "exports": [
+        "listWorkspacesForUser",
+        "checkWorkspaceAvailability",
+        "createWorkspaceForUser",
+        "createFirstWorkspaceForUser",
+        "listWorkspaceMembers",
+        "listPendingInvitations",
+        "createInvitations",
+        "cancelInvitation",
+        "previewInvitation",
+        "acceptInvitation"
+      ],
+      "imports": [
+        "server-only",
+        "@/server/billing/summary",
+        "@/server/rate-limit",
+        "@/server/features",
+        "@/lib/workspace-domain",
+        "node:crypto",
+        "drizzle-orm",
+        "@/server/db/client",
+        "@/server/db/errors",
+        "@/server/db/schema",
+        "@/server/email",
+        "@/server/result",
+        "@/server/services/access"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "Node database singleton dependency; inject request/transaction handle"
+      ]
+    },
+    {
+      "file": "src/server/storage.ts",
+      "serverAction": false,
+      "exports": [
+        "r2",
+        "putImage",
+        "getImage",
+        "deleteImage"
+      ],
+      "imports": [
+        "server-only",
+        "@aws-sdk/client-s3",
+        "@/server/env"
+      ],
+      "risks": [
+        "server-only build marker needs a Workers-safe entry",
+        "process.env configuration must become explicit Worker bindings"
+      ]
+    }
+  ]
+}

@@ -53,3 +53,6 @@ next-env.d.ts
 /tools/notification-scheduler/node_modules/
 /tools/notification-scheduler/.wrangler/
 /tools/notification-scheduler/.dev.vars*
+
+# Local Netlify build/link state
+/.netlify/

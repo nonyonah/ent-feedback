@@ -14,6 +14,7 @@
     "db:studio": "drizzle-kit studio",
     "jobs:check": "node scripts/run-maintenance.mjs --check",
     "jobs:run": "node scripts/run-maintenance.mjs",
+    "check:concurrency": "node scripts/check-concurrency.mjs",
     "widget:test": "node scripts/serve-widget-test.mjs",
     "production:check": "node --import tsx scripts/check-production.mjs",
     "docs:dev": "cd documentation && npx --yes mint@4.3.16 dev --port 3001 --no-open",

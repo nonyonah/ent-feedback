@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build -- --webpack"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NETLIFY_NEXT_SKEW_PROTECTION = "true"
+  # These values are intentionally public URLs, sender identity and browser tokens.
+  # Keep scanning enabled for all private provider keys and database credentials.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_APP_URL,MINTLIFY_ORIGIN,EMAIL_FROM,NEXT_PUBLIC_POSTHOG_HOST,NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,NEXT_PUBLIC_POSTHOG_KEY"
+
+# Netlify detects Next.js and installs its maintained OpenNext adapter.
+# Configure secrets in the Netlify dashboard, never in this file.

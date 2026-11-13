@@ -13,6 +13,7 @@ import {
   cancelInvitation,
   createInvitations,
   createWorkspaceForUser,
+  createFirstWorkspaceForUser,
   checkWorkspaceAvailability,
 } from "@/server/services/workspaces";
 
@@ -53,6 +54,38 @@ export async function createWorkspaceAction(input: {
     }
 
     const workspace = await createWorkspaceForUser({
+      userId: user.id,
+      name: parsed.data.name,
+      handle: parsed.data.handle,
+      website: parsed.data.website,
+    });
+
+    revalidatePath("/dashboard", "layout");
+    return workspace;
+  });
+
+  return result;
+}
+
+/**
+ * Create the account's first workspace. Idempotent: a repeated or concurrent
+ * submission returns the workspace that already exists instead of creating a
+ * second one. Use `createWorkspaceAction` for additional workspaces.
+ */
+export async function createFirstWorkspaceAction(input: {
+  name: string;
+  handle: string;
+  website?: string;
+}) {
+  const result = await runService(async () => {
+    const user = await requireAppUser();
+    const parsed = createWorkspaceSchema.safeParse(input);
+
+    if (!parsed.success) {
+      throw parsed.error;
+    }
+
+    const workspace = await createFirstWorkspaceForUser({
       userId: user.id,
       name: parsed.data.name,
       handle: parsed.data.handle,

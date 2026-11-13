@@ -64,3 +64,7 @@ Domain names remain to be assigned. Keep marketing, app, API, widget installatio
 - Installed Next.js 16.4.4 static-export and deployment guides: static export excludes server-dependent features.
 
 No provider resources or DNS changes were made by this research. No complete API migration or hosting compatibility test is claimed.
+
+## 11 November migration preparation
+
+The current working tree was inventoried as 40 server modules and 33 exported action functions across 9 modules. See [the migration plan and current cost envelope](cloudflare-migration.md) and `cloudflare-inventory.json`. The older count above is historical. No provider resources, paid upgrades or traffic changes were made during preparation.

@@ -9,6 +9,7 @@ import {loadFeedbackAction,loadWorkspaceFeedbackAction,mutateFeedbackAction,type
 import {getTrendingIds} from '@/lib/feedback-sort';
 import {createMutationQueue} from '@/lib/mutation-queue';
 import {createFeedbackUploader} from '@/lib/feedback-uploads';
+import {rememberVisitorToken,visitorToken} from '@/lib/visitor-token';
 import {toastManager} from '@/components/ui/toast';
 import type {FeedbackItemData,FeedbackStatus,FeedbackCategory} from '@/lib/feedback-data';
 
@@ -48,19 +49,20 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
  const error=snapshot.key===key?'':failureMessage;
  const loading=valid&&snapshot.key!==key&&!error;
  const readBoardId=workspaceInbox?'':bid;
- const reload=React.useCallback(async(cancelled:()=>boolean=()=>false)=>{
-  if(!valid)return;const version=++generation.current;
-  let saved:string|undefined;
-  try{saved=localStorage.getItem('ent-visitor:'+wid)??undefined;}catch{}
-  try{
-   const result=await (workspaceInbox?loadWorkspaceFeedbackAction(wid):loadFeedbackAction(wid,readBoardId,saved));
-   if(cancelled()||busy.current||scope.current!==key||generation.current!==version)return;
-   if(!result.ok)throw Error(result.error.message);
-   token.current=result.data.guestToken;
-   if(result.data.guestToken){try{localStorage.setItem('ent-visitor:'+wid,result.data.guestToken);}catch{}}
-   setFailure({key,message:''});setSnapshot({key,items:result.data.items});
-  }catch(error){if(!cancelled()&&scope.current===key&&generation.current===version)setFailure({key,message:error instanceof Error?error.message:'Feedback could not be loaded. Try again.'});}
- },[valid,key,wid,readBoardId,workspaceInbox]);
+  const reload=React.useCallback(async(cancelled:()=>boolean=()=>false)=>{
+   if(!valid)return;const version=++generation.current;
+   // Present one stable visitor token so parallel loads resolve to a single
+   // guest identity instead of creating one per request.
+   const saved=visitorToken(wid);
+   try{
+    const result=await (workspaceInbox?loadWorkspaceFeedbackAction(wid):loadFeedbackAction(wid,readBoardId,saved));
+    if(cancelled()||busy.current||scope.current!==key||generation.current!==version)return;
+    if(!result.ok)throw Error(result.error.message);
+    token.current=result.data.guestToken??saved;
+    rememberVisitorToken(wid,result.data.guestToken);
+    setFailure({key,message:''});setSnapshot({key,items:result.data.items});
+   }catch(error){if(!cancelled()&&scope.current===key&&generation.current===version)setFailure({key,message:error instanceof Error?error.message:'Feedback could not be loaded. Try again.'});}
+  },[valid,key,wid,readBoardId,workspaceInbox]);
  React.useEffect(()=>{
   const controller=new AbortController();
   // Skip an already-cleaned-up Strict Mode pass before starting visitor bootstrap.

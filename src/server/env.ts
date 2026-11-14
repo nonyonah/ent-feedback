@@ -31,8 +31,6 @@ const serverEnvSchema = z.object({
   BACHS_ORGANIZATION_ID:z.string().optional(),
   BACHS_MONTHLY_PRODUCT_ID:z.string().optional(),
   BACHS_YEARLY_PRODUCT_ID:z.string().optional(),
-  BACHS_MONTHLY_TRIAL_PRODUCT_ID:z.string().optional(),
-  BACHS_YEARLY_TRIAL_PRODUCT_ID:z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

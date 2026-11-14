@@ -13,7 +13,7 @@ export function productionReadiness(env:Record<string,string|undefined>):Check[]
  add('clerk-live',Boolean(env.CLERK_SECRET_KEY?.startsWith('sk_live_')&&env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_live_')),'Use matching Clerk production credentials.');
  add('bachs-live',Boolean(env.BACHS_API_KEY?.startsWith('sk_live_')),'Use a live Bachs API key.');
  add('bachs-webhook',Boolean(env.BACHS_WEBHOOK_SECRET&&env.BACHS_ORGANIZATION_ID),'Configure the live Bachs webhook secret and organization.');
- add('bachs-products',['BACHS_MONTHLY_PRODUCT_ID','BACHS_YEARLY_PRODUCT_ID','BACHS_MONTHLY_TRIAL_PRODUCT_ID','BACHS_YEARLY_TRIAL_PRODUCT_ID'].every(key=>env[key]?.startsWith('prod_')),'Configure monthly/yearly products with and without trials.');
+ add('bachs-products',['BACHS_MONTHLY_PRODUCT_ID','BACHS_YEARLY_PRODUCT_ID'].every(key=>env[key]?.startsWith('prod_')),'Configure monthly/yearly products with their included 14-day trials.');
  add('email',Boolean(env.SENDBYTE_API_KEY?.startsWith('sk_live_')&&env.EMAIL_FROM),'Use a live Sendbyte key and a verified sender; sandbox cannot deliver to an inbox.');
  add('storage',['R2_ACCOUNT_ID','R2_ACCESS_KEY_ID','R2_SECRET_ACCESS_KEY','R2_BUCKET'].every(key=>Boolean(env[key])),'Configure the production R2 bucket and credentials.');
  add('scheduler-secret',(env.CRON_SECRET?.length??0)>=32,'Configure a scheduler secret with at least 32 characters.');

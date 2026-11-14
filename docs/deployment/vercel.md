@@ -35,7 +35,7 @@ Use `.env.example` for the full names, not copied local values. Exclude disabled
 | Email | `SENDBYTE_API_KEY`, verified `EMAIL_FROM` (`Ent <team@riftlabs.xyz>` confirmed for live mail); sandbox in Preview |
 | Lifecycle | `LIFECYCLE_EMAILS_ENABLED=false` initially; separate `EMAIL_UNSUBSCRIBE_SECRET` before enabling |
 | Worker | `CRON_SECRET`, at least 32 random characters; set separately in each environment |
-| Billing | Bachs key, webhook secret, organization and four matching product IDs; never mix sandbox/live records |
+| Billing | Bachs key, webhook secret, organization and two monthly/yearly product IDs with included trials; never mix sandbox/live records |
 | Documentation | `MINTLIFY_ORIGIN=https://ent-docs.mintlify.site`; Mintlify source directory `/documentation`, public base path `/docs` |
 | Analytics | PostHog project key/host, with development collection off by default; consent gate remains in place |
 

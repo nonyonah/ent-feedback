@@ -45,7 +45,7 @@ export async function applyBillingEvent(event:WebhookEvent){
     if(current?.customerId&&current.customerId!==candidate.customer.customer_id)throw Error('Subscription identity changed');
     if(!known&&(!checkout||candidate.metadata?.workspace_id!==workspaceId||checkout.productId!==candidate.product_id))throw Error('Checkout binding mismatch');
     const interval:BillingInterval=candidate.billing_cycle.interval==='month'?'monthly':'yearly';
-    if(![billingProduct(interval,false),billingProduct(interval,true)].includes(candidate.product_id)||Number(candidate.amount)!==Number(interval==='monthly'?billingPlan.monthly:billingPlan.yearly))throw Error('Unexpected billing plan');
+    if(candidate.product_id!==billingProduct(interval)||Number(candidate.amount)!==Number(interval==='monthly'?billingPlan.monthly:billingPlan.yearly))throw Error('Unexpected billing plan');
     if(candidate.status==='trialing'&&!candidate.trial_end)throw Error('Missing trial end');
     const values={customerId:candidate.customer.customer_id,subscriptionId,status:candidate.status,interval,trialUsed:true,trialEnd:candidate.trial_end?new Date(candidate.trial_end):null,periodEnd:new Date(candidate.current_period_end),cancelAtPeriodEnd:candidate.cancel_at_period_end??false,updatedAt:new Date()};
     await tx.insert(workspaceSubscriptions).values({workspaceId,...values}).onConflictDoUpdate({target:workspaceSubscriptions.workspaceId,set:values});

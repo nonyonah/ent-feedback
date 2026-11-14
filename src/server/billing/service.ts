@@ -22,22 +22,21 @@ export async function startCheckout(workspaceId:string,interval:BillingInterval)
   const [subscription]=await tx.select().from(workspaceSubscriptions).where(eq(workspaceSubscriptions.workspaceId,workspaceId)).limit(1);
   if(subscription&&['active','trialing','past_due','paused','unpaid'].includes(subscription.status))throw new ServiceError('conflict','This workspace already has a subscription. Use Manage subscription instead.');
   const [pending]=await tx.select().from(billingCheckouts).where(and(eq(billingCheckouts.workspaceId,workspaceId),inArray(billingCheckouts.status,['creating','open']))).orderBy(desc(billingCheckouts.createdAt)).limit(1);
-  if(pending&&pending.expiresAt.getTime()>Date.now()){
+  if(pending&&pending.expiresAt.getTime()>Date.now()&&pending.productId===billingProduct(pending.interval)){
    if(pending.interval!==interval)throw new ServiceError('conflict','A checkout is already open for the other billing period. Complete it or wait for it to expire before switching.');
    return pending;
   }
   if(pending)await tx.update(billingCheckouts).set({status:'expired',checkoutUrl:null,updatedAt:new Date()}).where(eq(billingCheckouts.id,pending.id));
-  const [created]=await tx.insert(billingCheckouts).values({id:randomUUID(),workspaceId,interval,productId:billingProduct(interval,!subscription?.trialUsed),expiresAt:new Date(Date.now()+31*60_000)}).returning();
+  const [created]=await tx.insert(billingCheckouts).values({id:randomUUID(),workspaceId,interval,productId:billingProduct(interval),expiresAt:new Date(Date.now()+31*60_000)}).returning();
   return created;
  });
  if(attempt.status==='open'&&attempt.checkoutUrl)return {url:billingRedirect(attempt.checkoutUrl,'checkout')};
  const client=bachsClient();
  // Verify the catalog rather than trusting a client amount or a dashboard label.
  const product=await client.products.get(attempt.productId);
- const trial=attempt.productId===billingProduct(interval,true);
  const expected=interval==='monthly'?billingPlan.monthly:billingPlan.yearly;
  const trialPeriod=product.trial_period as {interval?:unknown;frequency?:unknown}|undefined;
- if(product.price.currency!=='USD'||product.price.price_type!=='fixed'||Number(product.price.amount)!==Number(expected)||product.billing_cycle?.interval!==(interval==='monthly'?'month':'year')||product.billing_cycle?.frequency!==1||(trial&&(!trialPeriod||trialPeriod.interval!=='day'||trialPeriod.frequency!==14))||(!trial&&trialPeriod&&Number(trialPeriod.frequency)>0)||product.archived_at)throw new ServiceError('retryable','The billing catalog needs attention. Please contact the workspace owner.');
+ if(product.price.currency!=='USD'||product.price.price_type!=='fixed'||Number(product.price.amount)!==Number(expected)||product.billing_cycle?.interval!==(interval==='monthly'?'month':'year')||product.billing_cycle?.frequency!==1||!trialPeriod||trialPeriod.interval!=='day'||trialPeriod.frequency!==14||product.archived_at)throw new ServiceError('retryable','The billing catalog needs attention. Please contact the workspace owner.');
  const env=getServerEnv();
  const origin=env.BACHS_RETURN_ORIGIN??env.NEXT_PUBLIC_APP_URL;
  if(new URL(origin).hostname==='localhost'||new URL(origin).hostname==='127.0.0.1')throw new ServiceError('retryable','Checkout needs a public return URL. Configure BACHS_RETURN_ORIGIN with your HTTPS test tunnel.');

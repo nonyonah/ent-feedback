@@ -16,7 +16,7 @@ function safeUrl(value: string): string {
   if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) throw new Error('Invalid email link');
   return escapeEmailHtml(url.href);
 }
-/** Mirrors Ent's 10px buttons, neutral cards, logo-only header and 500/600 type. */
+/** Plain-background emails with Ent's 10px buttons, logo-only header and 500/600 type. */
 export function emailLayout(input: {subject: string; heading: string; body: string; action: string; url: string; footer: string; unsubscribeUrl?: string}): EmailTemplate {
   const e = escapeEmailHtml;
   const href = safeUrl(input.url);
@@ -34,23 +34,23 @@ export function emailLayout(input: {subject: string; heading: string; body: stri
 <style>
   :root{color-scheme:light dark;supported-color-schemes:light dark}
   @media(prefers-color-scheme:dark){
-    .email-bg{background:#171717!important}.email-card{background:#222222!important;border-color:#363636!important}
+    .email-bg{background:#171717!important}
     .email-heading{color:#e8e8e8!important}.email-copy{color:#d0d0d0!important}.email-muted{color:#ababab!important}
     .email-button{background:#e8e8e8!important;border-color:#e8e8e8!important;box-shadow:none!important}.email-button a{color:#212529!important}
   }
-  @media(max-width:420px){.email-outer{padding:24px 16px!important}.email-inner{padding:24px!important}.email-heading{font-size:24px!important}}
+  @media(max-width:420px){.email-outer{padding:24px 16px!important}.email-heading{font-size:24px!important}}
 </style></head>
 <body class="email-bg" style="margin:0;background:#f7f7f7;color:#292929;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-weight:500">
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${e(input.body)}</div>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td class="email-outer" align="center" style="padding:40px 20px">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px">
-<tr><td class="email-card email-inner" style="padding:28px;background:#ffffff;border:1px solid #e5e5e5;border-radius:18px">
+<tr><td style="padding:0">
 <a href="${safeUrl(origin)}" style="display:inline-block;margin:0 0 28px;text-decoration:none" aria-label="Ent Feedback"><img src="${logo}" alt="Ent Feedback" width="40" height="40" style="display:block;width:40px;height:40px;object-fit:contain;border:0"></a>
 <h1 class="email-heading" style="margin:0 0 12px;color:#292929;font-size:26px;font-weight:600;letter-spacing:-.65px;line-height:1.25">${e(input.heading)}</h1>
 <p class="email-copy" style="margin:0 0 24px;font-size:14px;font-weight:500;line-height:1.65;color:#525252">${e(input.body)}</p>
 <table role="presentation" cellspacing="0" cellpadding="0"><tr><td class="email-button" bgcolor="#212529" style="background:#212529;border:1px solid #212529;border-radius:10px;box-shadow:inset 0 1px 0 #ffffff29,0 1px 2px #21252924"><a href="${href}" style="display:inline-block;padding:9px 15px;color:#ffffff;text-decoration:none;font-size:13px;font-weight:500;line-height:20px">${e(input.action)}</a></td></tr></table>
 </td></tr>
-<tr><td class="email-muted" style="padding:16px 12px;font-size:12px;font-weight:500;line-height:1.6;color:#686868">
+<tr><td class="email-muted" style="padding:24px 0;font-size:12px;font-weight:500;line-height:1.6;color:#686868">
 <p style="margin:0 0 8px">${e(input.footer)}</p>
 ${unsubscribe ? `<p style="margin:0 0 12px"><a class="email-muted" href="${unsubscribe}" style="color:#686868;text-decoration:underline">Stop these emails</a></p>` : ''}
 <p style="margin:0">Rift Labs · Nigeria · <a class="email-muted" href="mailto:nonyonah@gmail.com" style="color:#686868;text-decoration:underline">Contact support</a></p>

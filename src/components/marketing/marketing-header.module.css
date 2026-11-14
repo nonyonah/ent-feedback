@@ -5,3 +5,17 @@
 
 .mobileMenu{display:none;justify-self:end}
 @media(max-width:600px){.header{display:flex;justify-content:space-between;min-height:74px}.navigation,.actions{display:none}.mobileMenu{display:block}}
+
+.menuButton{width:44px;height:44px;border-radius:10px;color:var(--foreground)}
+.menuButton svg{overflow:visible}
+.menuLineTop,.menuLineMiddle,.menuLineBottom{transform-origin:12px 12px;transition:transform 160ms cubic-bezier(.23,1,.32,1),opacity 120ms ease-out}
+.menuButton[data-open=true] .menuLineTop{transform:translateY(5px) rotate(45deg);transform-origin:12px 7px}
+.menuButton[data-open=true] .menuLineMiddle{opacity:0}
+.menuButton[data-open=true] .menuLineBottom{transform:translateY(-5px) rotate(-45deg);transform-origin:12px 17px}
+.menuPopup{width:min(260px,calc(100vw - 32px));padding:4px;border-radius:14px;transform-origin:var(--transform-origin);transition:opacity 180ms cubic-bezier(.23,1,.32,1),transform 180ms cubic-bezier(.23,1,.32,1)}
+.menuPopup[data-starting-style],.menuPopup[data-ending-style]{opacity:0;transform:translateY(-4px) scale(.97)}
+.menuPopup[data-ending-style]{transition-duration:120ms}
+.menuPopup [role=menuitem]{min-height:44px;padding-inline:12px;border-radius:8px;font-size:14px}
+@media(prefers-reduced-motion:no-preference){.menuButton{transition:transform 120ms cubic-bezier(.23,1,.32,1)}.menuButton:active{transform:scale(.97)}}
+@media(prefers-reduced-motion:reduce){.menuPopup,.menuLineTop,.menuLineMiddle,.menuLineBottom{transition:none}.menuPopup[data-starting-style],.menuPopup[data-ending-style]{transform:none}}
+:global(html[data-input-modality=keyboard]) .menuPopup,:global(html[data-input-modality=keyboard]) .menuButton,:global(html[data-input-modality=keyboard]) .menuButton path{transition:none}

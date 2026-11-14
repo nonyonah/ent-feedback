@@ -11,3 +11,20 @@
 
 # Netlify detects Next.js and installs its maintained OpenNext adapter.
 # Configure secrets in the Netlify dashboard, never in this file.
+
+# Public docs bypass the Next adapter so Mintlify deployment queries survive.
+[[edge_functions]]
+  function = "documentation"
+  path = "/docs"
+[[edge_functions]]
+  function = "documentation"
+  path = "/docs/*"
+[[edge_functions]]
+  function = "documentation"
+  path = "/_mintlify/*"
+[[edge_functions]]
+  function = "documentation"
+  path = "/mintlify-assets/*"
+[[edge_functions]]
+  function = "documentation"
+  path = "/api/request"

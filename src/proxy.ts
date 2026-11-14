@@ -45,6 +45,9 @@ const applicationProxy=clerkMiddleware(async (auth, request) => {
 export default function proxy(request:NextRequest,event:NextFetchEvent){
   const path=request.nextUrl.pathname;
   if(documentationPath(path)){
+    // Netlify's native docs edge proxy receives the untouched URL, including dpl.
+    // The Next adapter normalizes that parameter before invoking this proxy.
+    if(process.env.ENT_NATIVE_DOCS_PROXY === "true")return NextResponse.next();
     const base=workspaceBaseDomain();
     const tenant=base?workspaceHandleFromHost(request.headers.get('host')??'',base):null;
     if(tenant)return new NextResponse('Not found',{status:404});

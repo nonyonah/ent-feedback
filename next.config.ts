@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Bake this routing flag in: Netlify build variables aren't all runtime envs.
+  env: { ENT_NATIVE_DOCS_PROXY: process.env.NETLIFY === "true" ? "true" : "false" },
   /* config options here */
   async headers() {
     const headers = [

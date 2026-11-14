@@ -3,6 +3,7 @@ import { DropdownChevron } from "@/components/ui/dropdown-chevron";
 
 import {useSettingsHref} from "./use-settings-href";
 import {ProductTour} from "@/components/feedback/product-tour";
+import {SidebarTrialReminder} from "./sidebar-trial-reminder";
 import Link from "next/link";
 import {useSearchParams} from "next/navigation";
 import {useClerk} from "@clerk/nextjs";
@@ -56,6 +57,6 @@ export function DashboardSidebar({view,filter,onFilterChange,onCopyLink,copied}:
    </nav>
   </SidebarContent>
 
- <div className="mt-auto p-2"><ProductTour/></div>
+ <div className="mt-auto p-2"><SidebarTrialReminder/><ProductTour/></div>
  </Sidebar>;
 }

@@ -17,5 +17,7 @@ export async function readBillingSummary(workspaceId:string,owner:boolean){
 export type BillingSummary=Awaited<ReturnType<typeof readBillingSummary>>;
 
 export function buildBillingSummary(row:typeof workspaceSubscriptions.$inferSelect|undefined,boardCount:number,owner:boolean){
- return {...planEntitlements(row),boardCount:boardCount,configured:billingReady(),enforced:true,owner,status:row?.status??'none',interval:row?.interval??'monthly',hasAccess:subscriptionHasAccess(row),trialUsed:row?.trialUsed??false,trialEnd:row?.trialEnd?.toISOString()??null,periodEnd:row?.periodEnd?.toISOString()??null,cancelAtPeriodEnd:row?.cancelAtPeriodEnd??false,canManage:Boolean(row?.customerId)};
+ const prepaid=Boolean(row?.prepaidUntil&&row.prepaidUntil.getTime()>Date.now());
+ const prepaidOnly=prepaid&&!subscriptionHasAccess(row?{...row,prepaidUntil:null}:undefined);
+ return {...planEntitlements(row),boardCount:boardCount,configured:billingReady(),enforced:true,owner,status:prepaidOnly?'prepaid':row?.status??'none',interval:prepaidOnly?(row?.prepaidInterval??'monthly'):row?.interval??'monthly',hasAccess:subscriptionHasAccess(row),trialUsed:row?.trialUsed??false,trialEnd:row?.trialEnd?.toISOString()??null,prepaidUntil:row?.prepaidUntil?.toISOString()??null,prepaidActive:prepaid,periodEnd:prepaidOnly?row?.prepaidUntil?.toISOString()??null:row?.periodEnd?.toISOString()??null,cancelAtPeriodEnd:row?.cancelAtPeriodEnd??false,canManage:Boolean(!prepaidOnly&&row?.subscriptionId&&row.customerId)};
 }

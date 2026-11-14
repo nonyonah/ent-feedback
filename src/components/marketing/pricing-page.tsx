@@ -18,9 +18,9 @@ const questions=[
  ['What does one subscription cover?','One workspace: a home for your product’s boards, feedback, and conversations. The price is per workspace, rather than per person who leaves feedback.'],
  ['Do my users need to pay?','No. The subscription is for the workspace owner. People who submit feedback, vote, or comment do not need their own paid subscription.'],
  ['Can I embed it in my app?','Yes. Install the widget on your website so people can browse and submit feedback without leaving your product. Your public board is also available as a shareable link.'],
- ['How do I manage my subscription?','Open Settings → Billing in your workspace to manage your payment method, invoices, or cancellation through our secure billing portal.'],
+ ['How do I manage my subscription?','Open Settings → Billing → Manage subscription to change your billing period or cancel renewal. Prepaid Essentials renews manually from Billing.'],
  ['Are there any usage limits?','Free includes 2 boards with unlimited posts and voters, plus a small Powered by badge. Essentials includes 5 boards and removes the badge. Attachment size and request-rate limits apply to both plans.'],
- ['Is there a free trial?','Yes. Start with a 14-day trial. A card is required at checkout, but you aren’t charged until the trial ends. Cancel before then to avoid the first charge.'],
+ ['Is there a free trial?','Yes. Card subscriptions include a 14-day trial. Cancel before it ends to avoid the first charge. Pay-once access using card, bank transfer or crypto starts after payment and has no free trial.'],
 ];
 
 export function PricingPage(){

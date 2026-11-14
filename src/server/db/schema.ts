@@ -661,12 +661,14 @@ export const workspaceSubscriptions = pgTable('workspace_subscriptions', {
  customerId:text('customer_id'),subscriptionId:text('subscription_id').unique(),
  status:text('status').notNull().default('none'),interval:text('interval').notNull().default('monthly'),
  trialUsed:boolean('trial_used').notNull().default(false),trialEnd:timestamp('trial_end',{withTimezone:true}),
+ prepaidUntil:timestamp('prepaid_until',{withTimezone:true}),prepaidInterval:text('prepaid_interval'),
  periodEnd:timestamp('period_end',{withTimezone:true}),cancelAtPeriodEnd:boolean('cancel_at_period_end').notNull().default(false),
  ...timestamps(),
 });
 export const billingCheckouts = pgTable('billing_checkouts', {
  id:uuid('id').primaryKey().defaultRandom(),workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
  productId:text('product_id').notNull(),interval:text('interval').notNull(),status:text('status').notNull().default('creating'),
+ mode:text('mode').notNull().default('subscription'),amount:text('amount'),paymentId:text('payment_id').unique(),paidAt:timestamp('paid_at',{withTimezone:true}),accessUntil:timestamp('access_until',{withTimezone:true}),
  checkoutId:text('checkout_id').unique(),checkoutUrl:text('checkout_url'),expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),
  ...timestamps(),
 },table=>[index('billing_checkouts_workspace_idx').on(table.workspaceId),uniqueIndex('billing_checkouts_one_pending').on(table.workspaceId).where(sql`${table.status} in ('creating','open')`)]);

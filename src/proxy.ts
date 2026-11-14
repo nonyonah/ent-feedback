@@ -52,6 +52,13 @@ export default function proxy(request:NextRequest,event:NextFetchEvent){
     if(!origin)return new NextResponse('Documentation is temporarily unavailable.',{status:503,headers:{'Cache-Control':'no-store'}});
     return NextResponse.rewrite(documentationDestination(path,request.nextUrl.search,origin),{request:{headers:documentationRequestHeaders(request.headers,origin)}});
   }
+  // Marketing entry points must remain accessible before a Clerk session exists.
+  // Tenant roots still go through the workspace rewrite above.
+  if (["/", "/pricing", "/privacy", "/terms", "/landing-v2"].includes(path)) {
+    const base=workspaceBaseDomain();
+    const tenant=base?workspaceHandleFromHost(request.headers.get("host")??"",base):null;
+    if(!tenant)return NextResponse.next();
+  }
   return applicationProxy(request,event);
 }
 

@@ -3,8 +3,7 @@ import { MotionPolicy } from "@/components/ui/motion-policy";
 import * as React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
-import {clerkAppearance} from "@/lib/clerk-appearance";
+import { ThemedClerkProvider } from "@/components/feedback/themed-clerk-provider";
 import "driver.js/dist/driver.css";
 import "./globals.css";
 import { FeedbackProvider } from "@/components/feedback/feedback-provider";
@@ -32,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="flex min-h-full flex-col">
         <MotionPolicy />
-        <ClerkProvider signInUrl="/auth" signUpUrl="/auth?mode=signup" signInForceRedirectUrl="/auth/continue?intent=workspace" signUpForceRedirectUrl="/auth/continue?intent=workspace" appearance={clerkAppearance} afterSignOutUrl="/">
+        <ThemedClerkProvider>
           <React.Suspense fallback={null}><AnalyticsProvider /></React.Suspense>
           <ProjectProvider><FeedbackProvider>
             <ToastProvider position="bottom-right">
@@ -40,7 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <div className="flex flex-1 flex-col">{children}</div>
             </ToastProvider>
           </FeedbackProvider></ProjectProvider>
-        </ClerkProvider>
+        </ThemedClerkProvider>
       </body>
     </html>
   );

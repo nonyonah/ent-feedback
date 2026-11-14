@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import {authContinuation,type AuthIntent} from "@/lib/auth-flow";
-import { clerkAppearance } from "@/lib/clerk-appearance";
 
 function LoadingAuth() {
   return <p role="status" className="text-sm text-muted-foreground">Loading…</p>;
@@ -31,7 +30,6 @@ export function AuthWidget({ isSignUp, next, intent="workspace" }: { isSignUp: b
       signInForceRedirectUrl={signInRedirect}
       forceRedirectUrl={signUpRedirect}
       fallbackRedirectUrl={signUpRedirect}
-      appearance={clerkAppearance}
     />
   ) : (
     <SignIn
@@ -40,7 +38,6 @@ export function AuthWidget({ isSignUp, next, intent="workspace" }: { isSignUp: b
       signUpForceRedirectUrl={signUpRedirect}
       forceRedirectUrl={signInRedirect}
       fallbackRedirectUrl={signInRedirect}
-      appearance={clerkAppearance}
     />
   );
 }

@@ -22,7 +22,7 @@ export async function startCheckout(workspaceId:string,interval:BillingInterval)
   const [subscription]=await tx.select().from(workspaceSubscriptions).where(eq(workspaceSubscriptions.workspaceId,workspaceId)).limit(1);
   if(subscription&&['active','trialing','past_due','paused','unpaid'].includes(subscription.status))throw new ServiceError('conflict','This workspace already has a subscription. Use Manage subscription instead.');
   const [pending]=await tx.select().from(billingCheckouts).where(and(eq(billingCheckouts.workspaceId,workspaceId),inArray(billingCheckouts.status,['creating','open']))).orderBy(desc(billingCheckouts.createdAt)).limit(1);
-  if(pending&&pending.expiresAt.getTime()>Date.now()&&pending.productId===billingProduct(pending.interval)){
+  if(pending&&pending.expiresAt.getTime()>Date.now()&&(pending.interval==='monthly'||pending.interval==='yearly')&&pending.productId===billingProduct(pending.interval)){
    if(pending.interval!==interval)throw new ServiceError('conflict','A checkout is already open for the other billing period. Complete it or wait for it to expire before switching.');
    return pending;
   }

@@ -8,7 +8,7 @@ import {SettingGroup} from './settings-layout';
 import {toastManager} from '@/components/ui/toast';
 import {BrandLogo} from './brand-logo';
 import {Button} from '@/components/ui/button';
-import {Select,SelectTrigger,SelectValue,SelectPopup,SelectItem} from '@/components/ui/select';
+import {Tabs,TabsList,TabsTab} from '@/components/ui/tabs';
 import {loadBillingAction,checkoutAction} from '@/server/actions/billing';
 import {ManageSubscriptionDialog} from './manage-subscription-dialog';
 import {openBillingOverlay} from '@/lib/billing-overlay';
@@ -18,9 +18,8 @@ export function BillingSettings(){
  const {project,workspaceReady}=useProject();const params=useSearchParams();const cache=useBillingCache();
  const [summary,setSummary]=React.useState<Summary|null>(()=>cache?.get(project.id)??null),[pending,setPending]=React.useState(false),[attempt,setAttempt]=React.useState(0);
  const [interval,setInterval]=React.useState<BillingInterval>(params.get('interval')==='yearly'?'yearly':'monthly');
- const [mode,setMode]=React.useState<BillingMode>('subscription');
  const [awaitingConfirmation,setAwaitingConfirmation]=React.useState<{mode:BillingMode;previousUntil:string|null}|null>(null);
- const effectiveMode:BillingMode=summary?.prepaidActive?'prepaid':mode;
+ const effectiveMode:BillingMode=summary?.prepaidActive?'prepaid':'subscription';
  const summaryRevision=React.useRef(0);
  const overlay=React.useRef<{close:()=>void}|null>(null);
  React.useEffect(()=>()=>{overlay.current?.close();overlay.current=null;},[project.id]);
@@ -30,15 +29,15 @@ export function BillingSettings(){
   void refresh();const timer=window.setInterval(()=>{if(document.visibilityState==='visible')void refresh();},15_000);
   return()=>{cancelled=true;window.clearInterval(timer);};
  },[project.id,workspaceReady,attempt,cache]);
- async function openCheckout(){
+ async function openCheckout(checkoutMode:BillingMode=effectiveMode){
   if(pending)return;
   setPending(true);
   try{
-   const result=await checkoutAction(project.id,interval,effectiveMode);
+   const result=await checkoutAction(project.id,interval,checkoutMode);
    if(!result.ok)throw Error(result.error.message);
    overlay.current=await openBillingOverlay(result.data.url,event=>{
     if(event.type==='checkout.closed'){overlay.current=null;setPending(false);setAttempt(value=>value+1);}
-    if(event.type==='checkout.completed'){captureAnalytics('checkout_returned',{interval});setAwaitingConfirmation({mode:effectiveMode,previousUntil:summary?.prepaidUntil??null});setAttempt(value=>value+1);}
+    if(event.type==='checkout.completed'){captureAnalytics('checkout_returned',{interval});setAwaitingConfirmation({mode:checkoutMode,previousUntil:summary?.prepaidUntil??null});setAttempt(value=>value+1);}
     if(['checkout.failed','checkout.error','checkout.expired'].includes(event.type)){
      toastManager.add({type:'error',title:event.type==='checkout.expired'?'Checkout expired':'Checkout could not be completed',description:'Please try again. Your subscription updates after billing confirmation.'});
     }
@@ -69,6 +68,7 @@ export function BillingSettings(){
   <div className="flex flex-col gap-5">
   {summary&&<>
    <div className="flex flex-col gap-3">
+    {summary.owner&&needsCheckout&&<div className="flex justify-end"><Tabs value={interval} onValueChange={value=>{if(value==='monthly'||value==='yearly')setInterval(value);}}><TabsList size="sm" aria-label="Billing period"><TabsTab value="monthly" disabled={pending}>$7 monthly</TabsTab><TabsTab value="yearly" disabled={pending}>$70 yearly</TabsTab></TabsList></Tabs></div>}
 
     <div className="rounded-[18px] bg-background shadow-[inset_0_0_0_1px_var(--color-border)] dark:bg-card">
      <div className="flex items-center gap-3.5 px-4 py-3.5">
@@ -78,10 +78,6 @@ export function BillingSettings(){
       <div className="min-w-0 flex-1"><p className="text-[13px] font-medium leading-[1.35] tracking-[-0.065px]">{planLabel}</p>{summary.status!=='none'&&<p className="mt-1 text-xs capitalize text-muted-foreground">{status}{summary.cancelAtPeriodEnd?' · Cancellation scheduled':''}</p>}</div>
      </div>
     </div>
-    {summary.owner&&needsCheckout&&<div className="grid gap-3 px-4 sm:grid-cols-2">
-     <div className="space-y-1.5"><label id="billing-payment-label" className="text-xs font-medium">Payment</label><Select value={effectiveMode} disabled={pending||summary.prepaidActive} items={[{value:'subscription',label:'Auto-renew · Card'},{value:'prepaid',label:'Pay once · Card, bank or crypto'}]} onValueChange={value=>{if(value==='subscription'||value==='prepaid')setMode(value);}}><SelectTrigger aria-labelledby="billing-payment-label" className="h-9 min-h-9 w-full min-w-0 text-[13px] max-sm:h-11"><SelectValue/></SelectTrigger><SelectPopup><SelectItem value="subscription">Auto-renew · Card</SelectItem><SelectItem value="prepaid">Pay once · Card, bank or crypto</SelectItem></SelectPopup></Select></div>
-     <div className="space-y-1.5"><label id="billing-period-label" className="text-xs font-medium">Access period</label><Select value={interval} disabled={pending} items={[{value:'monthly',label:'One month · $7'},{value:'yearly',label:'One year · $70'}]} onValueChange={value=>{if(value==='monthly'||value==='yearly')setInterval(value);}}><SelectTrigger aria-labelledby="billing-period-label" className="h-9 min-h-9 w-full min-w-0 text-[13px] max-sm:h-11"><SelectValue/></SelectTrigger><SelectPopup><SelectItem value="monthly">One month · $7</SelectItem><SelectItem value="yearly">One year · $70</SelectItem></SelectPopup></Select></div>
-    </div>}
     {summary.owner&&<div className="flex flex-wrap items-center gap-2.5 px-4">
      {needsCheckout&&<><Button size="sm" className="h-9 sm:h-9 max-sm:h-11 rounded-[10px] px-4 text-[13px]" disabled={pending||!summary.configured} onClick={()=>void openCheckout()}>{pending?'Opening…':effectiveMode==='prepaid'?(summary.prepaidActive?'Extend Essentials':`Pay $${interval==='monthly'?'7':'70'} once`):summary.trialUsed?'Subscribe':'Get Free Trial'}</Button></>}
      {summary.canManage&&<ManageSubscriptionDialog key={project.id} workspaceId={project.id} onUpdated={updateSummary} disabled={pending||!summary.configured}/>}
@@ -97,7 +93,7 @@ export function BillingSettings(){
    <SettingGroup title="Usage">
     <UsageRow title="Posts and voters" value="Unlimited"/>
     <div className="mx-4 h-px bg-border/60"/>
-    <UsageRow title="Feedback boards" value={`${summary.boardCount} of ${summary.boardLimit}`} active={summary.boardCount>0}/>
+    <UsageRow title="Feedback boards" value={`${summary.boardCount} of ${summary.boardLimit}`} usage={{count:summary.boardCount,limit:summary.boardLimit}}/>
     <div className="mx-4 h-px bg-border/60"/>
     <UsageRow title="Powered by badge" value={summary.hideAttribution?'Hidden':'Included'}/>
     <div className="mx-4 h-px bg-border/60"/>
@@ -112,6 +108,7 @@ export function BillingSettings(){
  </div></section>;
 }
 
-function UsageRow({title,value,active=false}:{title:string;value:string;active?:boolean}){
- return <div className="flex items-center justify-between gap-4 px-4 py-3"><p className="text-[13px] font-medium tracking-[-0.065px]">{title}</p><div className="relative flex h-[22px] w-[148px] shrink-0 items-center justify-center overflow-hidden rounded-[7px] bg-muted text-[11px] font-medium tabular-nums tracking-[-0.055px] text-muted-foreground">{active&&<span className="absolute inset-y-[3px] left-[3px] w-1 rounded-sm bg-emerald-500"/>}<span>{value}</span></div></div>;
+function UsageRow({title,value,usage}:{title:string;value:string;usage?:{count:number;limit:number}}){
+ const percent=usage&&usage.limit>0?Math.max(0,Math.min(100,usage.count/usage.limit*100)):0;
+ return <div className="flex items-center justify-between gap-4 px-4 py-3"><p className="text-[13px] font-medium tracking-[-0.065px]">{title}</p><div role={usage?'progressbar':undefined} aria-label={usage?title:undefined} aria-valuemin={usage?0:undefined} aria-valuemax={usage?.limit} aria-valuenow={usage?Math.min(usage.count,usage.limit):undefined} aria-valuetext={usage?value:undefined} className="relative flex h-[22px] w-[148px] shrink-0 items-center justify-center overflow-hidden rounded-[7px] bg-muted text-[11px] font-medium tabular-nums tracking-[-0.055px] text-muted-foreground">{usage&&<span aria-hidden="true" className="absolute inset-[3px] overflow-hidden rounded-[4px]"><span className="block h-full rounded-[4px] bg-emerald-600" style={{width:`${percent}%`}}/></span>}<span className={usage?'relative text-white':undefined}>{value}</span></div></div>;
 }

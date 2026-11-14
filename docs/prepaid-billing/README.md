@@ -2,7 +2,7 @@
 
 14 November 2026. Local implementation; not pushed or deployed.
 
-Settings → Billing offers Auto-renew (USD card subscriptions, existing 14-day trial) and Pay once ($7 for one calendar month or $70 for one calendar year). Pay once has no trial or automatic renewal. Bachs presents eligible currencies and payment methods, subject to account settings and payment minimums. No additional Bachs products are required for prepaid checkout.
+Settings → Billing retains the compact monthly/yearly tabs. Its primary action starts a USD card subscription with the existing 14-day trial. The separate Pay once action was removed at the user’s request; existing prepaid plans retain Extend Essentials. The prepaid server flow remains available for one-time checkout ($7 for one calendar month or $70 for one calendar year). Payment-method and currency selection remain inside Bachs. Pay once has no trial or automatic renewal. Bachs presents eligible currencies and payment methods, subject to account settings and payment minimums. No additional Bachs products are required for prepaid checkout.
 
 | Before | After | Why |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Active card subscriptions cannot simultaneously start prepaid checkout. Active p
 
 ## Local testing
 
-1. Open Settings → Billing and choose Pay once and an access period.
+1. For an existing prepaid plan, open Settings → Billing, choose a monthly/yearly tab and select Extend Essentials. There is no separate prepaid-entry action for new subscriptions.
 2. Use a sandbox account. A public tunnel forwarding to localhost:3000 is needed for a sandbox webhook endpoint at `/api/webhooks/bachs`; use its corresponding signing secret locally. Do not replace the production endpoint. No tunnel was running when this review finished.
 3. Subscribe that endpoint to `checkout.completed`, `collection.succeeded`, `collection.underpaid` and refund events in addition to existing subscription/invoice events. Set the allowed checkout return origin to the temporary public origin if required by the checkout flow.
 4. Complete a sandbox payment and confirm the verified expiry appears. Check duplicate delivery, manual extension and underpayment before publishing.

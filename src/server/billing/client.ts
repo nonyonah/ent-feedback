@@ -17,7 +17,7 @@ export function billingProduct(interval:BillingInterval,trial:boolean){
 export function billingReady(){const e=getServerEnv();return Boolean(e.BACHS_API_KEY&&e.BACHS_WEBHOOK_SECRET&&e.BACHS_ORGANIZATION_ID&&e.BACHS_MONTHLY_PRODUCT_ID&&e.BACHS_YEARLY_PRODUCT_ID&&e.BACHS_MONTHLY_TRIAL_PRODUCT_ID&&e.BACHS_YEARLY_TRIAL_PRODUCT_ID);}
 export function billingRedirect(value:string,kind:'checkout'|'portal'){
  const url=new URL(value);const sandbox=bachsClient().environment==='sandbox';
- const hosts=kind==='checkout'?['checkout.bachs.io',...(sandbox?['sandbox-checkout.bachs.io']:[])]:['portal.bachs.io',...(sandbox?['sandbox-portal.bachs.io']:[])];
+ const hosts=kind==='checkout'?['checkout.bachs.io',...(sandbox?['sandbox-checkout.bachs.io']:[])]:['portal.bachs.io',...(sandbox?['sandbox-portal.bachs.io','sandbox-billing.bachs.io']:[])];
  if(url.protocol!=='https:'||url.username||url.password||!hosts.includes(url.hostname)||url.port)throw new ServiceError('retryable','Billing returned an invalid destination. Please try again.');
  return url.href;
 }

@@ -1,0 +1,36 @@
+/* Mint's CTA uses colors.dark even in light mode. Give the action its own
+   contrasting pair without darkening links throughout dark documentation. */
+#topbar-cta-button {
+  --ent-cta-background: #212529;
+  --ent-cta-foreground: #ffffff;
+  --ent-cta-hover: #343a40;
+}
+.dark #topbar-cta-button {
+  --ent-cta-background: #e8e8e8;
+  --ent-cta-foreground: #212529;
+  --ent-cta-hover: #ffffff;
+}
+#topbar-cta-button > a {
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: var(--ent-cta-background);
+  color: var(--ent-cta-foreground);
+  font-weight: 600;
+}
+#topbar-cta-button > a > span.absolute {
+  background: transparent;
+}
+#topbar-cta-button > a span,
+#topbar-cta-button > a svg {
+  color: inherit;
+}
+#topbar-cta-button > a:focus-visible {
+  outline: 2px solid var(--ent-cta-background);
+  outline-offset: 3px;
+}
+@media (hover: hover) and (pointer: fine) {
+  #topbar-cta-button > a:hover {
+    background: var(--ent-cta-hover);
+  }
+}

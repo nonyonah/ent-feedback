@@ -1,0 +1,17 @@
+.container{container-type:inline-size;width:100%;min-width:0}
+.toolbar{display:grid;grid-template-columns:minmax(0,1fr) 44px auto;align-items:center;gap:8px;min-width:0}
+.statusDropdown{min-width:0;max-width:180px}
+.statusTrigger{width:100%;min-width:0;min-height:44px;padding-inline:8px;gap:4px;font-size:13px}
+.chips{display:none}
+.sortTrigger{width:44px;min-width:44px;min-height:44px;padding:0;justify-content:center;gap:0;box-shadow:none}
+.submit{min-width:0}
+.submit>button{min-height:44px;max-width:128px;padding-inline:10px;font-size:13px;line-height:1.25;white-space:normal;gap:0}
+.submit>button svg{display:none}
+@container (min-width:880px){
+ .toolbar{display:flex;gap:16px}
+ .statusDropdown{display:none}
+ .chips{display:flex;align-items:center;gap:12px;margin-inline-end:auto}
+ .sortTrigger{min-height:36px;height:36px;width:36px;min-width:36px}
+ .submit>button{min-height:36px;height:36px;max-width:none;white-space:nowrap;gap:8px;padding-inline:12px}
+ .submit>button svg{display:block}
+}

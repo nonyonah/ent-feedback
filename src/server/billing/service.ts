@@ -10,6 +10,7 @@ import {ServiceError} from '@/server/result';
 import {consumeRateLimit} from '@/server/rate-limit';
 import {billingPlan,type BillingInterval,type BillingMode} from '@/lib/billing';
 import {bachsClient,billingProduct,billingReady,billingRedirect} from './client';
+import {trialAlreadyUsed,trialSubjects,reserveTrial,releasableTrialAttempts,trialUsedMessage} from './trials';
 
 export async function startCheckout(workspaceId:string,interval:BillingInterval,mode:BillingMode='subscription'){
  const user=await requireAppUser();const db=getDb();
@@ -17,18 +18,23 @@ export async function startCheckout(workspaceId:string,interval:BillingInterval,
  if(!billingReady())throw new ServiceError('retryable','Billing setup is still in progress. Please try again later.');
  if(!user.email)throw new ServiceError('validation','Add a verified email address to your account before subscribing.');
  await consumeRateLimit('billing:'+workspaceId,6,60);
+ const subjects=mode==='subscription'?trialSubjects(workspaceId,user):[];
+ const releasable=mode==='subscription'?await releasableTrialAttempts(db,subjects):[];
  const attempt=await db.transaction(async tx=>{
   await tx.select({id:workspaces.id}).from(workspaces).where(eq(workspaces.id,workspaceId)).for('update');
   const [subscription]=await tx.select().from(workspaceSubscriptions).where(eq(workspaceSubscriptions.workspaceId,workspaceId)).limit(1);
+  if(mode==='subscription'&&(subscription?.trialUsed||await trialAlreadyUsed(tx,workspaceId,user)))throw new ServiceError('conflict',trialUsedMessage);
   if(subscription&&['active','trialing','past_due','paused','unpaid'].includes(subscription.status))throw new ServiceError('conflict','This workspace already has a subscription. Use Manage subscription instead.');
   if(mode==='subscription'&&subscription?.prepaidUntil&&subscription.prepaidUntil.getTime()>Date.now())throw new ServiceError('conflict','Prepaid Essentials is active. Renew with Pay once, or start a card subscription after prepaid access ends.');
   const [pending]=await tx.select().from(billingCheckouts).where(and(eq(billingCheckouts.workspaceId,workspaceId),inArray(billingCheckouts.status,['creating','open']))).orderBy(desc(billingCheckouts.createdAt)).limit(1);
   if(pending&&pending.expiresAt.getTime()>Date.now()&&(pending.interval==='monthly'||pending.interval==='yearly')&&(pending.mode==='prepaid'||pending.productId===billingProduct(pending.interval))){
    if(pending.interval!==interval||pending.mode!==mode)throw new ServiceError('conflict','A checkout is already open with different payment options. Complete it or wait for it to expire before switching.');
+   if(mode==='subscription')await reserveTrial(tx,subjects,pending.id,pending.expiresAt,releasable);
    return pending;
   }
   if(pending)await tx.update(billingCheckouts).set({status:'expired',checkoutUrl:null,updatedAt:new Date()}).where(eq(billingCheckouts.id,pending.id));
   const [created]=await tx.insert(billingCheckouts).values({id:randomUUID(),workspaceId,interval,mode,amount:billingPlan[interval],productId:mode==='prepaid'?'prepaid:'+interval:billingProduct(interval),expiresAt:new Date(Date.now()+31*60_000)}).returning();
+  if(mode==='subscription')await reserveTrial(tx,subjects,created.id,created.expiresAt,releasable);
   return created;
  });
  if(attempt.status==='open'&&attempt.checkoutUrl)return {url:billingRedirect(attempt.checkoutUrl,'checkout')};

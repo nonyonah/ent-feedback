@@ -13,7 +13,7 @@ await esbuild.build({
     build.onLoad({ filter: /.*/, namespace: 'mock' }, a => ({ contents: a.path === 'server-only' ? '' : `export function requireProviderEnv(){return {SENDBYTE_API_KEY:'test-key',EMAIL_FROM:'Ent <noreply@example.com>',NEXT_PUBLIC_APP_URL:'https://example.com'}}`, loader: 'js' }));
   } }],
 });
-const { sendActivityEmail, sendInvitationEmail } = createRequire(import.meta.url)(output);
+const { sendActivityEmail, sendInvitationEmail, sendTrialEmail } = createRequire(import.meta.url)(output);
 const originalFetch = globalThis.fetch;
 let requests = [];
 try {
@@ -33,6 +33,11 @@ try {
   assert.ok(requests[0].signal instanceof AbortSignal);
   await sendInvitationEmail({ to: input.to, workspaceName: 'Workspace', inviterName: 'Owner', role: 'member', token: 'stable-token' });
   assert.equal(requests.at(-1).body.idempotency_key, 'invitation:stable-token');
+  const trial={to:input.to,key:'trial:stable-retry',kind:'ending',workspaceName:'<Workspace>',trialEnd:'2026-11-28T12:00:00Z',cancelAtPeriodEnd:true,appOrigin:'https://example.com'};
+  await sendTrialEmail(trial);await sendTrialEmail(trial);
+  assert.equal(requests.at(-1).body.idempotency_key,requests.at(-2).body.idempotency_key);
+  assert.match(requests.at(-1).body.text,/Renewal is canceled/);
+  assert.match(requests.at(-1).body.html,/&lt;Workspace&gt;/);
   for (const response of [Response.json({ secret: 'private-provider-detail' }, { status: 429 }), Response.json({}), new Response('invalid-json')]) {
     globalThis.fetch = async () => response;
     await assert.rejects(sendActivityEmail(input), error => error.code === 'retryable' && !error.message.includes('private-provider-detail'));

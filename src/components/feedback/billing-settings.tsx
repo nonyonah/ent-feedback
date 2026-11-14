@@ -9,7 +9,6 @@ import {toastManager} from '@/components/ui/toast';
 import {BrandLogo} from './brand-logo';
 import {Button} from '@/components/ui/button';
 import {Tabs,TabsList,TabsTab} from '@/components/ui/tabs';
-import {Dialog,DialogTrigger,DialogPopup,DialogHeader,DialogTitle,DialogDescription,DialogFooter} from '@/components/ui/dialog';
 import {loadBillingAction,checkoutAction} from '@/server/actions/billing';
 import {ManageSubscriptionDialog} from './manage-subscription-dialog';
 import {openBillingOverlay} from '@/lib/billing-overlay';
@@ -21,8 +20,6 @@ export function BillingSettings(){
  const [interval,setInterval]=React.useState<BillingInterval>(params.get('interval')==='yearly'?'yearly':'monthly');
  const [awaitingConfirmation,setAwaitingConfirmation]=React.useState<{mode:BillingMode;previousUntil:string|null}|null>(null);
  const effectiveMode:BillingMode=summary?.prepaidActive?'prepaid':'subscription';
- const [checkoutChoiceOpen,setCheckoutChoiceOpen]=React.useState(false);
- const [checkoutMode,setCheckoutMode]=React.useState<BillingMode>('subscription');
  const summaryRevision=React.useRef(0);
  const overlay=React.useRef<{close:()=>void}|null>(null);
  React.useEffect(()=>()=>{overlay.current?.close();overlay.current=null;},[project.id]);
@@ -38,9 +35,6 @@ export function BillingSettings(){
   try{
    const result=await checkoutAction(project.id,interval,checkoutMode);
    if(!result.ok)throw Error(result.error.message);
-   setCheckoutChoiceOpen(false);
-   // Let the app dialog release its focus trap before Bachs mounts its overlay.
-   await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
    overlay.current=await openBillingOverlay(result.data.url,event=>{
     if(event.type==='checkout.closed'){overlay.current=null;setPending(false);setAttempt(value=>value+1);}
     if(event.type==='checkout.completed'){captureAnalytics('checkout_returned',{interval});setAwaitingConfirmation({mode:checkoutMode,previousUntil:summary?.prepaidUntil??null});setAttempt(value=>value+1);}
@@ -85,22 +79,11 @@ export function BillingSettings(){
      </div>
     </div>
     {summary.owner&&<div className="flex flex-wrap items-center gap-2.5 px-4">
-     {needsCheckout&&<Dialog open={checkoutChoiceOpen} onOpenChange={next=>{if(pending)return;setCheckoutChoiceOpen(next);if(next)setCheckoutMode(effectiveMode);}}>
-      <DialogTrigger render={<Button size="sm" className="h-9 max-sm:h-11 rounded-[10px] px-4 text-[13px]" disabled={pending||!summary.configured}/>}>{pending?'Opening…':summary.prepaidActive?'Extend Essentials':summary.trialUsed?'Subscribe':'Get Free Trial'}</DialogTrigger>
-      <DialogPopup bottomStickOnMobile={false} showCloseButton={!pending} className="max-w-[440px] overflow-y-auto overscroll-contain">
-       <DialogHeader className="gap-1 pe-8 pb-0"><DialogTitle className="text-[15px] font-semibold">Essentials checkout</DialogTitle><DialogDescription className="text-[13px] leading-5">{interval==='yearly'?'$70 for one year':'$7 for one month'}. Choose how you’d like to pay.</DialogDescription></DialogHeader>
-       <div className="space-y-3 px-6 py-5" aria-busy={pending}>
-        {!summary.prepaidActive&&<Button variant="outline" aria-pressed={checkoutMode==='subscription'} disabled={pending} onClick={()=>setCheckoutMode('subscription')} className={`h-auto w-full flex-col items-start gap-1 whitespace-normal rounded-xl p-3 text-start shadow-none ${checkoutMode==='subscription'?'border-primary bg-accent':''}`}><span className="text-[13px] font-semibold">{summary.trialUsed?'Subscribe with a card':'Start a 14-day free trial'}</span><span className="text-[13px] font-normal leading-5 text-muted-foreground">USD card. Renews automatically. Cancel anytime.</span></Button>}
-        <Button variant="outline" aria-pressed={checkoutMode==='prepaid'} disabled={pending} onClick={()=>setCheckoutMode('prepaid')} className={`h-auto w-full flex-col items-start gap-1 whitespace-normal rounded-xl p-3 text-start shadow-none ${checkoutMode==='prepaid'?'border-primary bg-accent':''}`}><span className="text-[13px] font-semibold">Pay once</span><span className="text-[13px] font-normal leading-5 text-muted-foreground">Card, bank transfer or crypto, where available. No free trial or automatic renewal.</span></Button>
-        <p className="text-xs leading-5 text-muted-foreground">Choose your currency and an available payment method in Bachs. Options depend on your currency, amount and account availability.</p>
-       </div>
-       <DialogFooter><Button variant="ghost" disabled={pending} onClick={()=>setCheckoutChoiceOpen(false)}>Cancel</Button><Button disabled={pending} onClick={()=>void openCheckout(checkoutMode)} className="h-9 rounded-[10px] text-[13px] max-sm:h-11">{pending?'Opening checkout…':checkoutMode==='prepaid'?`Pay $${interval==='yearly'?'70':'7'} once`:'Continue to Bachs'}</Button></DialogFooter>
-      </DialogPopup>
-     </Dialog>}
+     {needsCheckout&&<Button size="sm" className="h-9 max-sm:h-11 rounded-[10px] px-4 text-[13px]" disabled={pending||!summary.configured} onClick={()=>void openCheckout(summary.trialUsed||summary.prepaidActive?'prepaid':'subscription')}>{pending?'Opening…':summary.prepaidActive?'Extend Essentials':summary.trialUsed?`Pay $${interval==='yearly'?'70':'7'}`:'Start free trial'}</Button>}
      {summary.canManage&&<ManageSubscriptionDialog key={project.id} workspaceId={project.id} onUpdated={updateSummary} disabled={pending||!summary.configured}/>}
 
     </div>}
-    {needsCheckout&&<p className="px-4 text-xs leading-5 text-muted-foreground">{effectiveMode==='prepaid'?'Pay upfront. No free trial or automatic renewal. Choose your currency and an available payment method in checkout. Any bank conversion or processing fees are shown there.':summary.trialUsed?'Your trial has been used. Review the billing start date in checkout.':`${billingPlan.trialDays} days free. Card required. Cancel before the trial ends to avoid a charge.`}</p>}
+    {needsCheckout&&<p className="px-4 text-xs leading-5 text-muted-foreground">{effectiveMode==='prepaid'?'Pay upfront. No free trial or automatic renewal. Choose your currency and an available payment method in checkout. Any bank conversion or processing fees are shown there.':summary.trialUsed?'Your free trial has already been used. Pay once to continue; no automatic renewal.':`${billingPlan.trialDays} days free. Free trial available once per account and workspace, with a USD card only. Cancel before the trial ends to avoid a charge.`}</p>}
     {!summary.configured&&<p className="px-4 text-xs text-muted-foreground">Billing setup is in progress.</p>}
     {!summary.owner&&<p className="px-4 text-xs text-muted-foreground">Only the workspace owner can manage billing.</p>}
     {summary.status==='prepaid'&&summary.prepaidUntil&&<p className="px-4 text-xs text-muted-foreground">Prepaid access until {date(summary.prepaidUntil)}. Added time starts after your remaining prepaid access.</p>}

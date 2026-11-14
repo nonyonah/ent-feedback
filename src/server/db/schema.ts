@@ -675,3 +675,11 @@ export const billingCheckouts = pgTable('billing_checkouts', {
 export const billingWebhookEvents = pgTable('billing_webhook_events', {
  id:text('id').primaryKey(),type:text('type').notNull(),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
 });
+// No workspace/user cascade: deleting a workspace must not reset trial eligibility.
+export const billingTrialClaims = pgTable('billing_trial_claims', {
+ subject:text('subject').primaryKey(),
+ checkoutAttemptId:uuid('checkout_attempt_id').references(()=>billingCheckouts.id,{onDelete:'set null'}),
+ usedAt:timestamp('used_at',{withTimezone:true}),
+ expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),
+ ...timestamps(),
+});

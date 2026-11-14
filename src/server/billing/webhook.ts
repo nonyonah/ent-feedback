@@ -8,6 +8,8 @@ import {applyPrepaidEvent} from './prepaid';
 import {getServerEnv} from '@/server/env';
 import {bachsClient} from './client';
 import {billingSnapshot,subscriptionValues,recordedBillingProduct} from './snapshot';
+import {consumeTrial} from './trials';
+import {enqueueTrialEmails} from './trial-emails';
 
 const supported=new Set(['customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','invoice.paid','invoice.payment_failed']);
 /** Raised when another webhook wrote newer provider state while this one waited for the lock. */
@@ -46,6 +48,8 @@ export async function applyBillingEvent(event:WebhookEvent){
     if(current?.customerId&&current.customerId!==candidate.customer.customer_id)throw Error('Subscription identity changed');
     if(!known&&(!checkout||checkout.mode!=='subscription'||candidate.metadata?.workspace_id!==workspaceId||checkout.productId!==candidate.product_id))throw Error('Checkout binding mismatch');
     const values=subscriptionValues(candidate,known?recordedBillingProduct(candidate,checkout,workspaceId):undefined);
+    if(checkout)await consumeTrial(tx,checkout.id);
+    if(candidate.status==='trialing'&&values.trialEnd)await enqueueTrialEmails(tx,{workspaceId,subscriptionId,trialEnd:values.trialEnd});
     await tx.insert(workspaceSubscriptions).values({workspaceId,...values}).onConflictDoUpdate({target:workspaceSubscriptions.workspaceId,set:values});
     if(checkout)await tx.update(billingCheckouts).set({status:'completed',checkoutUrl:null,updatedAt:new Date()}).where(and(eq(billingCheckouts.id,checkout.id),eq(billingCheckouts.workspaceId,workspaceId)));
    });

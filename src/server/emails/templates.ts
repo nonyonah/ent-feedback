@@ -64,3 +64,9 @@ export function lifecycleEmail(input: {kind: LifecycleEmail; appOrigin: string; 
 export function activityEmail(input: {subject: string; title: string; url: string}): EmailTemplate {
   return emailLayout({subject: input.subject, heading: input.subject, body: input.title, action: 'Open feedback', url: input.url, footer: 'Manage notifications from the bell on your feedback board. Unfollow a post to stop status updates.'});
 }
+export type TrialEmailKind='started'|'ending';
+export function trialEmail(input:{kind:TrialEmailKind;workspaceName:string;trialEnd:string;cancelAtPeriodEnd:boolean;appOrigin:string}):EmailTemplate{
+ const end=new Intl.DateTimeFormat('en',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'}).format(new Date(input.trialEnd))+' UTC';
+ const renewal=input.cancelAtPeriodEnd?`Renewal is canceled. Your workspace returns to Free when the trial ends; your feedback stays available.`:`Your saved card will be charged for the selected plan when the trial ends. To avoid a charge, cancel renewal in Billing before ${end}.`;
+ return emailLayout({subject:input.kind==='started'?'Your Ent Essentials trial has started':'Your Ent Essentials trial ends soon',heading:input.kind==='started'?'Your Essentials trial is ready.':'Your trial is ending soon.',body:`${input.kind==='started'?`Essentials is now available for ${input.workspaceName}, with up to 5 boards and no Powered by badge.`:`The Essentials trial for ${input.workspaceName} is ending.`} Your trial ends on ${end}. ${renewal}`,action:'Manage billing',url:new URL('/dashboard/settings/billing',input.appOrigin).href,footer:'An update about your Ent billing. Open the workspace named above to review its subscription.'});
+}

@@ -9,9 +9,12 @@ import {portalError} from '@/server/billing/portal-error';
 import {loadSubscriptionManagement,manageSubscription} from '@/server/billing/management';
 import {subscriptionManagementError} from '@/server/billing/management-error';
 import {readBillingSummary} from '@/server/billing/summary';
+import {trialAlreadyUsed} from '@/server/billing/trials';
 export async function loadBillingAction(workspaceId:string){return runService(async()=>{
  const wid=z.uuid().parse(workspaceId),user=await requireAppUser();const db=getDb();const membership=await requireWorkspaceRole(db,{workspaceId:wid,userId:user.id,minimumRole:'member'});
- return readBillingSummary(wid,membership.role==='owner');
+ const summary=await readBillingSummary(wid,membership.role==='owner');
+ if(membership.role==='owner'&&!summary.trialUsed)summary.trialUsed=await trialAlreadyUsed(db,wid,user);
+ return summary;
 });}
 export async function checkoutAction(workspaceId:string,interval:'monthly'|'yearly',mode:'subscription'|'prepaid'='subscription'){return runService(async()=>{
  try{return await startCheckout(z.uuid().parse(workspaceId),z.enum(['monthly','yearly']).parse(interval),z.enum(['subscription','prepaid']).parse(mode));}catch(error){if(error instanceof ServiceError||error instanceof z.ZodError)throw error;throw new ServiceError('retryable','Checkout could not be opened. Try again; an existing checkout will be reused.');}

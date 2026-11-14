@@ -2,7 +2,7 @@ import "server-only";
 
 import { requireProviderEnv } from "@/server/env";
 import { ServiceError } from "@/server/result";
-import {activityEmail,lifecycleEmail,emailLayout,type LifecycleEmail} from "@/server/emails/templates";
+import {activityEmail,lifecycleEmail,emailLayout,trialEmail,type LifecycleEmail,type TrialEmailKind} from "@/server/emails/templates";
 
 type InvitationEmailInput = {
   to: string;
@@ -92,4 +92,7 @@ export async function sendActivityEmail(input: {
 
 export async function sendLifecycleEmail(input: {to:string;kind:LifecycleEmail;appOrigin:string;unsubscribeUrl:string;key:string}):Promise<void>{
   await sendEmail({to:input.to,key:input.key,...lifecycleEmail(input)});
+}
+export async function sendTrialEmail(input:{to:string;key:string;kind:TrialEmailKind;workspaceName:string;trialEnd:string;cancelAtPeriodEnd:boolean;appOrigin:string}):Promise<void>{
+ await sendEmail({to:input.to,key:input.key,...trialEmail(input)});
 }

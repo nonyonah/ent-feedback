@@ -367,3 +367,6 @@ Slack teammate lookups now use GET query parameters for `users.info`, matching t
 ### Read receipts
 
 Live chat messages show **Sent** and change to **Read** when the recipient views them in the widget or dashboard. Hidden chat tabs do not mark new replies as read. Receipts persist when the page is refreshed. Slack does not expose thread read events; opening a Slack thread does not mark a message as read in Ent.
+
+
+Topics and optional answer overrides are paused alongside AI. Settings show an unavailable state, automatic topic tagging is suspended, and conversation topic chips are hidden. Existing topics and approved answers are retained for later testing.

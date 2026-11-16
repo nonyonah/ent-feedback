@@ -65,7 +65,7 @@ export async function sendVisitor(workspaceId:string,id:string,token:string,inpu
   if(!CHAT_AI_REPLIES_ENABLED){
    await linkChatImages(tx,workspaceId,id,value.requestId,value.images);
    await tx.insert(chatMessages).values({workspaceId,conversationId:id,role:'visitor',requestId:value.requestId,body:value.body});
-   await tx.update(conversations).set({mode:'human',status:'escalated',preview:value.body.slice(0,140),topicIds:conversationTopics(row.topicIds,value.body),lastActivityAt:new Date(),updatedAt:new Date(),unread:true,generationId:null,generationExpiresAt:null}).where(conversationWhere(workspaceId,id));
+   await tx.update(conversations).set({mode:'human',status:'escalated',preview:value.body.slice(0,140),topicIds:CHAT_AI_REPLIES_ENABLED?conversationTopics(row.topicIds,value.body):row.topicIds,lastActivityAt:new Date(),updatedAt:new Date(),unread:true,generationId:null,generationExpiresAt:null}).where(conversationWhere(workspaceId,id));
    await queueChatNotice(tx,workspaceId,id,row.mode==='ai'||!row.preview?'escalation':'followup',value.requestId);
    return false;
   }
@@ -73,7 +73,7 @@ export async function sendVisitor(workspaceId:string,id:string,token:string,inpu
   // Expired generation is fenced by replacing its ID; late responses cannot save.
   await linkChatImages(tx,workspaceId,id,value.requestId,value.images);
   await tx.insert(chatMessages).values({workspaceId,conversationId:id,role:'visitor',requestId:value.requestId,body:value.body});
-  await tx.update(conversations).set({preview:value.body.slice(0,140),topicIds:conversationTopics(row.topicIds,value.body),lastActivityAt:new Date(),updatedAt:new Date(),unread:true,status:row.mode==='human'?'escalated':'open',generationId:null,generationExpiresAt:null}).where(conversationWhere(workspaceId,id));
+  await tx.update(conversations).set({preview:value.body.slice(0,140),topicIds:CHAT_AI_REPLIES_ENABLED?conversationTopics(row.topicIds,value.body):row.topicIds,lastActivityAt:new Date(),updatedAt:new Date(),unread:true,status:row.mode==='human'?'escalated':'open',generationId:null,generationExpiresAt:null}).where(conversationWhere(workspaceId,id));
   if(value.escalate){if(row.mode!=='human')await handoff(tx,workspaceId,id,value.requestId);return false;}
   if(row.mode==='human'){await queueChatNotice(tx,workspaceId,id,'followup',id+':'+Math.floor(Date.now()/300000));return false;}
   await tx.update(conversations).set({generationId:lease,generationExpiresAt:new Date(Date.now()+25000)}).where(conversationWhere(workspaceId,id));return true;

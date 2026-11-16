@@ -1,5 +1,9 @@
 "use server";
 
+import {after} from "next/server";
+import {processNotificationJobs} from "@/server/notification-worker";
+import {processChatJobs} from "@/server/chat/notifications";
+
 import {authenticateConversation,requireChat} from '@/server/chat/service';
 import {conversationFeedback,conversations} from '@/server/db/schema';
 import {createHash,randomUUID} from 'node:crypto';
@@ -96,6 +100,7 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
    if(!who.user)throw new ServiceError('unauthenticated','Sign in to change your feedback type.');
    if(post.authorUserId!==who.user.id)await requireWorkspaceRole(tx,{workspaceId:wid,userId:who.user.id,minimumRole:'admin'});
    await tx.update(feedback).set({category:value.category,updatedAt:new Date()}).where(eq(feedback.id,post.id));
+   if(post.category!==value.category)await publishActivity(tx,{type:'type_changed',workspaceId:wid,feedbackId:post.id,actorId:who.user?.id,eventId:randomUUID()});
   }
   if(value.type==='comment'){
    if(value.parentCommentId){const [parent]=await tx.select().from(comments).where(and(eq(comments.id,value.parentCommentId),eq(comments.feedbackId,post.id),eq(comments.workspaceId,wid),isNull(comments.deletedAt))).limit(1);if(!parent)throw new ServiceError('not_found','The comment you are replying to is unavailable.');}
@@ -122,11 +127,14 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
    const found=value.tagIds.length?await tx.select({id:tags.id}).from(tags).where(and(eq(tags.workspaceId,wid),inArray(tags.id,value.tagIds))):[];
    if(found.length!==value.tagIds.length)throw new ServiceError('validation','Choose tags from this workspace.');
    await tx.update(feedback).set({category:value.category,updatedAt:new Date()}).where(eq(feedback.id,post.id));
+   if(post.category!==value.category)await publishActivity(tx,{type:'type_changed',workspaceId:wid,feedbackId:post.id,actorId:who.user?.id,eventId:randomUUID()});
    await tx.delete(feedbackTags).where(and(eq(feedbackTags.workspaceId,wid),eq(feedbackTags.feedbackId,post.id)));
    if(value.tagIds.length)await tx.insert(feedbackTags).values(value.tagIds.map(tagId=>({workspaceId:wid,feedbackId:post.id,tagId})));
   }
   if(value.type==='delete')await tx.update(feedback).set({deletedAt:new Date(),updatedAt:new Date()}).where(eq(feedback.id,post.id));
  });
+ const feedbackId=createdId??('id' in value?value.id:undefined);
+ if(feedbackId)after(async()=>{await Promise.allSettled([processNotificationJobs(3,{workspaceId:wid,feedbackId}),processChatJobs(2,{workspaceId:wid,feedbackId})]);});
  return {items:await readBoard(wid,workspaceInbox?undefined:bid,who),createdId};
 });}
 

@@ -1,4 +1,5 @@
 import 'server-only';
+import {featureRequestSuggestion} from '@/lib/chat/feature-request';
 import {linkChatImages,chatImageUrl} from './uploads';
 import {createHash,randomBytes,randomUUID} from 'node:crypto';
 import {and,eq,asc,desc,gt,isNull,inArray,sql} from 'drizzle-orm';
@@ -44,7 +45,7 @@ export async function snapshot(workspaceId:string,id:string,cursor?:string,token
  const hasMore=messages.length>50;const page=messages.slice(0,50);const last=page.at(-1);
  const links=await db.select({feedbackId:feedback.id,title:feedback.title}).from(conversationFeedback).innerJoin(feedback,and(eq(feedback.id,conversationFeedback.feedbackId),eq(feedback.workspaceId,conversationFeedback.workspaceId))).where(and(eq(conversationFeedback.workspaceId,workspaceId),eq(conversationFeedback.conversationId,id),isNull(feedback.deletedAt)));
  const presentation=await chatPresentation(workspaceId);
- return {teamReadSequence:row.teamReadSequence,visitorReadSequence:row.visitorReadSequence,presentation,hasName:Boolean(row.visitorName),emailCollection:presentation.details==='none'||!presentation.email?'none':presentation.details==='required'?'required':'optional',id,status:row.status,mode:row.mode,topicIds:row.topicIds,availability:await chatAvailability(workspaceId),hasEmail:Boolean(row.email),messages:page.map(({requestId,authorUserId,...m})=>({...m,images:uploads.filter(image=>image.requestId===requestId&&image.uploaderUserId===(m.role==='visitor'?null:authorUserId)).map(image=>chatImageUrl(image.id)),createdAt:m.createdAt.toISOString()})),cursor:last?String(last.sequence):cursor??null,hasMore,generating:Boolean(row.generationId&&row.generationExpiresAt&&row.generationExpiresAt>new Date()),links};
+ return {teamReadSequence:row.teamReadSequence,visitorReadSequence:row.visitorReadSequence,presentation,hasName:Boolean(row.visitorName),emailCollection:presentation.details==='none'||!presentation.email?'none':presentation.details==='required'?'required':'optional',id,status:row.status,mode:row.mode,topicIds:row.topicIds,availability:await chatAvailability(workspaceId),hasEmail:Boolean(row.email),messages:page.map(({requestId,authorUserId,...m})=>({...m,suggestion:m.suggestion??(m.role==='visitor'&&!links.length?featureRequestSuggestion(m.body):null),images:uploads.filter(image=>image.requestId===requestId&&image.uploaderUserId===(m.role==='visitor'?null:authorUserId)).map(image=>chatImageUrl(image.id)),createdAt:m.createdAt.toISOString()})),cursor:last?String(last.sequence):cursor??null,hasMore,generating:Boolean(row.generationId&&row.generationExpiresAt&&row.generationExpiresAt>new Date()),links};
 }
 export const queueChatNotice=enqueueConversationNotice;
 

@@ -20,8 +20,8 @@ export async function POST(request: Request) {
     const started=Date.now();
     const lifecycleQueue=await enqueueLifecycleEmails(3);
     const prepaidQueue=await enqueuePrepaidReminders(3);
-    const chat=await processChatJobs(1);
     const notifications=await processNotificationJobs(1);
+    const chat=await processChatJobs(1);
     const lifecycle=await processLifecycleEmails(1);
     // A trial job may make two 15s provider calls. Leave room for cleanup on
     // the host's 60s request budget; deferred jobs stay pending for the next tick.

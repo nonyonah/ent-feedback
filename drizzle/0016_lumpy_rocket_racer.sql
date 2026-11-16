@@ -1,0 +1,1 @@
+ALTER TABLE "conversations" ADD COLUMN "visitor_name" text;

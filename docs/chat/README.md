@@ -278,7 +278,7 @@ Sources: [coss Chat UI](https://coss.com/ui/docs/chat),
 - AI replies remain disabled by `CHAT_AI_REPLIES_ENABLED` on the server.
 - Chat composers share the existing feedback `ComposerTools`: emoji search, up to three PNG/JPEG/WebP/GIF images (2 MB each), image previews and removal. Drafts and uploaded IDs survive send retries. The widget has a one-row compact composer.
 - Images are re-encoded to WebP and stored privately in R2. Chat snapshots return seven-day signed image links. Possession of a link grants access until expiry; links must not be placed in analytics or logs. `CRON_SECRET` signs these links; rotating it invalidates old links. Unsent uploads expire after 24 hours and are reclaimed by maintenance.
-- Available teammate avatars come from active workspace members selected as operators in Chat settings, within the configured availability schedule. This is scheduled availability, not device-online presence. Away teams show “Leave us a message”.
+- Available teammate avatars come from selected active members whose Ent heartbeat is recent or whose connected Slack presence is active, within the configured availability schedule. Away teams show “Leave us a message”.
 - Slack uses one thread per conversation or feedback post. Board alerts include Feedback, Bug or Feature request. Emoji and image attachments appear in the thread. Replies by active Ent workspace members (matched to their Slack profile email) import as team messages/comments; outsiders, bots, disconnected integrations and unrelated threads cannot reply into Ent. Standard Slack emoji shortcodes convert to Unicode. Custom Slack emoji are not mirrored as arbitrary remote images.
 - Signed Slack events are durably deduplicated by event ID and queued before acknowledgement. An `after` callback attempts delivery immediately; scheduled maintenance retries failed jobs. Slack chat replies notify the visitor without echoing a second bot message into the same thread.
 
@@ -328,3 +328,45 @@ Optional build-time overrides: `NEXT_PUBLIC_SUPPORT_WORKSPACE_SLUG` and `NEXT_PU
 The widget’s host-visibility event closes it without stealing focus when navigating to an excluded route. Returning to the dashboard reuses the existing iframe and conversation instead of creating another loader. The root integration is not conditioned on Clerk’s signed-in state. It does not automatically pass the host account’s name, email or authentication tokens into the anonymous chat session.
 
 Public Mintlify guides now cover live chat, availability/operators, conversation restoration and Slack status buttons. The existing Conversations and votes guide remains focused on feedback discussions.
+
+### Human-support follow-up
+
+Website/documentation knowledge and answer overrides are paused with AI replies. Existing sources are retained; syncing and answer mutations are rejected on the server until AI is enabled. Widget visitor-details settings now control the live-chat email prompt as well as feedback. Turning off email collection or choosing Don’t ask hides the prompt on the next conversation poll and prevents saving contact details through the chat endpoint.
+
+Visitor and dashboard team replies trigger processing scoped to their conversation, so unrelated queued jobs do not take their immediate-delivery slot. Durable retries still use scheduled maintenance. Slack delivery failures retain only allowlisted provider error codes; Integrations displays recovery guidance for the latest attempted delivery on the connected channel. Reconnect after granting new scopes, and ensure the bot belongs to that channel. Live production delivery must still be checked against the connected workspace; local Neon diagnostics were blocked by hostname resolution during this follow-up.
+
+Verification: scoped lint/type checking and the mocked-provider browser suite passed, including live visitor-policy changes, paused knowledge controls and mobile/dark-mode layouts. Backend policy regressions in `tests/chat/support.ts` passed after connectivity was restored.
+
+### Live widget settings and mobile follow-up
+
+The public chat configuration now includes the saved widget greeting, reply expectation and visitor-details policy. Open widgets refresh this configuration every 15 seconds while visible and recheck it when reopened. Conversation snapshots also refresh the contact/presentation policy. Disabling chat removes its tab and selects Feedback; enabling it restores the navigation without discarding the stored conversation. Automatic reply time intentionally displays no estimate.
+
+Live chat can collect a name, email, both or neither. Required contact details must be saved before sending; the server enforces the requirement and rejects fields disabled by the workspace. Names appear in the conversation list and search. **Migration `0016_lumpy_rocket_racer.sql` adds `conversations.visitor_name` and must be applied before deploying this code. Applied and verified in the configured Neon database on November 16, 2026.**
+
+The mobile host launcher detects visible chat composers and moves above them with a 12px clearance, returning to its normal position when they disappear. A `vh` iframe-size fallback covers browsers without `dvh`. Settings save rows share a component with a 16px gap below their preceding fields.
+
+Verification: browser regressions passed for live greeting/reply-time updates, disabling/re-enabling chat navigation, required name/email before sending, 320px save-row spacing, and launcher/composer non-overlap. The full widget suite passed light/dark, RTL, keyboard, error recovery and 320–1440px checks. The matching isolated database policy regressions passed after Neon connectivity was restored. No live Slack delivery was verified during these changes.
+
+### Operator presence
+
+The widget now shows a green dot beside online teammates and “Online now”. Selected operators qualify when they have a recent Ent heartbeat (90-second expiry) or a fresh active Slack presence (120-second expiry). Away/working-hours settings still take precedence. Dashboard heartbeats run every 30 seconds only while the page is focused/visible and the teammate has interacted within five minutes. Public responses expose only operator name/avatar and availability, not email addresses, Slack identifiers or activity timestamps.
+
+Slack uses the existing `users:read` and `users:read.email` scopes. Email lookup and `users.getPresence` use authenticated GET requests. The public widget schedules a bounded background refresh, with a durable database lease limiting a workspace to one batch per minute, up to three operators per batch, ordered by the oldest check. Presence errors are treated as unknown/offline. Disconnecting or reconnecting invalidates the previous connection’s cached presence. No visitor message is sent to Slack for a presence check.
+
+**Apply migration `0017_puzzling_weapon_omega.sql` after `0016` before deploying. Both were applied and verified in the configured Neon database on November 16, 2026.** Tests cover presence expiry, connection invalidation, Slack API lookup/presence requests, and live widget online/offline changes. Production Slack presence and database integration still require an end-to-end check after migration/deployment.
+
+### Migration and Slack verification — November 16, 2026
+
+`npm run db:migrate` completed against the configured Neon database. An independent hash check found 18 recorded migrations and no pending entries. `public.conversations.visitor_name` and `public.operator_presence` were verified. This does not establish whether a separately configured production database uses the same Neon branch.
+
+The isolated human-support database suite passed after migration. A read-only Slack `auth.test` check confirmed the connected token is valid, has `chat:write`, `users:read` and `users:read.email`, and includes a Slack team mapping. Aggregate diagnostics found three previously failed Slack delivery jobs. No real Slack messages were sent or retried during verification.
+
+Slack teammate lookups now use GET query parameters for `users.info`, matching the provider’s accepted format. The transport fixture rejects JSON POST for this lookup so reply-import tests exercise the required request format. Live delivery and status-button checks are still required after deploying the feature branch.
+
+
+### Read receipts
+
+Live chat messages show **Sent** and change to **Read** when the recipient views them in the widget or dashboard. Hidden chat tabs do not mark new replies as read. Receipts persist when the page is refreshed. Slack does not expose thread read events; opening a Slack thread does not mark a message as read in Ent.
+
+
+Topics and optional answer overrides are paused alongside AI. Settings show an unavailable state, automatic topic tagging is suspended, and conversation topic chips are hidden. Existing topics and approved answers are retained for later testing.

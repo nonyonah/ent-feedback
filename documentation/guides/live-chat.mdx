@@ -5,10 +5,10 @@ description: "Answer visitors from Ent or your connected Slack channel."
 
 ## Turn on chat
 
-Open **Settings → Chat & knowledge**, enable chat and save. The widget shows **Feedback** and **Live chat** in its bottom navigation. Visitors can switch between them without losing their message draft.
+Open **Settings → Chat**, enable chat and save. The widget shows **Feedback** and **Live chat** in its bottom navigation. Visitors can switch between them without losing their message draft.
 
 <Note>
-AI replies are currently paused. Your team handles conversations. Website and documentation knowledge can be prepared in settings, but the assistant does not send automatic replies in this release.
+AI replies are currently paused. Your team handles conversations. Website and documentation knowledge controls are disabled until AI replies are enabled. Saved sources are retained.
 </Note>
 
 ## Find a conversation
@@ -19,7 +19,7 @@ The dashboard’s **Conversations** section has three views:
 - **Open:** conversations in progress.
 - **All:** every conversation, including resolved ones.
 
-Search by message, visitor email, topic or status. Each row shows the visitor, latest message, relative time and status. Timestamps show Now, minutes, hours and then days.
+Search by message, visitor name or email, topic or status. Each row shows the visitor, latest message, relative time and status. Timestamps show Now, minutes, hours and then days.
 
 ## Reply and resolve
 
@@ -31,9 +31,9 @@ Choose **Resolve** when you are done. A new message reopens the conversation. Yo
 
 ## Availability and operators
 
-In **Settings → Chat & knowledge**, choose your team’s availability, timezone, working days and hours, and away message. Choose all workspace members or select existing members as operators.
+In **Settings → Chat**, choose your team’s availability, timezone, working days and hours, and away message. Choose all workspace members or select existing members as operators.
 
-The widget shows available operator avatars according to this configuration. This reflects your availability schedule, rather than tracking whether each teammate’s device is online. Visitors can leave a message while your team is away.
+The widget shows a green dot and **Online now** when a selected teammate is active in Ent or Slack reports them as active. Your availability schedule still applies. App presence expires after heartbeats stop; Slack presence is cached briefly and refreshed while visitors have the widget open. Unknown or expired presence is not shown as online. Visitors can leave a message while nobody is online. Slack matching uses the teammate’s Ent email address.
 
 ## Continue after a refresh
 
@@ -42,3 +42,8 @@ The widget saves a workspace-specific conversation reference in the visitor’s 
 Clearing site data, using a private session or switching browsers/devices can prevent restoration. Separate host websites may have separate browser storage; cross-site session transfer is not provided.
 
 Visitors can optionally leave an email address for the team’s reply. They do not need an Ent account to start a chat. Signing in to your host application does not automatically identify them to Ent.
+
+
+### Read receipts
+
+Live chat messages show **Sent** and change to **Read** when the recipient views them in the widget or dashboard. Hidden chat tabs do not mark new replies as read. Receipts persist when the page is refreshed. Slack does not expose thread read events; opening a Slack thread does not mark a message as read in Ent.

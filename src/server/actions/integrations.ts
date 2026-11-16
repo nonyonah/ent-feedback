@@ -2,11 +2,11 @@
 import {requireFeature} from '@/server/features';
 import {cookies} from 'next/headers';
 import {randomBytes} from 'node:crypto';
-import {and,eq} from 'drizzle-orm';
+import {and,eq,desc,sql} from 'drizzle-orm';
 import {z} from 'zod';
 import {requireAppUser} from '@/server/auth';
 import {getDb} from '@/server/db/client';
-import {chatSettings,integrationConnections} from '@/server/db/schema';
+import {chatSettings,integrationConnections,jobs} from '@/server/db/schema';
 import {requireWorkspaceRole} from '@/server/services/access';
 import {runService,ServiceError} from '@/server/result';
 import {config,providerSchema,returnSchema,secretSchema,providerFetch} from '@/server/integrations';
@@ -23,7 +23,10 @@ export async function loadWorkspaceSlackSettingsAction(workspaceId:string){retur
  const [connection]=await db.select().from(integrationConnections).where(and(eq(integrationConnections.workspaceId,workspaceId),eq(integrationConnections.provider,'slack'),eq(integrationConnections.scope,'workspace'))).limit(1);
  const connected=connection?.authorizationState==='connected';let label='';let repliesReady=false;const key=getServerEnv().INTEGRATION_ENCRYPTION_KEY;
  if(connected&&connection.encryptedSecretRef&&key){try{const secret=secretSchema.parse(unseal(connection.encryptedSecretRef,key,workspaceId+':slack'));label=secret.label;repliesReady=Boolean(secret.teamId&&getServerEnv().SLACK_SIGNING_SECRET);}catch{/* Never expose encrypted credentials. */}}
- return {settings:{slackEscalations:preferences?.slackEscalations??true,slackFollowups:preferences?.slackFollowups??true,slackFeedback:preferences?.slackFeedback??false,slackStatuses:preferences?.slackStatuses??false},slack:{connected,label,repliesReady},canManage:membership.role!=='member'};
+ const [delivery]=connection?await db.select({status:jobs.status,attempts:jobs.attempts,lastError:jobs.lastError}).from(jobs).where(and(eq(jobs.type,'chat_delivery'),sql`${jobs.payload}->>'connectionId' = ${connection.id}`,sql`${jobs.payload}->>'workspaceId' = ${workspaceId}`,sql`${jobs.payload}->>'delivery' = 'slack'`)).orderBy(desc(jobs.createdAt)).limit(1):[];
+ const deliveryHints:Record<string,string>={'Slack: not_in_channel':'Invite Ent to the connected Slack channel.','Slack: channel_not_found':'The connected channel is unavailable. Choose another channel.','Slack: missing_scope':'Reconnect Slack to grant the required permissions.','Slack: invalid_auth':'Slack authorization expired. Reconnect Slack.','Slack: token_revoked':'Slack authorization was revoked. Reconnect Slack.','Slack: account_inactive':'The Slack account is inactive. Reconnect an active account.','Slack: restricted_action':'Your Slack workspace restricts this action. Ask a Slack admin to review the app permissions.','Slack: ratelimited':'Slack is temporarily limiting requests. Delivery will retry.'};
+ const deliveryIssue=delivery&&delivery.status!=='succeeded'&&delivery.attempts>0?(deliveryHints[delivery.lastError??'']??'Slack delivery has not been confirmed. Check the connection and scheduled notification worker.') : null;
+ return {deliveryIssue,settings:{slackEscalations:preferences?.slackEscalations??true,slackFollowups:preferences?.slackFollowups??true,slackFeedback:preferences?.slackFeedback??false,slackStatuses:preferences?.slackStatuses??false},slack:{connected,label,repliesReady},canManage:membership.role!=='member'};
 });}
 export async function saveWorkspaceSlackSettingsAction(workspaceId:string,input:unknown){return runService(async()=>{
  z.uuid().parse(workspaceId);const user=await requireAppUser();const db=getDb();await requireWorkspaceRole(db,{workspaceId,userId:user.id,minimumRole:'admin'});const value=slackSettingsSchema.parse(input);

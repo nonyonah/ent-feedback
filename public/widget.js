@@ -40,11 +40,32 @@
   frame.id = "ent-feedback-panel";
   frame.title = "Feedback board";
   frame.src = origin + "/embed?project=" + encodeURIComponent(project) + "&board=" + encodeURIComponent(script.dataset.board || "product");
-  frame.style.cssText = "display:none;position:fixed;right:16px;bottom:80px;width:min(384px,calc(100vw - 32px));height:min(693px,calc(100dvh - 112px));border:0;outline:0;border-radius:20px;background:white;box-shadow:0 12px 32px #0002;z-index:2147483000";
+  frame.style.cssText = "display:none;position:fixed;right:16px;bottom:80px;width:min(384px,calc(100vw - 32px));height:min(693px,calc(100vh - 112px));height:min(693px,calc(100dvh - 112px));border:0;outline:0;border-radius:20px;background:white;box-shadow:0 12px 32px #0002;z-index:2147483000";
   button.setAttribute("aria-controls", frame.id);
   frame.style.transformOrigin = "bottom right";
   let open = false;
   let activeAnimation = null;
+  function positionLauncher() {
+    let bottom = 20;
+    if (!open && window.innerWidth <= 640) {
+      for (const composer of document.querySelectorAll('[data-slot="composer"]')) {
+        const rect = composer.getBoundingClientRect();
+        if (rect.width > 0 && rect.top < window.innerHeight && rect.bottom > 0) {
+          bottom = Math.max(bottom, window.innerHeight - rect.top + 12);
+        }
+      }
+    }
+    button.style.bottom = bottom + 'px';
+  }
+  let positionFrame = 0;
+  function schedulePosition() {
+    if (positionFrame) return;
+    positionFrame = requestAnimationFrame(() => { positionFrame = 0; positionLauncher(); });
+  }
+  new MutationObserver(schedulePosition).observe(document.body, {childList:true,subtree:true});
+  window.addEventListener('resize', schedulePosition);
+  window.addEventListener('scroll', schedulePosition, true);
+  window.visualViewport?.addEventListener('resize', schedulePosition);
   function setOpen(value, instant = false, restoreFocus = true) {
     const visible = frame.style.display !== "none";
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -53,6 +74,7 @@
     const from = visible ? { opacity: computed.opacity, transform: computed.transform } : closed;
     if (activeAnimation) { activeAnimation.cancel(); activeAnimation = null; }
     open = value;
+    positionLauncher();
     if (frame.contentWindow) frame.contentWindow.postMessage({type:"ent:visibility",open:open},new URL(frame.src).origin);
     button.setAttribute("aria-expanded", String(open));
     button.setAttribute("aria-label", open ? "Close feedback" : "Submit feedback");

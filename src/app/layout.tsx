@@ -17,6 +17,7 @@ const allo = localFont({ src: "../../public/fonts/allo/AlloVariable.woff2", weig
 
 export const metadata: Metadata = {
   title: "Ent Feedback",
+  other: { "slack-app-id": "A0CHRMN54GP" },
   description: "Share ideas, vote on what matters, and follow what ships.",
 };
 

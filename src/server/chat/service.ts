@@ -4,23 +4,28 @@ import {createHash,randomBytes,randomUUID} from 'node:crypto';
 import {and,eq,asc,desc,gt,isNull,inArray} from 'drizzle-orm';
 import {z} from 'zod';
 import {getDb,type Queryable} from '@/server/db/client';
-import {chatSettings,conversations,chatMessages,conversationFeedback,feedback,chatUploads,workspaceMembers,users} from '@/server/db/schema';
+import {chatSettings,widgetSettings,operatorPresence,integrationConnections,conversations,chatMessages,conversationFeedback,feedback,chatUploads,workspaceMembers,users} from '@/server/db/schema';
 import {getServerEnv} from '@/server/env';
 import {ServiceError} from '@/server/result';
 import {consumeRateLimit} from '@/server/rate-limit';
 import {enqueueConversationNotice} from './notifications';
 import {answerChat} from './ai';
 import {conversationTopics} from '@/lib/chat/topics';
+import {operatorOnline} from '@/lib/chat/presence';
 import {operationsSchema,teamAvailable} from '@/lib/chat/availability';
-import {CHAT_AI_REPLIES_ENABLED,sendSchema,HANDOFF,type ChatSnapshot} from '@/lib/chat/contracts';
+import {CHAT_AI_REPLIES_ENABLED,sendSchema,HANDOFF,type ChatSnapshot,type ChatPresentation} from '@/lib/chat/contracts';
 export const hashToken=(token:string)=>createHash('sha256').update(token).digest('hex');
 export const conversationWhere=(workspaceId:string,id:string)=>and(eq(conversations.workspaceId,workspaceId),eq(conversations.id,id));
 export async function chatAvailable(workspaceId:string,db:Queryable=getDb()){
  if(getServerEnv().CHAT_ENABLED!=='true')return false;
  const [settings]=await db.select({enabled:chatSettings.enabled}).from(chatSettings).where(eq(chatSettings.workspaceId,workspaceId)).limit(1);return Boolean(settings?.enabled);
 }
-export async function chatAvailability(workspaceId:string,db:Queryable=getDb()){
- const [settings]=await db.select({operations:chatSettings.operations}).from(chatSettings).where(eq(chatSettings.workspaceId,workspaceId)).limit(1);const operations=operationsSchema.parse(settings?.operations??{});const available=teamAvailable(operations);return {available,message:available?'Team is within working hours':operations.awayMessage};
+export async function chatPresentation(workspaceId:string,db:Queryable=getDb()):Promise<ChatPresentation>{
+ const [row]=await db.select().from(widgetSettings).where(and(eq(widgetSettings.workspaceId,workspaceId),isNull(widgetSettings.boardId))).limit(1);
+ return {greeting:row?.greeting??'',replyTime:row?.replyTime??'automatic',details:row?.details??'optional',email:row?.collectEmail??true,name:row?.collectName??false};
+}
+export async function chatAvailability(workspaceId:string,db:Queryable=getDb(),onlineCount?:number){
+ const [settings]=await db.select({operations:chatSettings.operations}).from(chatSettings).where(eq(chatSettings.workspaceId,workspaceId)).limit(1);const operations=operationsSchema.parse(settings?.operations??{});const available=teamAvailable(operations)&&(onlineCount??(await availableOperators(workspaceId)).length)>0;return {available,message:available?'The team is online':operations.awayMessage};
 }
 export async function requireChat(workspaceId:string,db:Queryable=getDb()){z.uuid().parse(workspaceId);if(!await chatAvailable(workspaceId,db))throw new ServiceError('not_found','Chat is not available for this workspace.');}
 export async function authenticateConversation(db:Queryable,workspaceId:string,id:string,token:string,lock=false){
@@ -38,7 +43,8 @@ export async function snapshot(workspaceId:string,id:string,cursor?:string,token
  const uploads=messages.length?await db.select().from(chatUploads).where(and(eq(chatUploads.workspaceId,workspaceId),eq(chatUploads.conversationId,id),inArray(chatUploads.requestId,messages.map(m=>m.requestId)))):[];
  const hasMore=messages.length>50;const page=messages.slice(0,50);const last=page.at(-1);
  const links=await db.select({feedbackId:feedback.id,title:feedback.title}).from(conversationFeedback).innerJoin(feedback,and(eq(feedback.id,conversationFeedback.feedbackId),eq(feedback.workspaceId,conversationFeedback.workspaceId))).where(and(eq(conversationFeedback.workspaceId,workspaceId),eq(conversationFeedback.conversationId,id),isNull(feedback.deletedAt)));
- return {id,status:row.status,mode:row.mode,topicIds:row.topicIds,availability:await chatAvailability(workspaceId),hasEmail:Boolean(row.email),messages:page.map(({requestId,authorUserId,...m})=>({...m,images:uploads.filter(image=>image.requestId===requestId&&image.uploaderUserId===(m.role==='visitor'?null:authorUserId)).map(image=>chatImageUrl(image.id)),createdAt:m.createdAt.toISOString()})),cursor:last?String(last.sequence):cursor??null,hasMore,generating:Boolean(row.generationId&&row.generationExpiresAt&&row.generationExpiresAt>new Date()),links};
+ const presentation=await chatPresentation(workspaceId);
+ return {presentation,hasName:Boolean(row.visitorName),emailCollection:presentation.details==='none'||!presentation.email?'none':presentation.details==='required'?'required':'optional',id,status:row.status,mode:row.mode,topicIds:row.topicIds,availability:await chatAvailability(workspaceId),hasEmail:Boolean(row.email),messages:page.map(({requestId,authorUserId,...m})=>({...m,images:uploads.filter(image=>image.requestId===requestId&&image.uploaderUserId===(m.role==='visitor'?null:authorUserId)).map(image=>chatImageUrl(image.id)),createdAt:m.createdAt.toISOString()})),cursor:last?String(last.sequence):cursor??null,hasMore,generating:Boolean(row.generationId&&row.generationExpiresAt&&row.generationExpiresAt>new Date()),links};
 }
 export const queueChatNotice=enqueueConversationNotice;
 
@@ -55,6 +61,7 @@ export async function sendVisitor(workspaceId:string,id:string,token:string,inpu
   await requireChat(workspaceId,tx);const row=await authenticateConversation(tx,workspaceId,id,token,true);
   const [previous]=await tx.select().from(chatMessages).where(and(eq(chatMessages.conversationId,id),eq(chatMessages.requestId,value.requestId),eq(chatMessages.role,'visitor'))).limit(1);
   if(previous){await linkChatImages(tx,workspaceId,id,value.requestId,value.images,undefined,true);if(previous.body!==value.body)throw new ServiceError('conflict','This message changed. Send it as a new message.');if(row.generationId&&row.generationExpiresAt&&row.generationExpiresAt<new Date())await handoff(tx,workspaceId,id,value.requestId);return false;}
+  const contact=await chatPresentation(workspaceId,tx);if(contact.details==='required'&&((contact.email&&!row.email)||(contact.name&&!row.visitorName)))throw new ServiceError('validation','Add the requested contact details before sending your message.');
   if(!CHAT_AI_REPLIES_ENABLED){
    await linkChatImages(tx,workspaceId,id,value.requestId,value.images);
    await tx.insert(chatMessages).values({workspaceId,conversationId:id,role:'visitor',requestId:value.requestId,body:value.body});
@@ -85,10 +92,21 @@ export async function sendVisitor(workspaceId:string,id:string,token:string,inpu
  }
  return {accepted:true};
 }
-export async function updateContact(workspaceId:string,id:string,token:string,input:unknown){await requireChat(workspaceId);const {email}=z.object({email:z.email().max(254).transform(s=>s.toLowerCase())}).strict().parse(input);await consumeRateLimit('chat:contact:'+id,5,3600);await getDb().transaction(async tx=>{const row=await authenticateConversation(tx,workspaceId,id,token,true);if(row.mode!=='human')throw new ServiceError('conflict','Contact details can be shared when the team takes over.');await tx.update(conversations).set({email,updatedAt:new Date()}).where(conversationWhere(workspaceId,id));});return {saved:true};}
+export async function updateContact(workspaceId:string,id:string,token:string,input:unknown){
+ await requireChat(workspaceId);const value=z.object({email:z.email().max(254).transform(s=>s.toLowerCase()).optional(),name:z.string().trim().min(1).max(120).optional()}).strict().refine(v=>Boolean(v.email||v.name),'Enter your contact details.').parse(input);
+ await consumeRateLimit('chat:contact:'+id,5,3600);
+ await getDb().transaction(async tx=>{
+  await authenticateConversation(tx,workspaceId,id,token,true);const policy=await chatPresentation(workspaceId,tx);
+  if(policy.details==='none'||value.email&&!policy.email||value.name&&!policy.name)throw new ServiceError('conflict','These visitor details are not being collected by this workspace.');
+  await tx.update(conversations).set({...(value.email?{email:value.email}:{}),...(value.name?{visitorName:value.name}:{}),updatedAt:new Date()}).where(conversationWhere(workspaceId,id));
+ });return {saved:true};
+}
+
 
 export async function availableOperators(workspaceId:string){
  const db=getDb();const [config]=await db.select().from(chatSettings).where(eq(chatSettings.workspaceId,workspaceId)).limit(1);const operations=operationsSchema.parse(config?.operations??{});if(!teamAvailable(operations))return [];
- const members=await db.select({id:users.id,name:users.name,avatarUrl:users.avatarUrl}).from(workspaceMembers).innerJoin(users,eq(users.id,workspaceMembers.userId)).where(and(eq(workspaceMembers.workspaceId,workspaceId),eq(workspaceMembers.status,'active')));
- return members.filter(m=>operations.allOperators||operations.operatorIds.includes(m.id)).slice(0,5).map(({id,name,avatarUrl})=>({id,name:name??'Teammate',avatarUrl}));
+ const [connection]=await db.select({id:integrationConnections.id,updatedAt:integrationConnections.updatedAt}).from(integrationConnections).where(and(eq(integrationConnections.workspaceId,workspaceId),eq(integrationConnections.provider,'slack'),eq(integrationConnections.scope,'workspace'),eq(integrationConnections.authorizationState,'connected'))).limit(1);
+ const version=connection?connection.id+':'+connection.updatedAt.toISOString():null;
+ const members=await db.select({id:users.id,name:users.name,avatarUrl:users.avatarUrl,presence:operatorPresence}).from(workspaceMembers).innerJoin(users,eq(users.id,workspaceMembers.userId)).leftJoin(operatorPresence,and(eq(operatorPresence.workspaceId,workspaceId),eq(operatorPresence.userId,users.id))).where(and(eq(workspaceMembers.workspaceId,workspaceId),eq(workspaceMembers.status,'active')));
+ return members.filter(m=>(operations.allOperators||operations.operatorIds.includes(m.id))&&m.presence&&operatorOnline(m.presence,version)).slice(0,5).map(({id,name,avatarUrl})=>({id,name:name??'Teammate',avatarUrl}));
 }

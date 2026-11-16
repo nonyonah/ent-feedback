@@ -68,7 +68,7 @@ function ConversationRow({row,selected,onSelect,now}:{row:Row[number];selected:b
  return <button onClick={onSelect} aria-pressed={selected} className={'mb-1 flex min-h-[74px] w-full items-center gap-1.5 rounded-[10px] px-2.5 py-3 text-start outline-none hover:bg-control-quiet/70 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring '+(selected?'bg-control-quiet':'')}>
   <Avatar className="mt-0.5 size-8" aria-hidden="true"><AvatarFallback seed={row.email??row.id}/></Avatar>
   <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-   <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13px] font-medium leading-5 tracking-[-0.065px]">{row.email??'Visitor'}</span>{row.unread&&<span aria-label="Unread" className="size-1.5 shrink-0 rounded-full bg-primary"/>}</span>
+   <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13px] font-medium leading-5 tracking-[-0.065px]">{row.name??row.email??'Visitor'}</span>{row.unread&&<span aria-label="Unread" className="size-1.5 shrink-0 rounded-full bg-primary"/>}</span>
    <span className="truncate text-[13px] font-medium leading-5 text-muted-foreground">{row.preview||'New conversation'}</span>
   </span>
   <span className="flex h-11.5 shrink-0 flex-col items-end gap-1.5">

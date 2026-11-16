@@ -724,7 +724,7 @@ export const chatFaqs = pgTable("chat_faqs", {
 export const conversations = pgTable("conversations", {
   id: uuid("id").primaryKey().defaultRandom(),
   workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id,{onDelete:"cascade"}),
-  tokenHash: text("token_hash").notNull(), email: text("email"),
+  tokenHash: text("token_hash").notNull(), email: text("email"), visitorName: text("visitor_name"),
   status: text("status").$type<"open"|"escalated"|"resolved">().notNull().default("open"),
   mode: text("mode").$type<"ai"|"human">().notNull().default("ai"),
   lastActivityAt: timestamp("last_activity_at",{withTimezone:true}).notNull().defaultNow(),
@@ -763,3 +763,12 @@ export const slackThreads = pgTable('slack_threads', {
  conversationId:uuid('conversation_id'),feedbackId:uuid('feedback_id'),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
 },t=>[unique('slack_threads_channel_ts_unique').on(t.connectionId,t.channel,t.threadTs),uniqueIndex('slack_threads_conversation_unique').on(t.connectionId,t.conversationId),uniqueIndex('slack_threads_feedback_unique').on(t.connectionId,t.feedbackId),check('slack_threads_one_target',sql`num_nonnulls(${t.conversationId},${t.feedbackId})=1`)]).enableRLS();
+
+export const operatorPresence = pgTable("operator_presence", {
+ workspaceId:uuid("workspace_id").notNull().references(()=>workspaces.id,{onDelete:"cascade"}),
+ userId:uuid("user_id").notNull().references(()=>users.id,{onDelete:"cascade"}),
+ appSeenAt:timestamp("app_seen_at",{withTimezone:true}),
+ slackCheckedAt:timestamp("slack_checked_at",{withTimezone:true}),
+ slackOnline:boolean("slack_online").notNull().default(false),
+ slackUserId:text("slack_user_id"),slackConnectionVersion:text("slack_connection_version"),
+},t=>[primaryKey({columns:[t.workspaceId,t.userId]})]).enableRLS();

@@ -1,3 +1,4 @@
+import {OperatorPresence} from '@/components/chat/operator-presence';
 import {BillingCacheProvider} from "@/components/feedback/billing-cache";
 import {readBillingSummary} from "@/server/billing/summary";
 import {DashboardLoading} from "@/components/feedback/dashboard-loading";
@@ -25,6 +26,7 @@ async function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <WorkspaceSync redirectWhenEmpty initialWorkspaces={workspaces}/>
+      <OperatorPresence/>
       <BillingCacheProvider initial={billing}><WorkspaceGate>{children}</WorkspaceGate></BillingCacheProvider>
     </>
   );

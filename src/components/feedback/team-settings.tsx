@@ -108,7 +108,7 @@ function EnabledTeamSettings() {
                   {invitation.emailSentAt ? "Email sent" : "Email not sent"}
                 </p>
               </div>
-              <Button
+              <Button loading={cancelling === invitation.id}
                 variant="ghost"
                 size="sm"
                 className="rounded-full text-xs"

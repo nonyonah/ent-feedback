@@ -232,7 +232,7 @@ function EnabledInviteTeamDialog({
             >
               Cancel
             </DialogClose>
-            <Button
+            <Button loading={submitting}
               type="submit"
               className="rounded-full"
               disabled={!emails.trim() || submitting}

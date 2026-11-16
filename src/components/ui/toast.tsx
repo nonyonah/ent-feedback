@@ -5,7 +5,7 @@ import { Toast } from "@base-ui/react/toast";
 import { WarningCircleIcon as CircleAlertIcon } from "@/components/icons";
 import { CheckCircleIcon as CircleCheckIcon } from "@/components/icons";
 import { InfoIcon } from "@/components/icons";
-import { CircleNotchIcon as LoaderCircleIcon } from "@/components/icons";
+import { Spinner } from "@/components/ui/spinner";
 import { WarningIcon as TriangleAlertIcon } from "@/components/icons";
 import type React from "react";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,7 @@ import { buttonVariants } from "@/components/ui/button";
 const TOAST_ICONS = {
   error: CircleAlertIcon,
   info: InfoIcon,
-  loading: LoaderCircleIcon,
+  loading: Spinner,
   success: CircleCheckIcon,
   warning: TriangleAlertIcon,
 } as const;
@@ -137,7 +137,7 @@ function Toasts({
                       className="[&>svg]:h-lh [&>svg]:w-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
                       data-slot="toast-icon"
                     >
-                      <Icon className="in-data-[type=loading]:animate-spin in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80" />
+                      <Icon className="in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80" />
                     </div>
                   )}
 
@@ -226,7 +226,7 @@ function AnchoredToasts({
                           className="[&>svg]:h-lh [&>svg]:w-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
                           data-slot="toast-icon"
                         >
-                          <Icon className="in-data-[type=loading]:animate-spin in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80" />
+                          <Icon className="in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80" />
                         </div>
                       )}
 

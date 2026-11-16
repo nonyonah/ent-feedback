@@ -1,8 +1,9 @@
 import "server-only";
 
-import { requireProviderEnv } from "@/server/env";
+import { getServerEnv, requireProviderEnv } from "@/server/env";
 import { ServiceError } from "@/server/result";
 import {activityEmail,lifecycleEmail,emailLayout,trialEmail,prepaidReminderEmail,type LifecycleEmail,type TrialEmailKind} from "@/server/emails/templates";
+import {applicationEmailUrl} from '@/lib/application-origin';
 
 type InvitationEmailInput = {
   to: string;
@@ -87,7 +88,9 @@ export async function sendActivityEmail(input: {
   url: string;
   key: string;
 }): Promise<void> {
-  await sendEmail({to: input.to, key: input.key, ...activityEmail(input)});
+  const env = getServerEnv();
+  const url = applicationEmailUrl(input.url, env.NEXT_PUBLIC_APP_URL, env.NODE_ENV === 'production');
+  await sendEmail({to: input.to, key: input.key, ...activityEmail({...input, url})});
 }
 
 export async function sendLifecycleEmail(input: {to:string;kind:LifecycleEmail;appOrigin:string;unsubscribeUrl:string;key:string}):Promise<void>{

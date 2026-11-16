@@ -3,12 +3,13 @@
 import Script from 'next/script';
 import {usePathname} from 'next/navigation';
 import {useEffect,useRef,useSyncExternalStore} from 'react';
+import {applicationOrigin,productionApplicationOrigin} from '@/lib/application-origin';
 
 const subscribe=()=>()=>{};
 function isApplicationHost(){
- const origin=process.env.NEXT_PUBLIC_APP_URL;
- if(!origin||['localhost','127.0.0.1'].includes(window.location.hostname))return true;
- try{return window.location.hostname===new URL(origin).hostname;}catch{return false;}
+ if(['localhost','127.0.0.1'].includes(window.location.hostname))return true;
+ if(window.location.hostname===new URL(productionApplicationOrigin).hostname)return true;
+ try{return window.location.hostname===new URL(applicationOrigin(process.env.NEXT_PUBLIC_APP_URL,process.env.NODE_ENV==='production')).hostname;}catch{return false;}
 }
 
 export function SupportWidget(){

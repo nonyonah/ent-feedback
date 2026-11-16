@@ -117,7 +117,7 @@ export function CommandInput({
   ...props
 }: React.ComponentProps<typeof AutocompleteInput>): React.ReactElement {
   return (
-    <div className="px-2.5 py-1.5">
+    <div className="border-b border-border/80 bg-control-quiet px-2.5 py-1.5">
       <AutocompleteInput
         autoFocus
         className={cn(

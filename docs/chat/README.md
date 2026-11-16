@@ -395,7 +395,7 @@ Migration 0020 is applied. PostgreSQL `--preferences-only` checks passed on Nove
 
 ### Early-pilot Slack distribution
 
-Slack app ID: `A0CHRMN54GP`. OAuth client ID: `10923381069686.12603736174567` (public identifiers). The production `SLACK_CLIENT_ID` must match that client ID; retain the client secret and signing secret only in server environment configuration.
+Slack app ID: `A0CHRMN54GP` (a public identifier). Set production `SLACK_CLIENT_ID` to the Client ID shown under **Basic Information → App Credentials** in this Slack app’s dashboard. Keep deployment-specific credentials out of this document; retain the client secret and signing secret only in server environment configuration.
 
 Enable **Manage Distribution → Activate Public Distribution** for an early pilot. Customers install through **Ent → Settings → Integrations → Add to Slack**. The official Slack artwork calls Ent’s authenticated OAuth action, which appends the workspace-bound state nonce and redirect URI to the same Slack v2 authorization endpoint and seven bot scopes supplied by Slack. A direct link copied from Slack’s dashboard omits that state cookie and cannot finish our callback safely. For invitations, share `https://ent.riftlabs.xyz/dashboard/settings/integrations` and have the customer sign in and select their workspace.
 

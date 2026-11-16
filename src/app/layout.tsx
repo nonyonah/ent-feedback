@@ -3,7 +3,7 @@ import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 import { MotionPolicy } from "@/components/ui/motion-policy";
 import * as React from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { ThemedClerkProvider } from "@/components/feedback/themed-clerk-provider";
 import "driver.js/dist/driver.css";
 import "./globals.css";
@@ -13,7 +13,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { ProjectProvider } from "@/components/feedback/project-provider";
 
-const inter = Inter({ subsets: ["latin"], weight: "variable", display: "swap", variable: "--font-inter" });
+const allo = localFont({ src: "../../public/fonts/allo/AlloVariable.woff2", weight: "100 900", style: "normal", display: "swap", variable: "--font-allo" });
 
 export const metadata: Metadata = {
   title: "Ent Feedback",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      className={cn("h-full", "antialiased", "font-sans", inter.variable)}
+      className={cn("h-full", "antialiased", "font-sans", allo.variable)}
       lang="en"
       suppressHydrationWarning
     >

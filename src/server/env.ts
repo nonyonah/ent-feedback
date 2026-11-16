@@ -1,6 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
+import {applicationOrigin} from '@/lib/application-origin';
 
 const serverEnvSchema = z.object({
   CHAT_ENABLED: z.enum(["true", "false"]).default("false"),
@@ -64,7 +65,7 @@ export function getServerEnv(): ServerEnv {
     throw new Error(`Invalid server environment: ${issues}`);
   }
 
-  cached = parsed.data;
+  cached = {...parsed.data, NEXT_PUBLIC_APP_URL: applicationOrigin(parsed.data.NEXT_PUBLIC_APP_URL, parsed.data.NODE_ENV === 'production')};
   return cached;
 }
 

@@ -112,7 +112,7 @@ function WorkspaceBillingSettings(){
     <div className="mx-4 h-px bg-border/60"/>
     <UsageRow title="Admin roles" value="Coming soon"/>
     <div className="mx-4 h-px bg-border/60"/>
-    <UsageRow title="Integrations" value="Coming soon"/>
+    <UsageRow title="Slack integration" value="Available"/>
    </SettingGroup>
    <p className="px-4 text-[13px] font-medium leading-5 text-muted-foreground">Subscription changes are processed securely by Bachs.</p>
   </>}

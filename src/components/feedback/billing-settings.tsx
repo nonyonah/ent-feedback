@@ -90,7 +90,7 @@ function WorkspaceBillingSettings(){
      </div>
     </div>
     {summary.owner&&<div className="flex flex-wrap items-center gap-2.5 px-4">
-     {needsCheckout&&<Button size="sm" className="h-9 max-sm:h-11 rounded-[10px] px-4 text-[13px]" disabled={pending||!summary.configured} onClick={()=>{if(summary.trialUsed||summary.prepaidActive)void openCheckout('prepaid');else setTrialNoticeOpen(true);}}>{pending?'Opening…':summary.prepaidActive?'Extend Essentials':summary.trialUsed?`Pay $${interval==='yearly'?'70':'7'}`:'Start free trial'}</Button>}
+     {needsCheckout&&<Button loading={pending} size="sm" className="h-9 max-sm:h-11 rounded-[10px] px-4 text-[13px]" disabled={pending||!summary.configured} onClick={()=>{if(summary.trialUsed||summary.prepaidActive)void openCheckout('prepaid');else setTrialNoticeOpen(true);}}>{pending?'Opening…':summary.prepaidActive?'Extend Essentials':summary.trialUsed?`Pay $${interval==='yearly'?'70':'7'}`:'Start free trial'}</Button>}
      {summary.canManage&&<ManageSubscriptionDialog key={project.id} workspaceId={project.id} onUpdated={updateSummary} disabled={pending||!summary.configured}/>}
 
     </div>}

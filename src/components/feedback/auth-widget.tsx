@@ -1,10 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import {Spinner} from '@/components/ui/spinner';
 import {authContinuation,type AuthIntent} from "@/lib/auth-flow";
 
 function LoadingAuth() {
-  return <p role="status" className="text-sm text-muted-foreground">Loading…</p>;
+  return <div className="flex min-h-24 items-center justify-center text-muted-foreground"><Spinner aria-label="Loading authentication"/></div>;
 }
 
 // Clerk's loaded state can differ between the server render and client-side

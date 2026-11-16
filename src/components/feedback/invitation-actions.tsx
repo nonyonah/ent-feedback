@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { toastManager } from "@/components/ui/toast";
 import { acceptInvitationAction } from "@/server/actions/workspaces";
 
@@ -44,8 +43,7 @@ export function AcceptInvitationButton({ token }: { token: string }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <Button className="min-h-10 self-start rounded-xl px-4" onClick={accept} disabled={pending}>
-        {pending ? <Spinner /> : null}
+      <Button loading={pending} className="min-h-10 self-start rounded-xl px-4" onClick={accept} disabled={pending}>
         {pending ? "Joining…" : "Accept invitation"}
       </Button>
       {error && (

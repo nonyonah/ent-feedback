@@ -117,15 +117,28 @@ export const getOptionalAppUser = cache(async (): Promise<AppUser | null> => {
     return null;
   }
 
-  const user = await upsertAppUser(userId);
-  // A public-board participant receives no workspace setup reminders unless they start setup.
-  // Existing accounts enroll on their next visit; this does not backfill a welcome campaign.
-  // Activity is only recorded when it moved, so a busy client does not write on every request.
-  const now = new Date();
-  const stale = new Date(now.getTime() - 5 * 60_000);
-  await getDb().insert(lifecycleEmailState).values({userId:user.id,lastActiveAt:now,welcomeEligible:now.getTime()-user.createdAt.getTime()<60_000})
-    .onConflictDoUpdate({target:lifecycleEmailState.userId,set:{lastActiveAt:now},setWhere:lt(lifecycleEmailState.lastActiveAt,stale)});
-  return user;
+  try {
+    const user = await upsertAppUser(userId);
+    // A public-board participant receives no workspace setup reminders unless they start setup.
+    // Existing accounts enroll on their next visit; this does not backfill a welcome campaign.
+    // Activity is only recorded when it moved, so a busy client does not write on every request.
+    const now = new Date();
+    const stale = new Date(now.getTime() - 5 * 60_000);
+    await getDb().insert(lifecycleEmailState).values({userId:user.id,lastActiveAt:now,welcomeEligible:now.getTime()-user.createdAt.getTime()<60_000})
+      .onConflictDoUpdate({target:lifecycleEmailState.userId,set:{lastActiveAt:now},setWhere:lt(lifecycleEmailState.lastActiveAt,stale)});
+    return user;
+  } catch (error) {
+    if(error instanceof ServiceError)throw error;
+    // Driver errors contain bound email addresses and account IDs. Never pass
+    // them through an SSR boundary or attach them as an error cause.
+    let cause:unknown=error;let code:string|undefined;
+    for(let depth=0;depth<4&&cause&&typeof cause==='object';depth++){
+      if('code' in cause&&typeof cause.code==='string')code=cause.code;
+      cause='cause' in cause?cause.cause:undefined;
+    }
+    console.error('Account database unavailable',{code:code&&/^[A-Z0-9_]{1,32}$/.test(code)?code:undefined});
+    throw new ServiceError('retryable','Your account could not be loaded. Please try again shortly.');
+  }
 });
 
 export const requireAppUser = cache(async (): Promise<AppUser> => {

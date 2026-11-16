@@ -1,4 +1,6 @@
 "use client";
+
+import {ErrorNotice} from '@/components/ui/error-notice';
 import {features} from "@/lib/features";
 
 import { useState } from "react";
@@ -60,10 +62,10 @@ function EnabledTeamSettings() {
             Loading team…
           </p>
         ) : team.error ? (
-          <p role="alert" className="px-4 py-6 text-[13px] text-destructive-foreground">
+          <ErrorNotice  className="px-4 py-6 text-[13px] text-foreground">
             {team.error}
             <Button variant="ghost" size="sm" className="ml-2" onClick={() => void team.refresh()}>Retry</Button>
-          </p>
+          </ErrorNotice>
         ) : (
           team.members.map((member) => (
             <div

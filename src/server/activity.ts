@@ -1,4 +1,5 @@
 import 'server-only';
+import {enqueueSlack} from '@/server/chat/notifications';
 import {and,eq,inArray,isNull} from 'drizzle-orm';
 import type {Database} from '@/server/db/client';
 import {feedback,comments,follows,workspaceMembers,notifications,notificationPreferences,jobs,users,workspaces} from '@/server/db/schema';
@@ -11,9 +12,10 @@ export function wantsActivity(p:typeof notificationPreferences.$inferSelect|unde
  if(!p)return true;
  return type==='new_feedback'?p.newFeedback:type==='feedback_comment'?p.feedbackComments:type==='comment_reply'?p.commentReplies:type==='comment_reaction'?p.commentReactions:type==='feedback_reaction'?p.feedbackReactions:true;
 }
-export async function publishActivity(tx:Tx,input:{type:ActivityType;workspaceId:string;feedbackId:string;actorId?:string;eventId:string;commentId?:string;parentCommentId?:string}){
+export async function publishActivity(tx:Tx,input:{type:ActivityType;workspaceId:string;feedbackId:string;actorId?:string;eventId:string;commentId?:string;parentCommentId?:string;skipSlack?:boolean}){
  const [post]=await tx.select().from(feedback).where(and(eq(feedback.id,input.feedbackId),eq(feedback.workspaceId,input.workspaceId),isNull(feedback.deletedAt))).limit(1);if(!post)return;
  const [workspace]=await tx.select({handle:workspaces.handle,name:workspaces.name}).from(workspaces).where(eq(workspaces.id,input.workspaceId)).limit(1);if(!workspace)return;
+ if(!input.skipSlack&&(input.type==='new_feedback'||input.type==='status_changed'||input.type==='feedback_comment'))await enqueueSlack(tx,{workspaceId:input.workspaceId,feedbackId:input.feedbackId,event:input.type,eventId:input.eventId});
  const recipients=new Map<string,ActivityType>();
  const followed=await tx.select({id:follows.userId}).from(follows).where(and(eq(follows.feedbackId,post.id),eq(follows.workspaceId,input.workspaceId)));
  if(['feedback_comment','status_changed'].includes(input.type))for(const f of followed)recipients.set(f.id,input.type);

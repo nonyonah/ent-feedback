@@ -1,7 +1,10 @@
 'use client';
+import {TrialCardNotice} from './trial-card-notice';
 import {captureAnalytics} from '@/lib/analytics';
 import * as React from 'react';
-import {useSearchParams} from 'next/navigation';
+import {ErrorNotice} from '@/components/ui/error-notice';
+import {Skeleton} from '@/components/ui/skeleton';
+import {usePathname,useRouter,useSearchParams} from 'next/navigation';
 import {useBillingCache} from './billing-cache';
 import {useProject} from './project-provider';
 import {SettingGroup} from './settings-layout';
@@ -15,9 +18,17 @@ import {openBillingOverlay} from '@/lib/billing-overlay';
 import {billingPlan,type BillingInterval,type BillingMode} from '@/lib/billing';
 type Summary=Extract<Awaited<ReturnType<typeof loadBillingAction>>,{ok:true}>['data'];
 export function BillingSettings(){
+ const {project,projects,switchProject,workspaceReady}=useProject();const params=useSearchParams();const pathname=usePathname();const router=useRouter();const requested=params.get('workspace');const valid=Boolean(projects?.some(workspace=>workspace.id===requested));
+ React.useEffect(()=>{if(!requested||!valid)return;if(project.id!==requested)switchProject(requested);else{const query=new URLSearchParams(params.toString());query.delete('workspace');router.replace(pathname+(query.size?'?'+query.toString():''));}},[requested,valid,project.id,switchProject,params,pathname,router]);
+ if(!workspaceReady||(requested&&valid&&requested!==project.id))return <div aria-label="Loading billing" className="space-y-4 p-4"><Skeleton className="h-24 w-full"/><Skeleton className="h-40 w-full"/></div>;
+ if(requested&&!valid)return <ErrorNotice className="m-4">This billing workspace is not available to your account.</ErrorNotice>;
+ return <WorkspaceBillingSettings key={project.id}/>;
+}
+function WorkspaceBillingSettings(){
  const {project,workspaceReady}=useProject();const params=useSearchParams();const cache=useBillingCache();
  const [summary,setSummary]=React.useState<Summary|null>(()=>cache?.get(project.id)??null),[pending,setPending]=React.useState(false),[attempt,setAttempt]=React.useState(0);
  const [interval,setInterval]=React.useState<BillingInterval>(params.get('interval')==='yearly'?'yearly':'monthly');
+ const [trialNoticeOpen,setTrialNoticeOpen]=React.useState(false);
  const [awaitingConfirmation,setAwaitingConfirmation]=React.useState<{mode:BillingMode;previousUntil:string|null}|null>(null);
  const effectiveMode:BillingMode=summary?.prepaidActive?'prepaid':'subscription';
  const summaryRevision=React.useRef(0);
@@ -79,7 +90,7 @@ export function BillingSettings(){
      </div>
     </div>
     {summary.owner&&<div className="flex flex-wrap items-center gap-2.5 px-4">
-     {needsCheckout&&<Button size="sm" className="h-9 max-sm:h-11 rounded-[10px] px-4 text-[13px]" disabled={pending||!summary.configured} onClick={()=>void openCheckout(summary.trialUsed||summary.prepaidActive?'prepaid':'subscription')}>{pending?'Opening…':summary.prepaidActive?'Extend Essentials':summary.trialUsed?`Pay $${interval==='yearly'?'70':'7'}`:'Start free trial'}</Button>}
+     {needsCheckout&&<Button size="sm" className="h-9 max-sm:h-11 rounded-[10px] px-4 text-[13px]" disabled={pending||!summary.configured} onClick={()=>{if(summary.trialUsed||summary.prepaidActive)void openCheckout('prepaid');else setTrialNoticeOpen(true);}}>{pending?'Opening…':summary.prepaidActive?'Extend Essentials':summary.trialUsed?`Pay $${interval==='yearly'?'70':'7'}`:'Start free trial'}</Button>}
      {summary.canManage&&<ManageSubscriptionDialog key={project.id} workspaceId={project.id} onUpdated={updateSummary} disabled={pending||!summary.configured}/>}
 
     </div>}
@@ -105,7 +116,7 @@ export function BillingSettings(){
    </SettingGroup>
    <p className="px-4 text-[13px] font-medium leading-5 text-muted-foreground">Subscription changes are processed securely by Bachs.</p>
   </>}
- </div></section>;
+ </div><TrialCardNotice open={trialNoticeOpen} onOpenChange={setTrialNoticeOpen} interval={interval} onContinue={()=>void openCheckout('subscription')}/></section>;
 }
 
 function UsageRow({title,value,usage}:{title:string;value:string;usage?:{count:number;limit:number}}){

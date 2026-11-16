@@ -1,4 +1,6 @@
 'use client';
+
+import {ErrorNotice} from '@/components/ui/error-notice';
 import * as React from 'react';
 import {loadSubscriptionManagementAction,manageSubscriptionAction} from '@/server/actions/billing';
 import {Dialog,DialogPopup,DialogHeader,DialogTitle,DialogDescription,DialogFooter,DialogTrigger} from '@/components/ui/dialog';
@@ -51,7 +53,7 @@ export function ManageSubscriptionDialog({workspaceId,onUpdated,disabled=false}:
       {!cancelled&&<div className="flex flex-wrap items-center justify-between gap-2"><p className="text-[13px] text-muted-foreground">Want to stop renewing?</p><Button disabled={Boolean(pending)} variant="ghost" className={control+' text-destructive-foreground'} onClick={()=>setConfirmCancel(true)}>Cancel subscription</Button></div>}
      </>}
     </>:null}
-    {error&&<div className="space-y-2"><p role="alert" className="text-[13px] leading-5 text-destructive-foreground">{error}</p><Button variant="secondary" className={control} disabled={Boolean(pending)||loading} onClick={()=>{setConfirmCancel(false);void refresh();}}>Refresh subscription</Button></div>}
+    {error&&<div className="space-y-2"><ErrorNotice  className="text-[13px] leading-5 text-foreground">{error}</ErrorNotice><Button variant="secondary" className={control} disabled={Boolean(pending)||loading} onClick={()=>{setConfirmCancel(false);void refresh();}}>Refresh subscription</Button></div>}
    </div>
    <DialogFooter className="flex-row flex-wrap justify-end gap-2">
     <Button variant="secondary" className={control} disabled={Boolean(pending)} onClick={()=>confirmCancel?setConfirmCancel(false):changeOpen(false)}>{confirmCancel?'Keep subscription':'Done'}</Button>

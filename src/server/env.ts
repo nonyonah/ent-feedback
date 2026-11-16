@@ -3,6 +3,10 @@ import "server-only";
 import { z } from "zod";
 
 const serverEnvSchema = z.object({
+  CHAT_ENABLED: z.enum(["true", "false"]).default("false"),
+  CHAT_AI_BASE_URL: z.url().optional(),
+  CHAT_AI_API_KEY: z.string().optional(),
+  CHAT_AI_MODEL: z.string().optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
   DATABASE_URL: z.url(),
@@ -11,6 +15,7 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1).optional(),
   CLERK_WEBHOOK_SIGNING_SECRET: z.string().min(1).optional(),
   INTEGRATION_ENCRYPTION_KEY: z.string().optional(),
+  SLACK_SIGNING_SECRET: z.string().optional(),
   SLACK_CLIENT_ID: z.string().optional(),
   SLACK_CLIENT_SECRET: z.string().optional(),
   DISCORD_CLIENT_ID: z.string().optional(),

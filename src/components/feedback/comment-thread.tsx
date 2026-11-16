@@ -1,5 +1,7 @@
 "use client";
 
+
+import {ErrorNotice} from '@/components/ui/error-notice';
 import * as React from "react";
 import {features} from "@/lib/features";
 import {ComposerTools,AttachmentPreview} from "@/components/feedback/composer-tools";
@@ -28,7 +30,7 @@ function CommentComposer({itemId,parent,onDone,onCancel}:{itemId:string;parent?:
  return <form onSubmit={submit} className="flex min-w-0 flex-col gap-3 rounded-[20px] border border-border/60 bg-muted/30 p-2">
   <label htmlFor={id} className="sr-only">{parent?"Reply to "+parent.author:"Add a comment"}</label>
   <Textarea aria-invalid={Boolean(error)} aria-describedby={error?id+"-error":undefined} id={id} ref={input} autoFocus={Boolean(parent)} disabled={pending} value={body} onChange={event=>setBody(event.target.value)} placeholder={parent?"Reply to "+parent.author+"…":"Add a comment or share more context…"} className="border-0 bg-transparent shadow-none ring-0 before:hidden [&_textarea]:min-h-14 [&_textarea]:sm:min-h-14"/>
-  {error&&<p id={id+"-error"} role="alert" className="px-2 text-[13px] text-destructive-foreground">{error}</p>}
+  {error&&<ErrorNotice id={id+"-error"}  className="px-2 text-[13px] text-foreground">{error}</ErrorNotice>}
   <div className="flex flex-wrap items-end justify-between gap-2"><ComposerTools onBusyChange={setPreparing} disabled={pending} value={body} onChange={setBody} inputRef={input} images={images} onImagesChange={setImages}/><div className="ml-auto flex gap-1">{onCancel&&<Button type="button" size="sm" variant="ghost" disabled={pending} onClick={onCancel}>Cancel</Button>}<ActionButton type="submit" size="sm" className="rounded-full" state={pending?"pending":error?"error":"idle"} pendingLabel={parent?"Posting reply…":"Posting comment…"} retryLabel={parent?"Retry reply":"Retry comment"} disabled={preparing||(!body.trim()&&!images.length)}>{parent?"Reply":"Comment"}</ActionButton></div></div>
  </form>;
 }

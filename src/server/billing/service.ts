@@ -1,4 +1,5 @@
 import 'server-only';
+import {bachsCheckoutPricing} from '@/lib/bachs-checkout';
 import {randomUUID} from 'node:crypto';
 import {and,desc,eq,inArray} from 'drizzle-orm';
 import {getDb} from '@/server/db/client';
@@ -50,7 +51,7 @@ export async function startCheckout(workspaceId:string,interval:BillingInterval,
  const origin=env.BACHS_RETURN_ORIGIN??env.NEXT_PUBLIC_APP_URL;
  if(new URL(origin).hostname==='localhost'||new URL(origin).hostname==='127.0.0.1')throw new ServiceError('retryable','Checkout needs a public return URL. Configure BACHS_RETURN_ORIGIN with your HTTPS test tunnel.');
  const checkout=await client.checkoutSessions.create({
-  ...(mode==='prepaid'?{pricing:{currency:'USD',amount:billingPlan[interval],price_type:'fixed' as const}}:{product_cart:[{product_id:attempt.productId,quantity:1}],billing_currency:'USD',payment_method_types:['USD_CARD' as const]}),
+  ...bachsCheckoutPricing(mode,interval,attempt.productId),
   customer:{email:user.email,name:user.name||'Workspace owner'},reference:attempt.id,
   metadata:{workspace_id:workspaceId,checkout_attempt_id:attempt.id,billing_mode:mode},
   success_url:new URL(`/dashboard/settings/billing?checkout=returned&billing_mode=${mode}`,origin).href,cancel_url:new URL('/dashboard/settings/billing?checkout=canceled',origin).href,expires_in_minutes:30,

@@ -2,7 +2,7 @@ import "server-only";
 
 import { requireProviderEnv } from "@/server/env";
 import { ServiceError } from "@/server/result";
-import {activityEmail,lifecycleEmail,emailLayout,trialEmail,type LifecycleEmail,type TrialEmailKind} from "@/server/emails/templates";
+import {activityEmail,lifecycleEmail,emailLayout,trialEmail,prepaidReminderEmail,type LifecycleEmail,type TrialEmailKind} from "@/server/emails/templates";
 
 type InvitationEmailInput = {
   to: string;
@@ -96,3 +96,7 @@ export async function sendLifecycleEmail(input: {to:string;kind:LifecycleEmail;a
 export async function sendTrialEmail(input:{to:string;key:string;kind:TrialEmailKind;workspaceName:string;trialEnd:string;cancelAtPeriodEnd:boolean;appOrigin:string}):Promise<void>{
  await sendEmail({to:input.to,key:input.key,...trialEmail(input)});
 }
+
+export async function sendChatEmail(input:{to:string;key:string;subject:string;heading:string;body:string;url:string;action:string}){await sendEmail({to:input.to,key:input.key,...emailLayout({...input,footer:"You received this email about a support conversation with your workspace."})});}
+
+export async function sendPrepaidReminderEmail(input:{to:string;key:string;workspaceName:string;workspaceId:string;accessUntil:string;appOrigin:string}):Promise<void>{await sendEmail({to:input.to,key:input.key,...prepaidReminderEmail(input)});}

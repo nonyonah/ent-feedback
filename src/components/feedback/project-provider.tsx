@@ -19,6 +19,7 @@ export type Project = {
   logo: string;
   theme?: "dynamic" | "light" | "dark";
   hideAttribution?: boolean;
+  chatEnabled?: boolean;
   website?: string;
   role?: WorkspaceRole;
 };

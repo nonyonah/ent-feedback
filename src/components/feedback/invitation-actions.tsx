@@ -1,5 +1,7 @@
 "use client";
 
+
+import {ErrorNotice} from '@/components/ui/error-notice';
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
@@ -47,9 +49,9 @@ export function AcceptInvitationButton({ token }: { token: string }) {
         {pending ? "Joining…" : "Accept invitation"}
       </Button>
       {error && (
-        <p role="alert" className="text-xs text-destructive-foreground">
+        <ErrorNotice  className="text-xs text-foreground">
           {error}
-        </p>
+        </ErrorNotice>
       )}
     </div>
   );

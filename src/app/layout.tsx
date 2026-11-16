@@ -1,3 +1,4 @@
+import {SupportWidget} from "@/components/support/support-widget";
 import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 import { MotionPolicy } from "@/components/ui/motion-policy";
 import * as React from "react";
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <ProjectProvider><FeedbackProvider>
             <ToastProvider position="bottom-right">
               <SiteHeader />
+              <React.Suspense fallback={null}><SupportWidget /></React.Suspense>
               <div className="flex flex-1 flex-col">{children}</div>
             </ToastProvider>
           </FeedbackProvider></ProjectProvider>

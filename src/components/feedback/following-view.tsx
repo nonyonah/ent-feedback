@@ -1,4 +1,6 @@
 "use client";
+
+import {ErrorNotice} from '@/components/ui/error-notice';
 import {EmptyIllustration} from "./empty-illustration";
 import * as React from "react";
 import {useUser} from "@clerk/nextjs";
@@ -22,7 +24,7 @@ export function FollowingView() {
   const loading=!isLoaded||Boolean(user&&snapshot?.key!==key);const followed=snapshot?.key===key?snapshot.items:[];const error=snapshot?.key===key?snapshot.error:'';
   return <PageShell backHref={publicHref} backLabel="Back to the board" eyebrow="Your corner of the conversation" title="Following" description="The ideas you’re keeping an eye on, all in one place.">
     <div className="mb-5 flex justify-end"><Button variant="outline" render={<Link href="/dashboard?notifications=open"/>}>Notification preferences</Button></div>
-    {error?<div role="alert">{error}<Button variant="ghost" onClick={()=>setAttempt(value=>value+1)}>Retry</Button></div>:loading?<p role="status">Loading feedback…</p>:followed.length?<div className="flex flex-col">{followed.map(item=><div key={item.id} className="border-b last:border-0"><BoardFeedbackRow item={item}/></div>)}</div>:<Empty className="rounded-lg border py-14"><EmptyIllustration variant="notifications"/><EmptyHeader><EmptyTitle>No followed posts</EmptyTitle><EmptyDescription>Follow a post to see it here.</EmptyDescription></EmptyHeader><EmptyContent><Button render={<Link href={publicHref}/>}>Explore feedback</Button></EmptyContent></Empty>}
+    {error?<ErrorNotice>{error}<Button variant="ghost" onClick={()=>setAttempt(value=>value+1)}>Retry</Button></ErrorNotice>:loading?<p role="status">Loading feedback…</p>:followed.length?<div className="flex flex-col">{followed.map(item=><div key={item.id} className="border-b last:border-0"><BoardFeedbackRow item={item}/></div>)}</div>:<Empty className="rounded-lg border py-14"><EmptyIllustration variant="notifications"/><EmptyHeader><EmptyTitle>No followed posts</EmptyTitle><EmptyDescription>Follow a post to see it here.</EmptyDescription></EmptyHeader><EmptyContent><Button render={<Link href={publicHref}/>}>Explore feedback</Button></EmptyContent></Empty>}
 
   </PageShell>;
 }

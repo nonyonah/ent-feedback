@@ -1,4 +1,5 @@
 "use client";
+import {ConversationsInbox} from '@/components/chat/conversations-inbox';
 import {Skeleton} from "@/components/ui/skeleton";
 import {TrendingBadge} from "./trending-badge";
 import {EmptyIllustration} from "./empty-illustration";
@@ -33,7 +34,7 @@ import { ShareView } from "@/components/feedback/share-view";
 import { DashboardBoards } from "@/components/feedback/dashboard-boards";
 import { DashboardSettings, SettingsSidebar, type SettingsSection } from "@/components/feedback/dashboard-settings";
 
-export function DashboardView({view="requests",settingsSection="branding",initialFilter="all"}:{initialFilter?:"all"|FeedbackStatus;view?:"requests"|"boards"|"settings"|"share";settingsSection?:SettingsSection}): React.ReactElement {
+export function DashboardView({view="requests",settingsSection="branding",initialFilter="all"}:{initialFilter?:"all"|FeedbackStatus;view?:"requests"|"boards"|"settings"|"share"|"conversations";settingsSection?:SettingsSection}): React.ReactElement {
   const { project, activeBoard, boards } = useProject();
   const { items,loading,error } = useFeedback();
   const boardFilter=useSearchParams().get("board");
@@ -43,8 +44,9 @@ export function DashboardView({view="requests",settingsSection="branding",initia
   const [filter, setFilter] = React.useState<"all" | FeedbackStatus>(initialFilter);
   const [sort, setSort] = React.useState("trending");
   const [copied, setCopied] = React.useState(false);
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
-  const [detailOpen, setDetailOpen] = React.useState(false);
+  const requestedFeedback=useSearchParams().get("request");
+  const [selectedId, setSelectedId] = React.useState<string | null>(requestedFeedback);
+  const [detailOpen, setDetailOpen] = React.useState(Boolean(requestedFeedback));
   const publicHref = activeBoard ? boardHref(project, activeBoard) : "/dashboard/boards";
   const visibleItems = items.filter(item => (!boardFilter||item.boardId===boardFilter) && (categoryFilter==="all"||(item.category??"feedback")===categoryFilter) && (tagFilter==="all"||item.tags?.some(tag=>tag.id===tagFilter)) && (filter === "all" || item.status === filter)).sort((a,b) => compareFeedback(sort,a,b));
   const selected = visibleItems.find(item => item.id === selectedId) ?? visibleItems[0];
@@ -60,7 +62,7 @@ export function DashboardView({view="requests",settingsSection="branding",initia
     {view === "settings" ? <SettingsSidebar section={settingsSection}/> : <DashboardSidebar view={view} filter={filter} onFilterChange={value=>{setFilter(value);resetSelection();}} onCopyLink={()=>void copyLink()} copied={copied}/>}
     <SidebarInset data-tour="workspace-content" className="h-dvh min-w-0 overflow-hidden bg-[var(--dashboard-body)]" id="feedback-inbox">
       {!(view==="settings"&&settingsSection==="billing")&&<BillingNotice/>}
-      {view === "share" ? <div className="min-h-0 flex-1 overflow-y-auto"><div className="px-4 pt-3 md:hidden"><SidebarTrigger/></div><ShareView/></div> : view === "settings" ? <div className="min-h-0 flex-1 overflow-y-auto"><div className="px-4 pt-3 md:hidden"><SidebarTrigger/></div><DashboardSettings key={project.id} section={settingsSection}/></div> : view === "boards" ? <DashboardBoards/> : !activeBoard ? <div className="mx-auto w-full max-w-xl p-6"><div className="mb-5 md:hidden"><SidebarTrigger/></div><NoBoard/></div> : <div className="flex h-full min-h-0">
+      {view === "conversations" ? <ConversationsInbox/> : view === "share" ? <div className="min-h-0 flex-1 overflow-y-auto"><div className="px-4 pt-3 md:hidden"><SidebarTrigger/></div><ShareView/></div> : view === "settings" ? <div className="min-h-0 flex-1 overflow-y-auto"><div className="px-4 pt-3 md:hidden"><SidebarTrigger/></div><DashboardSettings key={project.id} section={settingsSection}/></div> : view === "boards" ? <DashboardBoards/> : !activeBoard ? <div className="mx-auto w-full max-w-xl p-6"><div className="mb-5 md:hidden"><SidebarTrigger/></div><NoBoard/></div> : <div className="flex h-full min-h-0">
         <section aria-label="Request inbox" className={cn("flex min-h-0 w-full shrink-0 flex-col border-r border-border/60 lg:w-[300px] xl:w-[320px]",detailOpen&&"hidden lg:flex")}>
           <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2"><SidebarTrigger className="md:hidden"/><h1 className="text-[13px] font-medium tracking-[-0.135px]">Requests</h1><span aria-label={visibleItems.length+" requests in this view"} className="text-[13px] tabular-nums text-muted-foreground">{visibleItems.length}</span><div className="ms-auto flex shrink-0 items-center gap-2"><Menu><MenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Filter and sort requests" title={"Sort: "+FEEDBACK_SORT_OPTIONS.find(option=>option.value===sort)?.label} className="size-8 rounded-lg text-muted-foreground"/>}><FilterIcon className="size-4"/></MenuTrigger><MenuPopup align="end"><MenuGroup><MenuGroupLabel>Sort by</MenuGroupLabel><MenuRadioGroup value={sort} onValueChange={value=>setSort(value)}>{FEEDBACK_SORT_OPTIONS.map(option=><MenuRadioItem key={option.value} value={option.value}>{option.label}</MenuRadioItem>)}</MenuRadioGroup></MenuGroup>{boardFilter&&<><MenuSeparator/><MenuItem render={<Link href="/dashboard"/>}>Show workspace requests</MenuItem></>}</MenuPopup></Menu><Select value={categoryFilter} onValueChange={value=>{if(value){setCategoryFilter(value);resetSelection();}}} items={[{value:"all",label:"All types"},...Object.entries(FEEDBACK_CATEGORIES).map(([value,label])=>({value,label}))]}><SelectTrigger aria-label="Filter request type" className="h-8 w-[118px] min-w-0 rounded-lg px-2 text-[13px]"><SelectValue>{value=>value==="all"?"All types":<FeedbackTypeLabel category={value as FeedbackCategory}/>}</SelectValue></SelectTrigger><SelectPopup><SelectItem value="all">All types</SelectItem>{Object.keys(FEEDBACK_CATEGORIES).map(value=><SelectItem key={value} value={value}><FeedbackTypeLabel category={value as keyof typeof FEEDBACK_CATEGORIES}/></SelectItem>)}</SelectPopup></Select></div></header>
           <div className="px-4 pb-4"><RequestSearch dashboard items={visibleItems} loading={loading} error={error} onSelect={id=>{setSelectedId(id);setDetailOpen(true);}}/></div>

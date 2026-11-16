@@ -1,5 +1,7 @@
 "use server";
 
+import {authenticateConversation,requireChat} from '@/server/chat/service';
+import {conversationFeedback,conversations} from '@/server/db/schema';
 import {createHash,randomUUID} from 'node:crypto';
 import {and,eq,isNull,sql,asc,inArray,or} from 'drizzle-orm';
 import {z} from 'zod';
@@ -16,7 +18,7 @@ import {runService,ServiceError} from '@/server/result';
 const uuid=z.string().uuid();
 const images=z.array(uuid).max(3,'Attach up to 3 images.').optional();
 const command=z.discriminatedUnion('type',[
- z.object({type:z.literal('create'),requestId:uuid.optional(),category:z.enum(['feedback','bug','feature_request']).default('feedback'),title:z.string().trim().min(4).max(160),description:z.string().trim().min(1).max(3000),anonymous:z.boolean().optional(),channel:z.enum(['board','widget']).optional(),name:z.string().trim().max(80).optional(),email:z.string().trim().toLowerCase().max(254).refine(value=>!value||z.email().safeParse(value).success,'Enter a valid email address.').optional(),images}),
+ z.object({type:z.literal('create'),conversation:z.object({id:z.uuid(),token:z.string().regex(/^[a-f0-9]{64}$/).optional()}).optional(),requestId:uuid.optional(),category:z.enum(['feedback','bug','feature_request']).default('feedback'),title:z.string().trim().min(4).max(160),description:z.string().trim().min(1).max(3000),anonymous:z.boolean().optional(),channel:z.enum(['board','widget']).optional(),name:z.string().trim().max(80).optional(),email:z.string().trim().toLowerCase().max(254).refine(value=>!value||z.email().safeParse(value).success,'Enter a valid email address.').optional(),images}),
  z.object({type:z.literal('comment'),requestId:uuid.optional(),id:uuid,body:z.string().trim().max(3000),parentCommentId:uuid.optional(),images}),
  z.object({type:z.literal('vote'),id:uuid,active:z.boolean()}),
  z.object({type:z.literal('reaction'),id:uuid,commentId:uuid,active:z.boolean()}),
@@ -71,6 +73,7 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
  let createdId:string|undefined;
  await getDb().transaction(async tx=>{
   if(value.type==='create'){
+   if(value.conversation){await requireChat(wid,tx);if(value.conversation.token)await authenticateConversation(tx,wid,value.conversation.id,value.conversation.token,true);else{if(!who.user)throw new ServiceError('unauthenticated','Reconnect to chat.');await requireWorkspaceRole(tx,{workspaceId:wid,userId:who.user.id,minimumRole:'member'});const [conv]=await tx.select().from(conversations).where(and(eq(conversations.workspaceId,wid),eq(conversations.id,value.conversation.id))).for('update');if(!conv)throw new ServiceError('not_found','Conversation not found.');}}
    if(value.channel==='widget'){
     const [setting]=await tx.select().from(widgetSettings).where(and(eq(widgetSettings.workspaceId,wid),isNull(widgetSettings.boardId))).limit(1);
     if(setting&&!setting.enabled)throw new ServiceError('forbidden','New feedback is paused.');
@@ -83,6 +86,7 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
    if(!created)throw new ServiceError('conflict','Feedback could not be created. Try again.');
    await publishActivity(tx,{type:'new_feedback',workspaceId:wid,feedbackId:created.id,actorId:who.user?.id,eventId:created.id});
    if(who.user)await tx.insert(follows).values({workspaceId:wid,feedbackId:created.id,userId:who.user.id}).onConflictDoNothing();
+   if(value.conversation)await tx.insert(conversationFeedback).values({workspaceId:wid,conversationId:value.conversation.id,feedbackId:created.id}).onConflictDoNothing();
    createdId=created.id;await linkAttachments(tx,wid,who,value.images,{feedbackId:created.id},newRecord);await tx.insert(votes).values({workspaceId:wid,feedbackId:created.id,userId:who.user?.id??null,guestActorId:who.guestId}).onConflictDoNothing();return;
   }
   // Lock the post so deletes/status changes and concurrent activity cannot interleave.

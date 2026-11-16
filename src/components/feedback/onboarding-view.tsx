@@ -1,4 +1,6 @@
 "use client";
+
+import {ErrorNotice} from '@/components/ui/error-notice';
 import {captureAnalytics} from "@/lib/analytics";
 import {ActionButton} from "@/components/ui/action-button";
 
@@ -165,9 +167,9 @@ export function OnboardingView({
           </Field>
           <WorkspaceIdentityFields name={name} handle={slug} onNameChange={value=>{setName(value);if(!edited)setSlug(slugify(value).slice(0,40).replace(/-$/,""));setError("");}} onHandleChange={value=>{setEdited(true);setSlug(value);setError("");}}/>
           {error && (
-            <p role="alert" className="text-xs text-destructive-foreground">
+            <ErrorNotice  className="text-xs text-foreground">
               {error}
-            </p>
+            </ErrorNotice>
           )}
           <ActionButton
             state={submitting?"pending":error?"error":"idle"}

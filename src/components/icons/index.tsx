@@ -138,3 +138,6 @@ export function FilterIcon({size=16,strokeWidth=2,...props}:IconProps){return <s
 
 import InvoiceData from "@hugeicons/core-free-icons/Invoice02Icon";
 export function InvoiceIcon(props:IconProps){return <HugeiconsIcon icon={InvoiceData} size={16} strokeWidth={2.25} aria-hidden="true" data-icon-library="hugeicons" {...props}/>;}
+
+import MessagesData from "@hugeicons/core-free-icons/MessageMultiple01Icon";
+export function MessagesIcon(props:IconProps){return <HugeiconsIcon icon={MessagesData} size={16} strokeWidth={2.25} aria-hidden="true" data-icon-library="hugeicons" {...props}/>;}

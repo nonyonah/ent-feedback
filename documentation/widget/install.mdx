@@ -42,6 +42,23 @@ export function FeedbackWidget() {
 
 Render `FeedbackWidget` once in the shared layout. Do not add a second copy on each page.
 
+## Show the widget inside a signed-in app
+
+Place the loader in your application’s shared layout, outside page-specific content. The same loader then appears on public pages and authenticated routes; it does not need a second installation after login.
+
+Keep the workspace and board slugs fixed to your support workspace. Changing them to match the current customer’s workspace would send support requests to a different destination. Do not put auth tokens or private API keys in script attributes.
+
+If your framework navigates without reloading the page, mount the loader once. Hide and close it on routes where it should not appear, such as sign-in screens or embedded widget pages. Ent’s loader supports this same-page event:
+
+```js
+window.dispatchEvent(new CustomEvent("ent:host-visibility", {
+  detail: { visible: false },
+}));
+// Use visible: true to show it again.
+```
+
+This controls visibility only; it does not identify a user. The widget does not currently offer host-user SSO. A visitor can continue a chat after a refresh in the same browser, but clearing storage or changing browsers can start a new session.
+
 ## Appearance
 
 By default, the launcher follows the host page’s light/dark theme and falls back to the device theme. It recognizes `html.dark`, `html.light`, `data-theme` and `data-color-scheme`.

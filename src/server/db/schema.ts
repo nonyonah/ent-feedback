@@ -1,13 +1,17 @@
+import {defaultOperations,type ChatOperations} from '@/lib/chat/availability';
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  bigserial,
   check,
   foreignKey,
   index,
   integer,
   jsonb,
   pgEnum,
-  pgTable,
+  PgSchema,
+  type PgTableFn,
+  pgTable as defaultPgTable,
   primaryKey,
   text,
   timestamp,
@@ -15,6 +19,15 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+
+// Explicit qualification prevents pooled-session search_path from redirecting
+// queries to an absent or unrelated schema. PgSchema's table builder preserves
+// the existing public tables; this is a query qualification change, not a move.
+// Drizzle Kit represents the default public schema as undefined in snapshots.
+// Keep its representation stable while qualifying application SQL explicitly.
+const pgTable: PgTableFn<string|undefined> = process.env.ENT_SCHEMA_GENERATION === "true"
+  ? defaultPgTable
+  : new PgSchema("public").table;
 
 const timestamps = () => ({
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -683,3 +696,70 @@ export const billingTrialClaims = pgTable('billing_trial_claims', {
  expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),
  ...timestamps(),
 });
+
+
+// Conversation capabilities are independent of public feedback visitor tokens.
+export const chatSettings = pgTable("chat_settings", {
+  workspaceId: uuid("workspace_id").primaryKey().references(() => workspaces.id, {onDelete:"cascade"}),
+  enabled: boolean("enabled").notNull().default(false),
+  operations: jsonb("operations").$type<ChatOperations>().notNull().default(defaultOperations),
+  slackEscalations: boolean("slack_escalations").notNull().default(true),
+  slackFollowups: boolean("slack_followups").notNull().default(true),
+  slackFeedback: boolean("slack_feedback").notNull().default(false),
+  slackStatuses: boolean("slack_statuses").notNull().default(false),
+  ...timestamps(),
+}).enableRLS();
+export const chatWebsites = pgTable("chat_websites", {
+ workspaceId:uuid("workspace_id").primaryKey().references(()=>workspaces.id,{onDelete:"cascade"}),
+ documentationUrl:text("documentation_url"),documentationPages:jsonb("documentation_pages").$type<{url:string;title:string;text:string}[]>().notNull().default([]),documentationSyncedAt:timestamp("documentation_synced_at",{withTimezone:true}),
+ url:text("url").notNull().default(""),pages:jsonb("pages").$type<{url:string;title:string;text:string}[]>().notNull().default([]),
+ syncedAt:timestamp("synced_at",{withTimezone:true}).notNull().defaultNow(),
+ ...timestamps(),
+}).enableRLS();
+export const chatFaqs = pgTable("chat_faqs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, {onDelete:"cascade"}),
+  question: text("question").notNull(), answer: text("answer").notNull(), ...timestamps(),
+}, t => [index("chat_faqs_workspace_idx").on(t.workspaceId), check("chat_faq_lengths",sql`length(${t.question}) between 1 and 200 and length(${t.answer}) between 1 and 3000`)]).enableRLS();
+export const conversations = pgTable("conversations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id,{onDelete:"cascade"}),
+  tokenHash: text("token_hash").notNull(), email: text("email"),
+  status: text("status").$type<"open"|"escalated"|"resolved">().notNull().default("open"),
+  mode: text("mode").$type<"ai"|"human">().notNull().default("ai"),
+  lastActivityAt: timestamp("last_activity_at",{withTimezone:true}).notNull().defaultNow(),
+  preview: text("preview").notNull().default(""),
+  topicIds: jsonb("topic_ids").$type<string[]>().notNull().default([]),
+  unread: boolean("unread").notNull().default(false),
+  generationId: uuid("generation_id"), generationExpiresAt: timestamp("generation_expires_at",{withTimezone:true}),
+  ...timestamps(),
+}, t => [unique("conversations_id_workspace_unique").on(t.id,t.workspaceId),unique("conversations_token_unique").on(t.tokenHash),index("conversations_inbox_idx").on(t.workspaceId,t.status,t.lastActivityAt),check("conversations_status_check",sql`${t.status} in ('open','escalated','resolved')`),check("conversations_mode_check",sql`${t.mode} in ('ai','human')`)]).enableRLS();
+export const chatMessages = pgTable("chat_messages", {
+  sequence: bigserial("sequence",{mode:"number"}).notNull(),
+  id: uuid("id").primaryKey().defaultRandom(), workspaceId: uuid("workspace_id").notNull(),
+  conversationId: uuid("conversation_id").notNull(),
+  role: text("role").$type<"visitor"|"assistant"|"team">().notNull(),
+  body: text("body").notNull(), requestId: uuid("request_id").notNull(),
+  sourceIds: jsonb("source_ids").$type<string[]>().notNull().default([]),
+  suggestion: jsonb("suggestion").$type<{title:string;description:string}|null>(),
+  authorUserId: uuid("author_user_id").references(()=>users.id,{onDelete:"set null"}),
+  createdAt: timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
+},t=>[foreignKey({columns:[t.conversationId,t.workspaceId],foreignColumns:[conversations.id,conversations.workspaceId]}).onDelete("cascade"),unique("chat_messages_request_role_unique").on(t.conversationId,t.requestId,t.role),index("chat_messages_cursor_idx").on(t.conversationId,t.sequence),check("chat_messages_role_check",sql`${t.role} in ('visitor','assistant','team')`),check("chat_messages_body_length",sql`length(${t.body}) between 1 and 4000`)]).enableRLS();
+export const conversationFeedback = pgTable("conversation_feedback", {
+ workspaceId:uuid("workspace_id").notNull(),conversationId:uuid("conversation_id").notNull(),feedbackId:uuid("feedback_id").notNull(),
+ createdAt:timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
+},t=>[primaryKey({columns:[t.conversationId,t.feedbackId]}),foreignKey({columns:[t.conversationId,t.workspaceId],foreignColumns:[conversations.id,conversations.workspaceId]}).onDelete("cascade"),foreignKey({columns:[t.feedbackId,t.workspaceId],foreignColumns:[feedback.id,feedback.workspaceId]}).onDelete("cascade")]).enableRLS();
+
+export const chatUploads = pgTable('chat_uploads', {
+ id:uuid('id').primaryKey().defaultRandom(), workspaceId:uuid('workspace_id').notNull(), conversationId:uuid('conversation_id').notNull(),
+ uploaderUserId:uuid('uploader_user_id').references(()=>users.id,{onDelete:'set null'}),
+ storageKey:text('storage_key').notNull(),requestId:uuid('request_id'),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[foreignKey({columns:[t.conversationId,t.workspaceId],foreignColumns:[conversations.id,conversations.workspaceId]}).onDelete('cascade'),index('chat_uploads_request_idx').on(t.conversationId,t.requestId)]).enableRLS();
+export const slackThreads = pgTable('slack_threads', {
+ id:uuid('id').primaryKey().defaultRandom(),workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ connectionId:uuid('connection_id').notNull().references(()=>integrationConnections.id,{onDelete:'cascade'}),
+ channel:text('channel').notNull(),threadTs:text('thread_ts').notNull(),
+ conversationId:uuid('conversation_id'),feedbackId:uuid('feedback_id'),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[unique('slack_threads_channel_ts_unique').on(t.connectionId,t.channel,t.threadTs),uniqueIndex('slack_threads_conversation_unique').on(t.connectionId,t.conversationId),uniqueIndex('slack_threads_feedback_unique').on(t.connectionId,t.feedbackId),check('slack_threads_one_target',sql`num_nonnulls(${t.conversationId},${t.feedbackId})=1`)]).enableRLS();

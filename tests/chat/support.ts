@@ -1,0 +1,67 @@
+import {POST as uploadImage} from '@/app/api/chat/[workspaceId]/[conversationId]/attachments/route';
+import {GET as readImage} from '@/app/api/chat/images/[id]/route';
+import sharp from 'sharp';
+import {defaultOperations} from '@/lib/chat/availability';
+import assert from 'node:assert/strict';
+import {randomUUID,createHmac} from 'node:crypto';
+import {eq} from 'drizzle-orm';
+import {getDb} from '@/server/db/client';
+import {users,workspaces,workspaceMembers,boards,feedback,chatSettings,chatUploads,chatMessages,integrationConnections,slackThreads,comments,jobs} from '@/server/db/schema';
+import {startConversation,sendVisitor,snapshot,availableOperators} from '@/server/chat/service';
+import {replyConversationAction,changeConversationAction} from '@/server/actions/chat';
+import {linkChatImages,verifyChatImage} from '@/server/chat/uploads';
+import {POST as slackEndpoint} from '@/app/api/integrations/slack/events/route';
+import {validSlackSignature,receiveSlackEvent,slackRequestId,receiveSlackAction} from '@/server/chat/slack';
+import {enqueueSlack,deliverChatJob} from '@/server/chat/notifications';
+import {seal} from '@/server/integration-crypto';
+declare const global:typeof globalThis&{chatUser:typeof users.$inferSelect;chatEnv:Record<string,unknown>;slackCalls:number;slackFileBytes:Buffer;slackPayloads:Record<string,unknown>[]};
+export async function run(){
+ const db=getDb();const [owner,outsider]=await db.insert(users).values(['owner','outside'].map(name=>({clerkUserId:name+randomUUID(),name,email:name+'@example.com'}))).returning();global.chatUser=owner;
+ const [workspace,other]=await db.insert(workspaces).values([{name:'Support alpha',handle:'alpha'},{name:'Support bravo',handle:'bravo'}]).returning();
+ await db.insert(workspaceMembers).values([{workspaceId:workspace.id,userId:owner.id,role:'owner'},{workspaceId:other.id,userId:outsider.id,role:'owner'}]);
+ await db.insert(chatSettings).values({workspaceId:workspace.id,enabled:true,slackFeedback:true,operations:defaultOperations}).onConflictDoNothing();
+ // Use settings defaults for the schedule validation.
+ await db.update(chatSettings).set({operations:defaultOperations}).where(eq(chatSettings.workspaceId,workspace.id));
+ const session=await startConversation(workspace.id);const requestId=randomUUID();const imageBytes=await sharp({create:{width:4,height:4,channels:4,background:'#212529'}}).png().toBuffer();global.slackFileBytes=imageBytes;
+ const uploadResponse=await uploadImage(new Request('https://ent.test/api/chat/upload',{method:'POST',headers:{Authorization:'Bearer '+session.token},body:imageBytes}),{params:Promise.resolve({workspaceId:workspace.id,conversationId:session.id})});assert.equal(uploadResponse.status,200);const upload=(await uploadResponse.json()).data as {id:string};
+ const input={requestId,body:'Hello 👋',images:[upload.id]};await sendVisitor(workspace.id,session.id,session.token,input);await sendVisitor(workspace.id,session.id,session.token,input);
+ let state=await snapshot(workspace.id,session.id,undefined,session.token);assert.equal(state.mode,'human');assert.equal(state.status,'escalated');assert.equal(state.messages.length,1);assert.equal(state.messages[0].body,'Hello 👋');assert.equal(state.messages[0].images?.length,1);assert.equal(state.generating,false);
+ const image=new URL(state.messages[0].images![0]);assert.ok(verifyChatImage(upload.id,image.searchParams.get('expires')!,image.searchParams.get('signature')!));const imageResponse=await readImage(new Request(image.href),{params:Promise.resolve({id:upload.id})});assert.equal(imageResponse.status,200);assert.equal(imageResponse.headers.get('Content-Type'),'image/webp');assert.ok((await imageResponse.arrayBuffer()).byteLength>0);assert.equal(verifyChatImage(randomUUID(),image.searchParams.get('expires')!,image.searchParams.get('signature')!),false);
+ await assert.rejects(()=>sendVisitor(workspace.id,session.id,session.token,{...input,images:[]}));
+ const second=await startConversation(workspace.id);await assert.rejects(()=>db.transaction(tx=>linkChatImages(tx,workspace.id,second.id,randomUUID(),[upload.id])));
+ const [teamUpload]=await db.insert(chatUploads).values({workspaceId:workspace.id,conversationId:session.id,storageKey:'test/team.webp',uploaderUserId:owner.id}).returning();
+ const reply={requestId:randomUUID(),body:'Here is a screenshot ✅',images:[teamUpload.id]};assert.equal((await replyConversationAction(workspace.id,session.id,reply)).ok,true);assert.equal((await replyConversationAction(workspace.id,session.id,reply)).ok,true);
+ assert.equal((await changeConversationAction(workspace.id,session.id,'ai')).ok,false);state=await snapshot(workspace.id,session.id,undefined,session.token);assert.equal(state.messages.length,2);assert.equal(state.messages[1].images?.length,1);
+ global.chatUser=outsider;assert.equal((await replyConversationAction(workspace.id,session.id,{requestId:randomUUID(),body:'forged'})).ok,false);global.chatUser=owner;
+ assert.ok((await availableOperators(workspace.id)).every(person=>person.id===owner.id));
+ const timestamp=String(Math.floor(Date.now()/1000)),raw='{"type":"event_callback"}',secret='fixture-signing';const sig='v0='+createHmac('sha256',secret).update('v0:'+timestamp+':'+raw).digest('hex');assert.equal(validSlackSignature(raw,timestamp,sig,secret),true);assert.equal(validSlackSignature(raw+'x',timestamp,sig,secret),false);assert.equal(validSlackSignature(raw,String(Number(timestamp)-301),sig,secret),false);
+ const token={accessToken:'fixture-token',teamId:'T1',webhookUrl:'https://hooks.slack.com/services/test',channel:'C1',label:'Support'};
+ const [connection]=await db.insert(integrationConnections).values({workspaceId:workspace.id,provider:'slack',scope:'workspace',authorizationState:'connected',encryptedSecretRef:seal(token,String(global.chatEnv.INTEGRATION_ENCRYPTION_KEY),workspace.id+':slack'),allowedChannels:['C1']}).returning();
+ const [board]=await db.insert(boards).values({workspaceId:workspace.id,handle:'product',name:'Product'}).returning();const [post]=await db.insert(feedback).values({workspaceId:workspace.id,boardId:board.id,authorUserId:owner.id,title:'Broken layout',body:'Screenshot attached',category:'bug'}).returning();
+ await enqueueSlack(db,{workspaceId:workspace.id,event:'new_feedback',eventId:post.id,feedbackId:post.id});const [job]=await db.select().from(jobs).where(eq(jobs.dedupeKey,'chat:slack:new_feedback:'+post.id));await deliverChatJob(job);assert.ok(global.slackPayloads.some(p=>JSON.stringify(p).includes('Bug')));
+ await db.insert(slackThreads).values({workspaceId:workspace.id,connectionId:connection.id,channel:'C1',threadTs:'100.1',conversationId:session.id});await enqueueSlack(db,{workspaceId:workspace.id,event:'followup',eventId:requestId,conversationId:session.id});const [imageJob]=await db.select().from(jobs).where(eq(jobs.dedupeKey,'chat:slack:followup:'+requestId));await deliverChatJob(imageJob);assert.ok(global.slackPayloads.some(p=>JSON.stringify(p).includes('image_url')));
+ const event={type:'event_callback',team_id:'T1',event_id:'Ev1',event:{type:'message',channel:'C1',thread_ts:'100.1',ts:'101.1',user:'U1',text:'We can help :+1:'}};
+ await receiveSlackEvent(event);await receiveSlackEvent(event);state=await snapshot(workspace.id,session.id,undefined,session.token);assert.equal(state.messages.filter(m=>m.body==='We can help 👍').length,1);assert.equal(state.messages.at(-1)?.role,'team');await receiveSlackEvent({...event,event_id:'EvImage',event:{...event.event,text:'Screenshot :tada:',files:[{id:'F1',url_private_download:'https://files.slack.com/test.png',size:imageBytes.length,mimetype:'image/png'}]}});state=await snapshot(workspace.id,session.id,undefined,session.token);assert.equal(state.messages.at(-1)?.images?.length,1);assert.ok(state.messages.at(-1)?.body.includes('🎉'));
+ await receiveSlackEvent({...event,event_id:'EvWrong',team_id:'T2'});await receiveSlackEvent({...event,event_id:'EvGuest',event:{...event.event,user:'UOutside'}});assert.equal((await db.select().from(chatMessages).where(eq(chatMessages.requestId,slackRequestId('EvGuest')))).length,0);
+ const [boardThread]=await db.select().from(slackThreads).where(eq(slackThreads.feedbackId,post.id));await receiveSlackEvent({...event,event_id:'EvBoard',event:{...event.event,thread_ts:boardThread.threadTs,text:'Fixed it ✅'}});assert.equal((await db.select().from(comments).where(eq(comments.id,slackRequestId('EvBoard'))))[0].body,'Fixed it ✅');
+
+ // Interactive status changes are signed, scoped to the mapped thread and idempotent.
+ const action={type:'block_actions',team:{id:'T1'},user:{id:'U1'},container:{type:'message',channel_id:'C1',message_ts:'100.1'},actions:[{action_id:'ent_chat_status_resolved',value:session.id,action_ts:'1700000000.1'}]};
+ global.chatEnv.SLACK_SIGNING_SECRET=secret;
+ const actionRaw=new URLSearchParams({payload:JSON.stringify(action)}).toString();const signed='v0='+createHmac('sha256',secret).update('v0:'+timestamp+':'+actionRaw).digest('hex');
+ const request=()=>new Request('https://ent.test/api/integrations/slack/events',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded','x-slack-request-timestamp':timestamp,'x-slack-signature':signed},body:actionRaw});
+ assert.equal((await slackEndpoint(request())).status,200);assert.equal((await slackEndpoint(request())).status,200);
+ assert.equal((await slackEndpoint(new Request('https://ent.test/api/integrations/slack/events',{method:'POST',headers:{'x-slack-request-timestamp':timestamp,'x-slack-signature':signed},body:actionRaw+'x'}))).status,401);
+ const inbound=(await db.select().from(jobs)).filter(job=>job.dedupeKey?.startsWith('slack:action:'));assert.equal(inbound.length,1);
+ await deliverChatJob(inbound[0]);state=await snapshot(workspace.id,session.id,undefined,session.token);assert.equal(state.status,'resolved');assert.equal(state.messages.some(message=>message.body==='Resolve'),false);
+ await receiveSlackAction(action,'same-resolved-status');assert.ok((await db.select().from(jobs)).some(job=>job.dedupeKey==='chat:slack:status_changed:same-resolved-status'),'Clicking an older button still confirms the current state');
+ const confirmation=(await db.select().from(jobs)).find(job=>job.dedupeKey==='chat:slack:status_changed:'+String((inbound[0].payload as {eventId:string}).eventId));assert.ok(confirmation);await deliverChatJob(confirmation);assert.ok(global.slackPayloads.some(payload=>JSON.stringify(payload).includes('Conversation marked Resolved.')));assert.ok(global.slackPayloads.some(payload=>JSON.stringify(payload).includes('ent_chat_status_open')));
+ await receiveSlackAction({...action,actions:[{...action.actions[0],action_id:'ent_chat_status_open',action_ts:'1700000001.1'}]},'status-open');assert.equal((await snapshot(workspace.id,session.id,undefined,session.token)).status,'open');
+ await deliverChatJob(inbound[0]);assert.equal((await snapshot(workspace.id,session.id,undefined,session.token)).status,'open','Retry of an old action must not undo a newer change');
+ await receiveSlackAction({...action,actions:[{...action.actions[0],action_id:'ent_chat_status_escalated',action_ts:'1700000002.1'}]},'status-queue');assert.equal((await snapshot(workspace.id,session.id,undefined,session.token)).status,'escalated');
+ for(const forged of [{...action,user:{id:'UOutside'}},{...action,team:{id:'T2'}},{...action,container:{...action.container,channel_id:'C2'}},{...action,container:{...action.container,message_ts:'999.1'}},{...action,actions:[{...action.actions[0],value:second.id}]}])await receiveSlackAction(forged,randomUUID());
+ assert.equal((await snapshot(workspace.id,session.id,undefined,session.token)).status,'escalated','Nonmembers and unrelated teams/channels/threads cannot change status');
+ assert.equal((await changeConversationAction(workspace.id,session.id,'resolve')).ok,true);assert.equal((await snapshot(workspace.id,session.id,undefined,session.token)).status,'resolved');
+ await db.update(integrationConnections).set({authorizationState:'disconnected'}).where(eq(integrationConnections.id,connection.id));await receiveSlackEvent({...event,event_id:'EvDisconnected'});await receiveSlackAction({...action,actions:[{...action.actions[0],action_id:'ent_chat_status_open'}]},'disconnected-status');assert.equal((await snapshot(workspace.id,session.id,undefined,session.token)).status,'resolved');assert.equal((await db.select().from(chatMessages).where(eq(chatMessages.requestId,slackRequestId('EvDisconnected')))).length,0);
+ console.log('PASS: human-only chat, image ownership and signed links, attachment retry idempotency, workspace isolation, manual replies, operator schedule, Slack signature/replay rejection, typed board alerts, thread replies for chat and boards, member matching, event deduplication, signed status buttons, resolve/reopen/queue sync, stale-action retry safety, action authorization and disconnect enforcement. No live providers contacted.');
+}

@@ -1,4 +1,6 @@
 "use client";
+
+import {ErrorNotice} from '@/components/ui/error-notice';
 import {features} from "@/lib/features";
 
 import * as React from "react";
@@ -213,9 +215,9 @@ function EnabledInviteTeamDialog({
               </FieldDescription>
             </Field>
             {error && (
-              <p role="alert" className="text-xs text-destructive-foreground">
+              <ErrorNotice  className="text-xs text-foreground">
                 {error}
-              </p>
+              </ErrorNotice>
             )}
           </div>
           <DialogFooter className="flex-row justify-end">

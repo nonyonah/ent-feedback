@@ -1,3 +1,5 @@
+import type {Viewport} from 'next';
+export const viewport:Viewport={width:'device-width',initialScale:1,viewportFit:'cover'};
 import { notFound } from "next/navigation";
 import { EmbeddedBoard } from "@/components/feedback/embedded-board";
 import { PublicWorkspaceBoundary } from "@/components/feedback/public-workspace-boundary";

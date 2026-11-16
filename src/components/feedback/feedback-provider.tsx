@@ -14,7 +14,7 @@ import {toastManager} from '@/components/ui/toast';
 import type {FeedbackItemData,FeedbackStatus,FeedbackCategory} from '@/lib/feedback-data';
 
 type MutationData=Extract<Awaited<ReturnType<typeof mutateFeedbackAction>>,{ok:true}>['data'];
-type NewFeedbackInput={category?:FeedbackCategory;title:string;description:string;images?:string[];email?:string;name?:string;channel?:'board'|'widget'};
+type NewFeedbackInput={conversation?:{id:string;token?:string};category?:FeedbackCategory;title:string;description:string;images?:string[];email?:string;name?:string;channel?:'board'|'widget'};
 type FeedbackContextValue={
  trendingIds:ReadonlySet<string>;items:FeedbackItemData[];loading:boolean;error:string;pending:boolean;retry:()=>void;
  vote:(id:string)=>void;
@@ -119,7 +119,7 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
  }
  function report(operation:Promise<unknown>,title='Change wasn’t saved'){void operation.catch(error=>toastManager.add({title,description:error instanceof Error?error.message:'Try again.',type:'error'}));}
  async function addFeedback(input:NewFeedbackInput){
-  const result=await mutate({type:'create',category:input.category,channel:input.channel,title:input.title,description:input.description,name:input.name,email:input.email,anonymous:!publicUser,images:input.images});
+  const result=await mutate({type:'create',conversation:input.conversation,category:input.category,channel:input.channel,title:input.title,description:input.description,name:input.name,email:input.email,anonymous:!publicUser,images:input.images});
   const created=result.items.find(item=>item.id===result.createdId);if(!created)throw Error('Feedback was saved. Refresh the board to view it.');return created;
  }
  const value:FeedbackContextValue={trendingIds:getTrendingIds(items),items,loading,error,pending,retry,

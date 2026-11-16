@@ -1,3 +1,5 @@
+import type {Viewport} from 'next';
+export const viewport:Viewport={width:'device-width',initialScale:1,viewportFit:'cover'};
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Widget } from "@/components/feedback/widget";

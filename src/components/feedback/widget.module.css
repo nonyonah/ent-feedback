@@ -1,0 +1,14 @@
+/* Compact embedded UI keeps readable native input sizes on touch devices. */
+@media (pointer: coarse) {
+  .shell input:not([data-widget-title]),
+  .shell textarea {
+    font-size: 16px;
+  }
+}
+
+@media (forced-colors: active) {
+  .shell :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}

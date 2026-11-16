@@ -35,7 +35,8 @@
           "guides/boards",
           "guides/feedback",
           "guides/conversations",
-          "guides/share"
+          "guides/share",
+          "guides/live-chat"
         ]
       },
       {
@@ -44,6 +45,12 @@
           "widget/install",
           "widget/settings",
           "widget/troubleshooting"
+        ]
+      },
+      {
+        "group": "Integrations",
+        "pages": [
+          "integrations/slack"
         ]
       },
       {

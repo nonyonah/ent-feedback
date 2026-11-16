@@ -6,6 +6,7 @@ import type { PgDatabase } from "drizzle-orm/pg-core";
 import { Pool } from "pg";
 
 import { getServerEnv } from "@/server/env";
+import {databaseConnectionUrl} from "./connection";
 import * as schema from "@/server/db/schema";
 
 export type Database = NodePgDatabase<typeof schema>;
@@ -32,7 +33,7 @@ const globalForDatabase = globalThis as unknown as {
 function createDatabaseState(): DatabaseState {
   const env = getServerEnv();
   const pool = new Pool({
-    connectionString: env.DATABASE_URL,
+    connectionString: databaseConnectionUrl(env.DATABASE_URL),
     // Every request must fit in a single connection. A transaction holds one
     // connection for its whole lifetime, so a nested query on the pool would
     // wait for a second slot and deadlock the pool once every slot is busy.

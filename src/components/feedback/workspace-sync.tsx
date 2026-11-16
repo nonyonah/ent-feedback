@@ -1,5 +1,7 @@
 "use client";
 
+
+import {ErrorNotice} from '@/components/ui/error-notice';
 import {DashboardLoading} from "./dashboard-loading";
 import * as React from "react";
 import { useRouter } from "next/navigation";
@@ -121,9 +123,9 @@ export function WorkspaceSync({ redirectWhenEmpty = false, initialWorkspaces }: 
   }
 
   return (
-    <p role="alert" className="px-4 py-3 text-xs text-destructive-foreground">
+    <ErrorNotice  className="px-4 py-3 text-xs text-foreground">
       Workspaces could not be loaded. Refresh the page to try again.
-    </p>
+    </ErrorNotice>
   );
 }
 

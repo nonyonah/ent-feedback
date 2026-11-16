@@ -45,7 +45,7 @@
   frame.style.transformOrigin = "bottom right";
   let open = false;
   let activeAnimation = null;
-  function setOpen(value, instant = false) {
+  function setOpen(value, instant = false, restoreFocus = true) {
     const visible = frame.style.display !== "none";
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const closed = { opacity: "0", transform: reduced ? "none" : "translateY(8px) scale(.97)" };
@@ -53,10 +53,11 @@
     const from = visible ? { opacity: computed.opacity, transform: computed.transform } : closed;
     if (activeAnimation) { activeAnimation.cancel(); activeAnimation = null; }
     open = value;
+    if (frame.contentWindow) frame.contentWindow.postMessage({type:"ent:visibility",open:open},new URL(frame.src).origin);
     button.setAttribute("aria-expanded", String(open));
     button.setAttribute("aria-label", open ? "Close feedback" : "Submit feedback");
     button.textContent = open ? "Close feedback" : "Submit feedback";
-    if (open) { frame.style.display = "block"; frame.focus(); } else button.focus();
+    if (open) { frame.style.display = "block"; frame.focus(); } else if (restoreFocus) button.focus();
     const to = open ? { opacity: "1", transform: "none" } : closed;
     if (instant || typeof frame.animate !== "function") {
       Object.assign(frame.style, to);
@@ -81,6 +82,7 @@
   button.addEventListener("keydown", event => { if (event.key === "Escape") setOpen(false, true); });
   window.addEventListener("message", event => {
     if (event.source !== frame.contentWindow || event.origin !== origin || !event.data) return;
+    if (event.data.type === "ent:ready") frame.contentWindow.postMessage({type:"ent:visibility",open:open},new URL(frame.src).origin);
     if (event.data.type === "ent:close") setOpen(false, event.data.inputModality === "keyboard");
     if (event.data.type === "ent:appearance" && /^#[0-9a-f]{6}$/i.test(event.data.accent)) {
       followSystem();
@@ -88,6 +90,12 @@
     }
   });
   window.addEventListener("keydown", event => { if (event.key === "Escape" && open) setOpen(false, true); });
+  // SPA hosts can hide the launcher on auth/embed routes without creating a second widget.
+  window.addEventListener("ent:host-visibility", event => {
+    if (!event.detail || typeof event.detail.visible !== "boolean") return;
+    if (!event.detail.visible) setOpen(false, true, false);
+    root.hidden = !event.detail.visible;
+  });
   root.append(frame, button);
   document.body.append(root);
   followSystem();

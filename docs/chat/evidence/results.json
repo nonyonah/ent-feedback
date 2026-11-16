@@ -1,0 +1,30 @@
+{
+  "results": [
+    "Bottom navigation preserves the chat draft across destinations",
+    "Composer supports Shift+Enter for a new line and Enter to send on desktop",
+    "Failed sends retain draft and reuse idempotency key",
+    "Request suggestions are reviewed and use existing create form",
+    "Dedicated optional contact form works after escalation",
+    "Widget emoji insertion, attachment preview/send and available operator avatars work",
+    "Closing pauses polling; reopening restores the conversation",
+    "Hidden pages pause polling",
+    "Widget light 320px: no horizontal overflow",
+    "Widget light 390px: no horizontal overflow",
+    "Widget light 768px: no horizontal overflow",
+    "Widget light 1440px: no horizontal overflow",
+    "Widget dark 320px: no horizontal overflow",
+    "Widget dark 390px: no horizontal overflow",
+    "Widget dark 768px: no horizontal overflow",
+    "Widget dark 1440px: no horizontal overflow",
+    "Coss chat preserves history scroll position and supports jump to latest",
+    "Live chat stays accessible while feedback is loading or unavailable",
+    "Disabled chat has no tab and does not poll",
+    "Shared Requests search trigger and keyboard shortcut remain functional",
+    "Team inbox replies render through polling",
+    "Availability schedule and existing-member operator selection save",
+    "Website sync reports imported pages",
+    "Independent documentation source syncs and displays detected topics",
+    "Settings and FAQ dialog fit mobile"
+  ],
+  "errors": []
+}

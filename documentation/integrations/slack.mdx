@@ -1,0 +1,36 @@
+---
+title: "Slack"
+description: "Receive feedback, reply to live chats and manage conversation status."
+---
+
+Connect Slack from **Settings → Integrations**. One connection serves the workspace’s feedback boards and live chat. Select the notification switches you need and save.
+
+## Receive and reply
+
+Ent keeps one Slack thread per feedback post or live conversation. Board notifications identify Feedback, Bug or Feature request. Reply inside the thread to send a response back to the corresponding board or chat.
+
+The replying Slack user must be an active member of the Ent workspace, using the same email in both services. Replies from outsiders, bots and unrelated threads are not imported. Standard emoji and up to three supported image attachments of 2 MB each can be mirrored. Custom Slack emoji are not mirrored as remote images.
+
+## Change live-chat status
+
+Live-chat notifications include actions for **In progress**, **Queue** and **Resolve**, excluding the state already shown on that message. Use **In progress** to reopen a resolved chat. Status changes sync with the Ent dashboard and widget; button clicks do not become visitor-facing messages.
+
+Direct button actions post a status confirmation in the Slack thread. The **Status changes** switch controls passive updates from Ent. Old notifications do not gain buttons retroactively; a new conversation or follow-up produces the updated controls.
+
+## Configure your Slack app
+
+If you manage the Slack app installation:
+
+1. Enable the bot scopes `incoming-webhook`, `chat:write`, `channels:history`, `groups:history`, `users:read`, `users:read.email` and `files:read`.
+2. Under **Event Subscriptions**, set the Request URL to `https://YOUR-ENT-APP/api/integrations/slack/events` and subscribe to `message.channels` and `message.groups`.
+3. Under **Interactivity & Shortcuts**, enable Interactivity and use the same Request URL.
+4. Configure the app’s signing secret on the Ent server. Keep credentials out of installation snippets and browser code.
+5. Reconnect Slack from Ent after granting new scopes, and invite the bot into the selected channel. Private channels also require the bot to be a member.
+
+For hosted Ent, the application URL is `https://ent.riftlabs.xyz`.
+
+## Check the connection
+
+Create one feedback post and start one live chat. Confirm both arrive in the selected channel. Reply in each thread with text, emoji and an image. Resolve and reopen the live conversation, then check its status in Ent.
+
+If controls or replies fail, check the workspace connection, selected channel, Slack app permissions, Interactivity URL and member email match. Disconnecting Slack stops delivery for the workspace’s boards and chat.

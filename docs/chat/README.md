@@ -370,3 +370,35 @@ Live chat messages show **Sent** and change to **Read** when the recipient views
 
 
 Topics and optional answer overrides are paused alongside AI. Settings show an unavailable state, automatic topic tagging is suspended, and conversation topic chips are hidden. Existing topics and approved answers are retained for later testing.
+
+
+### Feedback delivery and feature suggestions
+
+Feedback mutations attempt scoped email and Slack delivery with Next `after` once the transaction commits. Durable jobs retain retry/deduplication and preference checks. New posts notify active workspace members other than the actor; replies notify the author, relevant parent-comment author and followers. Guests who supplied an email receive authenticated replies to their submission; anonymous replies cannot trigger guest mail. Delivery revalidates the saved address and undeleted reply before sending. Own actions do not email the actor.
+
+Explicit request wording (for example, “please add” or “could you support”) produces a reviewable draft on visitor chat messages while AI remains paused. Widget and dashboard actions open the existing similarity-check and feedback form. Slack presents a review link scoped to the workspace, conversation and message. It opens Ent for authenticated review, not automatic publication or a native Slack creation modal. No extra Slack scopes or migrations are needed.
+
+Offline checks: `node scripts/check-feedback-delivery.mjs`, `node --import tsx --test tests/chat-feature-request.test.ts`, and `node scripts/check-chat-ui.mjs --feature-requests` (with the local Playwright module configured). The rollback-only Neon integration test requires network permission; no live inbox send was performed for this change.
+
+Live reply-notification delivery was accepted by Sendbyte and confirmed in the recipient’s inbox on November 16, 2026. The feature-request browser check now presses Create and verifies the feature_request category and conversation ID in the submission.
+
+Neon rollback-only checks passed on November 16, 2026: admin and guest chat-to-board feature creation, reloading the selected board, feature_request category, conversation linking, duplicate prevention and invalid-token rejection. Notification checks also passed for guest replies, preferences, retries and deduplication. Test fixtures were rolled back and all integration-test email transport was mocked; the single live inbox smoke test ran separately.
+
+Status and type changes now create author/follower notifications and immediate email jobs, including guest-author email updates. Authors do not need a separate follow to receive updates; non-author followers who unfollow before delivery are skipped. Both direct type edits and the type/tag dialog publish type_changed only for a real category change. Migration 0019 adds the notification event and is applied to the configured Neon database.
+
+Focused PostgreSQL update tests passed on November 16, 2026 (`node scripts/check-notification-db.mjs --updates-only`): guest email jobs delivered through the mocked transport; direct/category and type/tag-dialog edits notified correctly; repeated selections did not duplicate alerts; registered authors received inbox and email alerts without following. All fixtures were rolled back.
+
+Notification settings now include Status changes and Type changes alongside new feedback, comments, replies and both reaction switches. All seven switches gate creation of both the bell notification and its email job, and the email worker rechecks saved settings before delivery. Seven event-policy tests, actor-bound settings-save checks and queued-delivery preference checks pass. Guest submitters without an Ent account receive only transactional updates at the address they supplied; they do not have account preference settings.
+
+Migration 0020 is applied. PostgreSQL `--preferences-only` checks passed on November 16, 2026: all seven saved switches suppress both notification-feed records and email jobs; enabled events appear in the feed and produce seven mocked deliveries; marking read updates the feed, and disabling a preference suppresses an already queued email. Fixtures were rolled back. Live inbox delivery was confirmed separately above.
+
+
+### Early-pilot Slack distribution
+
+Slack app ID: `A0CHRMN54GP`. OAuth client ID: `10923381069686.12603736174567` (public identifiers). The production `SLACK_CLIENT_ID` must match that client ID; retain the client secret and signing secret only in server environment configuration.
+
+Enable **Manage Distribution → Activate Public Distribution** for an early pilot. Customers install through **Ent → Settings → Integrations → Add to Slack**. The official Slack artwork calls Ent’s authenticated OAuth action, which appends the workspace-bound state nonce and redirect URI to the same Slack v2 authorization endpoint and seven bot scopes supplied by Slack. A direct link copied from Slack’s dashboard omits that state cookie and cannot finish our callback safely. For invitations, share `https://ent.riftlabs.xyz/dashboard/settings/integrations` and have the customer sign in and select their workspace.
+
+The root metadata includes `slack-app-id=A0CHRMN54GP`. Slack’s review guide states that automatic app suggestions require Marketplace listing; the tag is preparatory and does not imply pilot approval or guarantee suggestions before listing.
+
+References: https://docs.slack.dev/app-management/distribution/ , https://docs.slack.dev/authentication/installing-with-oauth/ , https://docs.slack.dev/slack-marketplace/slack-marketplace-review-guide/#app-suggestions

@@ -134,6 +134,20 @@
       "when": 1794860412423,
       "tag": "0018_dusty_wilson_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794866660764,
+      "tag": "0019_lively_ezekiel",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794867025889,
+      "tag": "0020_vengeful_silver_sable",
+      "breakpoints": true
     }
   ]
 }

@@ -45,7 +45,7 @@ function WorkspaceIntegrationsContent({workspaceId}:{workspaceId:string}){
   {data?.deliveryIssue&&<ErrorNotice>{data.deliveryIssue}<Button size="sm" variant="secondary" onClick={()=>setReload(value=>value+1)}>Refresh status</Button></ErrorNotice>}
   {data&&draft&&<fieldset disabled={Boolean(pending)||!data.canManage} className="contents">
    <SettingGroup title="Slack"><SettingRow title="Slack" description={data.slack.connected?(data.slack.label||'Connected to this workspace'):'Choose a channel to receive board and live chat notifications.'}>
-    <div className="flex flex-wrap gap-2"><ActionButton size="sm" variant={data.slack.connected?'secondary':'default'} state={pending==='connect'?'pending':'idle'} pendingLabel="Connecting…" onClick={()=>void act('connect')}>{data.slack.connected?'Change channel':'Connect Slack'}</ActionButton>{data.slack.connected&&<ActionButton size="sm" variant="destructive-outline" state={pending==='disconnect'?'pending':'idle'} pendingLabel="Disconnecting…" onClick={()=>void act('disconnect')}>Disconnect</ActionButton>}</div>
+    <div className="flex flex-wrap gap-2"><ActionButton size="sm" variant={data.slack.connected?'secondary':'ghost'} className={data.slack.connected?undefined:'h-10 w-[139px] shrink-0 border-0 bg-transparent p-0 shadow-none hover:bg-transparent'} aria-label={data.slack.connected?'Change Slack channel':'Add to Slack'} state={pending==='connect'?'pending':'idle'} pendingLabel="Connecting…" onClick={()=>void act('connect')}>{data.slack.connected?'Change channel':<SlackInstallArtwork/>}</ActionButton>{data.slack.connected&&<ActionButton size="sm" variant="destructive-outline" state={pending==='disconnect'?'pending':'idle'} pendingLabel="Disconnecting…" onClick={()=>void act('disconnect')}>Disconnect</ActionButton>}</div>
    </SettingRow>
    {query.get('connection')==='slack'&&query.get('result')==='error'&&<ErrorNotice  className="px-4 pb-4 text-sm text-foreground">Slack authorization did not finish. Reconnect to try again.</ErrorNotice>}
    {data.canManage&&data.slack.connected&&!data.slack.repliesReady&&<SettingRow title="Enable Slack replies" description="Add the Slack signing secret and reconnect to grant reply permissions."><ActionButton size="sm" variant="secondary" state={pending==='connect'?'pending':'idle'} pendingLabel="Reconnecting…" onClick={()=>void act('connect')}>Reconnect Slack</ActionButton></SettingRow>}
@@ -55,4 +55,10 @@ function WorkspaceIntegrationsContent({workspaceId}:{workspaceId:string}){
   </fieldset>}
   <SettingGroup title="Discord"><SettingRow title="Discord · Coming soon" description="Discord connections are not available yet."><Button size="sm" variant="outline" disabled>Coming soon</Button></SettingRow></SettingGroup>
  </div></SettingsPage>;
+}
+
+function SlackInstallArtwork(){
+ // Official Slack distribution artwork supplies its own border and label.
+ // eslint-disable-next-line @next/next/no-img-element
+ return <img alt="Add to Slack" height={40} width={139} className="block h-10 w-[139px] max-w-none" src="https://platform.slack-edge.com/img/add_to_slack.png" srcSet="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x"/>;
 }

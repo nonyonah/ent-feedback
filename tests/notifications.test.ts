@@ -7,18 +7,18 @@ import type {notificationPreferences} from '../src/server/db/schema';
 
 process.env.DATABASE_URL='postgres://test:test@localhost/test';
 process.env.NEXT_PUBLIC_APP_URL='http://localhost:3000';
-const preferences=(userId:string,changes:Partial<typeof notificationPreferences.$inferSelect>={})=>({id:'pref-'+userId,userId,notificationEmail:null,newFeedback:true,feedbackComments:true,commentReplies:true,commentReactions:true,feedbackReactions:true,createdAt:new Date(0),updatedAt:new Date(0),...changes});
+const preferences=(userId:string,changes:Partial<typeof notificationPreferences.$inferSelect>={})=>({id:'pref-'+userId,userId,notificationEmail:null,newFeedback:true,feedbackComments:true,commentReplies:true,commentReactions:true,feedbackReactions:true,statusChanges:true,typeChanges:true,createdAt:new Date(0),updatedAt:new Date(0),...changes});
 type Tx=Parameters<typeof publishActivity>[0];
 async function activity(type:ActivityType,options:{parent?:string;actor?:string;prefs?:ReturnType<typeof preferences>[]}={}){
  const writes:Record<string,Record<string,unknown>[]>={};
- const rows:Record<string,unknown[]>={feedback:[{id:'post',authorUserId:'author'}],workspaces:[{handle:'workspace',name:'Workspace'}],follows:[{id:'follower'}],workspace_members:[{id:'owner'}],comments:[{author:'commenter'}],users:['author','follower','owner','commenter'].map(id=>({id,email:id+'@example.com'})),notification_preferences:options.prefs??[]};
+ const rows:Record<string,unknown[]>={feedback:[{id:'post',authorUserId:'author',status:'planned',category:'feature_request'}],workspaces:[{handle:'workspace',name:'Workspace'}],follows:[{id:'follower'}],workspace_members:[{id:'owner'}],comments:[{author:'commenter'}],users:['author','follower','owner','commenter'].map(id=>({id,email:id+'@example.com'})),notification_preferences:options.prefs??[]};
  const tx={select:()=>({from:(table:Parameters<typeof getTableName>[0])=>{let data=rows[getTableName(table)]??[];const query={where:(condition:SQL)=>{if(getTableName(table)==='users'){const {params}=new PgDialect().sqlToQuery(condition);data=data.filter(row=>params.includes((row as {id:string}).id));}return query;},limit:async()=>data,then:(resolve:(value:unknown[])=>unknown)=>Promise.resolve(data).then(resolve)};return query;}}),insert:(table:Parameters<typeof getTableName>[0])=>({values:(value:Record<string,unknown>)=>{const key=getTableName(table);(writes[key]??=[]).push(value);return {onConflictDoNothing:()=>({returning:async()=>[{id:'notice-'+writes[key].length}]})};}})} as unknown as Tx;
  await publishActivity(tx,{type,workspaceId:'workspace',feedbackId:'post',eventId:'event',actorId:options.actor,commentId:type==='comment_reaction'||type==='feedback_comment'?'comment':undefined,parentCommentId:options.parent});
  return writes;
 }
 
-test('each of the five preferences independently suppresses its event',()=>{
- const pairs=[['new_feedback','newFeedback'],['feedback_comment','feedbackComments'],['comment_reply','commentReplies'],['comment_reaction','commentReactions'],['feedback_reaction','feedbackReactions']] as const;
+test('each of the seven preferences independently suppresses its event',()=>{
+ const pairs=[['new_feedback','newFeedback'],['feedback_comment','feedbackComments'],['comment_reply','commentReplies'],['comment_reaction','commentReactions'],['feedback_reaction','feedbackReactions'],['status_changed','statusChanges'],['type_changed','typeChanges']] as const;
  for(const[event,key]of pairs){const p=preferences('recipient',{[key]:false});assert.equal(wantsActivity(p,event),false);for(const[other]of pairs)if(other!==event)assert.equal(wantsActivity(p,other),true);}
  assert.equal(wantsActivity(undefined,'new_feedback'),true);
  assert.equal(wantsActivity(preferences('recipient',{newFeedback:false,feedbackComments:false,commentReplies:false,commentReactions:false,feedbackReactions:false}),'status_changed'),true);
@@ -44,4 +44,11 @@ test('reaction events notify the relevant author and respect both reaction switc
 test('disabled new-feedback and comment preferences suppress notices and email jobs',async()=>{
  assert.equal((await activity('new_feedback',{prefs:[preferences('owner',{newFeedback:false})]})).jobs,undefined);
  const result=await activity('feedback_comment',{prefs:['author','follower','owner'].map(id=>preferences(id,{feedbackComments:false}))});assert.equal(result.notifications,undefined);assert.equal(result.jobs,undefined);
+});
+
+test('status and type switches suppress both notices and email jobs',async()=>{
+ for(const [event,key] of [['status_changed','statusChanges'],['type_changed','typeChanges']] as const){
+  const enabled=await activity(event);assert.deepEqual(enabled.notifications.map(notice=>notice.recipientUserId).sort(),['author','follower']);assert.equal(enabled.jobs.length,2);
+  const muted=await activity(event,{prefs:['author','follower'].map(id=>preferences(id,{[key]:false}))});assert.equal(muted.notifications,undefined);assert.equal(muted.jobs,undefined);
+ }
 });

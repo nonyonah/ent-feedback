@@ -49,6 +49,7 @@ export const notificationEventType = pgEnum("notification_event_type", [
   "comment_reaction",
   "feedback_reaction",
   "status_changed",
+  "type_changed",
 ]);
 export const integrationProvider = pgEnum("integration_provider", ["slack", "discord", "email"]);
 export const integrationScope = pgEnum("integration_scope", ["personal", "workspace"]);
@@ -530,6 +531,8 @@ export const notificationPreferences = pgTable(
     commentReplies: boolean("comment_replies").notNull().default(true),
     commentReactions: boolean("comment_reactions").notNull().default(true),
     feedbackReactions: boolean("feedback_reactions").notNull().default(true),
+    statusChanges: boolean("status_changes").notNull().default(true),
+    typeChanges: boolean("type_changes").notNull().default(true),
     ...timestamps(),
   },
   (table) => [

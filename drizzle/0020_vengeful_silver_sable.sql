@@ -1,0 +1,2 @@
+ALTER TABLE "notification_preferences" ADD COLUMN "status_changes" boolean DEFAULT true NOT NULL;--> statement-breakpoint
+ALTER TABLE "notification_preferences" ADD COLUMN "type_changes" boolean DEFAULT true NOT NULL;

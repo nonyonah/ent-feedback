@@ -57,14 +57,14 @@ export const slackActionSchema=z.object({
  type:z.literal('block_actions'),team:z.object({id:z.string().min(1).max(100)}),user:z.object({id:z.string().min(1).max(100)}),
  container:z.object({type:z.literal('message'),channel_id:z.string().min(1).max(100),message_ts:z.string().regex(/^\d+\.\d+$/)}),
  message:z.object({thread_ts:z.string().regex(/^\d+\.\d+$/).optional()}).optional(),
- actions:z.array(z.object({action_id:z.enum(['ent_chat_status_open','ent_chat_status_escalated','ent_chat_status_resolved']),value:z.uuid(),action_ts:z.string().regex(/^\d+\.\d+$/)})).length(1),
+ actions:z.array(z.object({action_id:z.enum(['ent_chat_status_open','ent_chat_status_escalated','ent_chat_status_resolved','ent_chat_review_feature']),value:z.uuid(),action_ts:z.string().regex(/^\d+\.\d+$/)})).length(1),
 });
 export async function queueSlackAction(tx:Queryable,input:z.infer<typeof slackActionSchema>){
- const action=input.actions[0];const eventId=slackRequestId([input.team.id,input.user.id,input.container.channel_id,input.container.message_ts,action.action_id,action.action_ts].join(':'));
+ const action=input.actions[0];if(action.action_id==='ent_chat_review_feature')return;const eventId=slackRequestId([input.team.id,input.user.id,input.container.channel_id,input.container.message_ts,action.action_id,action.action_ts].join(':'));
  await tx.insert(jobs).values({type:'chat_delivery',dedupeKey:'slack:action:'+eventId,payload:{delivery:'slack_action',input,eventId}}).onConflictDoNothing();
 }
 export async function receiveSlackAction(input:unknown,eventId:string){
- const p=slackActionSchema.parse(input),action=p.actions[0],db=getDb();const key=getServerEnv().INTEGRATION_ENCRYPTION_KEY;if(!key)return;
+ const p=slackActionSchema.parse(input),action=p.actions[0],db=getDb();if(action.action_id==='ent_chat_review_feature')return;const key=getServerEnv().INTEGRATION_ENCRYPTION_KEY;if(!key)return;
  const mappings=await db.select({thread:slackThreads,connection:integrationConnections}).from(slackThreads).innerJoin(integrationConnections,eq(integrationConnections.id,slackThreads.connectionId)).where(and(eq(slackThreads.conversationId,action.value),eq(slackThreads.channel,p.container.channel_id),eq(integrationConnections.provider,'slack'),eq(integrationConnections.authorizationState,'connected')));
  for(const {thread,connection} of mappings){
   if(!connection.encryptedSecretRef||!connection.allowedChannels.includes(thread.channel)||!(p.container.message_ts===thread.threadTs||p.message?.thread_ts===thread.threadTs))continue;

@@ -362,3 +362,8 @@ Slack uses the existing `users:read` and `users:read.email` scopes. Email lookup
 The isolated human-support database suite passed after migration. A read-only Slack `auth.test` check confirmed the connected token is valid, has `chat:write`, `users:read` and `users:read.email`, and includes a Slack team mapping. Aggregate diagnostics found three previously failed Slack delivery jobs. No real Slack messages were sent or retried during verification.
 
 Slack teammate lookups now use GET query parameters for `users.info`, matching the provider’s accepted format. The transport fixture rejects JSON POST for this lookup so reply-import tests exercise the required request format. Live delivery and status-button checks are still required after deploying the feature branch.
+
+
+### Read receipts
+
+Live chat messages show **Sent** and change to **Read** when the recipient views them in the widget or dashboard. Hidden chat tabs do not mark new replies as read. Receipts persist when the page is refreshed. Slack does not expose thread read events; opening a Slack thread does not mark a message as read in Ent.

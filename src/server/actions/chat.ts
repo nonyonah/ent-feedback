@@ -13,7 +13,7 @@ import {requireWorkspaceRole} from '@/server/services/access';
 import {runService,ServiceError} from '@/server/result';
 import {operatorPresence,chatSettings,chatFaqs,conversations,chatMessages,workspaces,workspaceMembers,users,chatWebsites} from '@/server/db/schema';
 import {settingsSchema,sendSchema} from '@/lib/chat/contracts';
-import {conversationWhere,snapshot,queueChatNotice} from '@/server/chat/service';
+import {acknowledgeConversation,conversationWhere,snapshot,queueChatNotice} from '@/server/chat/service';
 import {consumeRateLimit} from '@/server/rate-limit';
 import {knowledgeTopics} from '@/lib/chat/topics';
 import {getServerEnv} from '@/server/env';
@@ -46,3 +46,5 @@ export async function removeChatWebsiteAction(workspaceId:string,kind:'website'|
  // Each source is independent: removing website content must retain documentation.
  await getDb().update(chatWebsites).set(kind==='website'?{url:'',pages:[],updatedAt:new Date()}:{documentationUrl:null,documentationPages:[],documentationSyncedAt:null,updatedAt:new Date()}).where(eq(chatWebsites.workspaceId,workspaceId));
 });}
+
+export async function acknowledgeConversationAction(workspaceId:string,id:string,sequence:number){return runService(async()=>{await member(workspaceId);z.uuid().parse(id);await acknowledgeConversation(workspaceId,id,sequence,'team');});}

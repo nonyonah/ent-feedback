@@ -1,7 +1,7 @@
 import 'server-only';
 import {linkChatImages,chatImageUrl} from './uploads';
 import {createHash,randomBytes,randomUUID} from 'node:crypto';
-import {and,eq,asc,desc,gt,isNull,inArray} from 'drizzle-orm';
+import {and,eq,asc,desc,gt,isNull,inArray,sql} from 'drizzle-orm';
 import {z} from 'zod';
 import {getDb,type Queryable} from '@/server/db/client';
 import {chatSettings,widgetSettings,operatorPresence,integrationConnections,conversations,chatMessages,conversationFeedback,feedback,chatUploads,workspaceMembers,users} from '@/server/db/schema';
@@ -44,7 +44,7 @@ export async function snapshot(workspaceId:string,id:string,cursor?:string,token
  const hasMore=messages.length>50;const page=messages.slice(0,50);const last=page.at(-1);
  const links=await db.select({feedbackId:feedback.id,title:feedback.title}).from(conversationFeedback).innerJoin(feedback,and(eq(feedback.id,conversationFeedback.feedbackId),eq(feedback.workspaceId,conversationFeedback.workspaceId))).where(and(eq(conversationFeedback.workspaceId,workspaceId),eq(conversationFeedback.conversationId,id),isNull(feedback.deletedAt)));
  const presentation=await chatPresentation(workspaceId);
- return {presentation,hasName:Boolean(row.visitorName),emailCollection:presentation.details==='none'||!presentation.email?'none':presentation.details==='required'?'required':'optional',id,status:row.status,mode:row.mode,topicIds:row.topicIds,availability:await chatAvailability(workspaceId),hasEmail:Boolean(row.email),messages:page.map(({requestId,authorUserId,...m})=>({...m,images:uploads.filter(image=>image.requestId===requestId&&image.uploaderUserId===(m.role==='visitor'?null:authorUserId)).map(image=>chatImageUrl(image.id)),createdAt:m.createdAt.toISOString()})),cursor:last?String(last.sequence):cursor??null,hasMore,generating:Boolean(row.generationId&&row.generationExpiresAt&&row.generationExpiresAt>new Date()),links};
+ return {teamReadSequence:row.teamReadSequence,visitorReadSequence:row.visitorReadSequence,presentation,hasName:Boolean(row.visitorName),emailCollection:presentation.details==='none'||!presentation.email?'none':presentation.details==='required'?'required':'optional',id,status:row.status,mode:row.mode,topicIds:row.topicIds,availability:await chatAvailability(workspaceId),hasEmail:Boolean(row.email),messages:page.map(({requestId,authorUserId,...m})=>({...m,images:uploads.filter(image=>image.requestId===requestId&&image.uploaderUserId===(m.role==='visitor'?null:authorUserId)).map(image=>chatImageUrl(image.id)),createdAt:m.createdAt.toISOString()})),cursor:last?String(last.sequence):cursor??null,hasMore,generating:Boolean(row.generationId&&row.generationExpiresAt&&row.generationExpiresAt>new Date()),links};
 }
 export const queueChatNotice=enqueueConversationNotice;
 
@@ -109,4 +109,14 @@ export async function availableOperators(workspaceId:string){
  const version=connection?connection.id+':'+connection.updatedAt.toISOString():null;
  const members=await db.select({id:users.id,name:users.name,avatarUrl:users.avatarUrl,presence:operatorPresence}).from(workspaceMembers).innerJoin(users,eq(users.id,workspaceMembers.userId)).leftJoin(operatorPresence,and(eq(operatorPresence.workspaceId,workspaceId),eq(operatorPresence.userId,users.id))).where(and(eq(workspaceMembers.workspaceId,workspaceId),eq(workspaceMembers.status,'active')));
  return members.filter(m=>(operations.allOperators||operations.operatorIds.includes(m.id))&&m.presence&&operatorOnline(m.presence,version)).slice(0,5).map(({id,name,avatarUrl})=>({id,name:name??'Teammate',avatarUrl}));
+}
+
+// Acknowledge only the exact message rendered to the reader, never a later arrival.
+export async function acknowledgeConversation(workspaceId:string,id:string,sequence:number,side:'team'|'visitor',token?:string){
+ z.number().int().positive().max(Number.MAX_SAFE_INTEGER).parse(sequence);
+ const db=getDb();if(side==='visitor'){await requireChat(workspaceId);await authenticateConversation(db,workspaceId,id,token??'');}
+ const [message]=await db.select({sequence:chatMessages.sequence}).from(chatMessages).where(and(eq(chatMessages.workspaceId,workspaceId),eq(chatMessages.conversationId,id),eq(chatMessages.sequence,sequence),eq(chatMessages.role,side==='team'?'visitor':'team'))).limit(1);
+ if(!message)throw new ServiceError('not_found','Message not found.');
+ const column=side==='team'?conversations.teamReadSequence:conversations.visitorReadSequence;
+ await db.update(conversations).set(side==='team'?{teamReadSequence:sql`greatest(${column},${sequence})`}:{visitorReadSequence:sql`greatest(${column},${sequence})`}).where(conversationWhere(workspaceId,id));
 }

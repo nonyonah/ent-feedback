@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   bigserial,
+  bigint,
   check,
   foreignKey,
   index,
@@ -731,6 +732,8 @@ export const conversations = pgTable("conversations", {
   preview: text("preview").notNull().default(""),
   topicIds: jsonb("topic_ids").$type<string[]>().notNull().default([]),
   unread: boolean("unread").notNull().default(false),
+  teamReadSequence: bigint("team_read_sequence",{mode:"number"}).notNull().default(0),
+  visitorReadSequence: bigint("visitor_read_sequence",{mode:"number"}).notNull().default(0),
   generationId: uuid("generation_id"), generationExpiresAt: timestamp("generation_expires_at",{withTimezone:true}),
   ...timestamps(),
 }, t => [unique("conversations_id_workspace_unique").on(t.id,t.workspaceId),unique("conversations_token_unique").on(t.tokenHash),index("conversations_inbox_idx").on(t.workspaceId,t.status,t.lastActivityAt),check("conversations_status_check",sql`${t.status} in ('open','escalated','resolved')`),check("conversations_mode_check",sql`${t.mode} in ('ai','human')`)]).enableRLS();

@@ -127,6 +127,13 @@
       "when": 1794858325421,
       "tag": "0017_puzzling_weapon_omega",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794860412423,
+      "tag": "0018_dusty_wilson_fisk",
+      "breakpoints": true
     }
   ]
 }

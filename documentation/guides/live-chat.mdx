@@ -5,7 +5,7 @@ description: "Answer visitors from Ent or your connected Slack channel."
 
 ## Turn on chat
 
-Open **Settings → Chat**, enable chat and save. The widget shows **Feedback** and **Live chat** in its bottom navigation. Visitors can switch between them without losing their message draft.
+Open **Settings → Conversations**, enable chat and save. The widget shows **Feedback** and **Live chat** in its bottom navigation. Visitors can switch between them without losing their message draft.
 
 <Note>
 AI replies are currently paused. Your team handles conversations. Website and documentation knowledge controls are disabled until AI replies are enabled. Saved sources are retained.
@@ -19,11 +19,11 @@ The dashboard’s **Conversations** section has three views:
 - **Open:** conversations in progress.
 - **All:** every conversation, including resolved ones.
 
-Search by message, visitor name or email, topic or status. Each row shows the visitor, latest message, relative time and status. Timestamps show Now, minutes, hours and then days.
+Search by message, visitor name or email, or status. Topic detection is paused with AI replies. Each row shows the visitor, latest message, relative time and status. Timestamps show Now, minutes, hours and then days.
 
 ## Reply and resolve
 
-Select a conversation and write in the reply box at the bottom. Use the emoji and attachment controls to add context. You can attach up to three images, each no larger than 2 MB. Supported image formats are PNG, JPEG, GIF and WebP.
+Selected live-chat operators can select a conversation and write in the reply box at the bottom. Workspace membership alone does not grant reply access when individual operators have been selected. Use the emoji and attachment controls to add context. You can attach up to three images, each no larger than 2 MB. Supported image formats are PNG, JPEG, GIF and WebP.
 
 On desktop, Enter sends and Shift+Enter adds a new line. If a send fails, the draft remains available to retry. Load failures show a recovery notice with a retry action.
 
@@ -31,9 +31,19 @@ Choose **Resolve** when you are done. A new message reopens the conversation. Yo
 
 ## Availability and operators
 
-In **Settings → Chat**, choose your team’s availability, timezone, working days and hours, and away message. Choose all workspace members or select existing members as operators.
+In **Settings → Conversations**, choose your team’s availability, timezone, working days and hours, and away message. To choose operators:
+
+1. [Invite your teammates](/guides/team) and wait for them to accept.
+2. Leave **All workspace members** enabled, or switch it off and select individual teammates.
+3. Select **Save changes**.
+
+Only active, selected operators can reply from Ent or Slack, appear online in the widget, and receive handoff or follow-up emails. Queued emails are checked again before delivery. If nobody is selected, visitors can leave messages for later; no teammate is shown as available. Removing a member also removes them from the operator selection.
 
 The widget shows a green dot and **Online now** when a selected teammate is active in Ent or Slack reports them as active. Your availability schedule still applies. App presence expires after heartbeats stop; Slack presence is cached briefly and refreshed while visitors have the widget open. Unknown or expired presence is not shown as online. Visitors can leave a message while nobody is online. Slack matching uses the teammate’s Ent email address.
+
+## Greeting and header
+
+The widget shows **Live chat**, with available teammate avatars and their availability below the title. Your configured greeting replaces the default **How can we help?**; leaving it empty restores the default. It appears only at the start of an empty conversation. The reply expectation is grouped in the header rather than added to the message history. [Configure the widget](/widget/settings).
 
 ## Continue after a refresh
 
@@ -54,3 +64,7 @@ Live chat messages show **Sent** and change to **Read** when the recipient views
 When a visitor explicitly asks for a feature, Ent offers **Suggest as feature request** in the widget and **Review feature request** in Conversations. Slack shows the same suggestion with a link to review it in Ent. This uses request wording, not AI replies.
 
 Review similar requests first. Link an existing request or confirm a new one using the feedback form. Ent never publishes a suggestion automatically.
+
+After linking or creating a request, that suggestion shows **Added to board** in both the widget and dashboard. Slack’s matching review action is updated and a confirmation is posted in the thread. These updates use the delivery queue and may take a moment. The created request belongs to the board chosen in the feedback form.
+
+**Added to board** means the suggestion has been captured. It does not resolve the chat or mark the feature itself completed. Other suggestions in the same conversation remain separate.

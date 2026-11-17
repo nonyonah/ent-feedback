@@ -747,7 +747,7 @@ export const chatMessages = pgTable("chat_messages", {
   role: text("role").$type<"visitor"|"assistant"|"team">().notNull(),
   body: text("body").notNull(), requestId: uuid("request_id").notNull(),
   sourceIds: jsonb("source_ids").$type<string[]>().notNull().default([]),
-  suggestion: jsonb("suggestion").$type<{title:string;description:string}|null>(),
+  suggestion: jsonb("suggestion").$type<{title:string;description:string;feedbackId?:string}|null>(),
   authorUserId: uuid("author_user_id").references(()=>users.id,{onDelete:"set null"}),
   createdAt: timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
 },t=>[foreignKey({columns:[t.conversationId,t.workspaceId],foreignColumns:[conversations.id,conversations.workspaceId]}).onDelete("cascade"),unique("chat_messages_request_role_unique").on(t.conversationId,t.requestId,t.role),index("chat_messages_cursor_idx").on(t.conversationId,t.sequence),check("chat_messages_role_check",sql`${t.role} in ('visitor','assistant','team')`),check("chat_messages_body_length",sql`length(${t.body}) between 1 and 4000`)]).enableRLS();
@@ -778,3 +778,18 @@ export const operatorPresence = pgTable("operator_presence", {
  slackOnline:boolean("slack_online").notNull().default(false),
  slackUserId:text("slack_user_id"),slackConnectionVersion:text("slack_connection_version"),
 },t=>[primaryKey({columns:[t.workspaceId,t.userId]})]).enableRLS();
+
+// A verified address is bound to one resource and requester, never a global
+// claim inferred from another anonymous visitor's matching email string.
+export const guestEmailVerifications=pgTable('guest_email_verifications',{
+ id:uuid('id').primaryKey().defaultRandom(),
+ workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ kind:text('kind').$type<'feedback'|'chat'>().notNull(),
+ subjectId:uuid('subject_id').notNull(),
+ requesterHash:text('requester_hash').notNull(),
+ email:text('email').notNull(),
+ tokenHash:text('token_hash').notNull(),
+ expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),
+ verifiedAt:timestamp('verified_at',{withTimezone:true}),
+ ...timestamps(),
+},t=>[unique('guest_email_subject_unique').on(t.workspaceId,t.kind,t.subjectId),index('guest_email_token_idx').on(t.tokenHash),check('guest_email_kind_check',sql`${t.kind} in ('feedback','chat')`)]).enableRLS();

@@ -1,3 +1,5 @@
+import {RegistrationWizard} from '@/components/feedback/registration-wizard';
+import {TeamSettings} from '@/components/feedback/team-settings';
 import {useState} from 'react';
 import {TrialCardNotice} from '@/components/feedback/trial-card-notice';
 import {createRoot} from 'react-dom/client';
@@ -9,4 +11,4 @@ import {SidebarProvider} from '@/components/ui/sidebar';
 import {ToastProvider} from '@/components/ui/toast';
 function TrialPreview(){const [open,setOpen]=useState(false);return <><button onClick={()=>setOpen(true)}>Start free trial</button><TrialCardNotice open={open} onOpenChange={setOpen} interval="monthly" onContinue={()=>{const target=window as unknown as {fixture:{trialCheckouts?:number}};target.fixture.trialCheckouts=(target.fixture.trialCheckouts??0)+1;}}/></>;}
 const view=new URLSearchParams(location.search).get('screen');
-createRoot(document.getElementById('root')!).render(<ToastProvider>{view==='trial-notice'?<TrialPreview/>:view==='request-search'?<RequestSearch dashboard items={[]}/>:view==='settings'?<ChatSettings/>:view==='inbox'?<SidebarProvider className="h-svh"><ConversationsInbox/></SidebarProvider>:<Widget defaultOpen/>}</ToastProvider>);
+createRoot(document.getElementById('root')!).render(<ToastProvider>{view==='onboarding-team'?<RegistrationWizard initialStep={2} initialWorkspace={{id:'11111111-1111-4111-8111-111111111111',name:'Acme workspace',handle:'acme',website:null}}/>:view==='team'?<TeamSettings/>:view==='trial-notice'?<TrialPreview/>:view==='request-search'?<RequestSearch dashboard items={[]}/>:view==='settings'?<ChatSettings/>:view==='inbox'?<SidebarProvider className="h-svh"><ConversationsInbox/></SidebarProvider>:<Widget defaultOpen/>}</ToastProvider>);

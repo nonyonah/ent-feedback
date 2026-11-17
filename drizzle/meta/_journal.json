@@ -148,6 +148,13 @@
       "when": 1794867025889,
       "tag": "0020_vengeful_silver_sable",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794903556837,
+      "tag": "0021_damp_lyja",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,5 @@
+import {mutateFeedbackAction} from '@/server/actions/feedback';
+import {linkVisibleFeedback} from '@/server/chat/links';
 import {POST as uploadImage} from '@/app/api/chat/[workspaceId]/[conversationId]/attachments/route';
 import {GET as readImage} from '@/app/api/chat/images/[id]/route';
 import sharp from 'sharp';
@@ -72,6 +74,32 @@ export async function run(){
  for(const forged of [{...action,user:{id:'UOutside'}},{...action,team:{id:'T2'}},{...action,container:{...action.container,channel_id:'C2'}},{...action,container:{...action.container,message_ts:'999.1'}},{...action,actions:[{...action.actions[0],value:second.id}]}])await receiveSlackAction(forged,randomUUID());
  assert.equal((await snapshot(workspace.id,session.id,undefined,session.token)).status,'escalated','Nonmembers and unrelated teams/channels/threads cannot change status');
  assert.equal((await changeConversationAction(workspace.id,session.id,'resolve')).ok,true);assert.equal((await snapshot(workspace.id,session.id,undefined,session.token)).status,'resolved');
+ // Creating from a suggestion commits an actual board post and source completion together.
+ const createSession=await startConversation(workspace.id);
+ await sendVisitor(workspace.id,createSession.id,createSession.token,{requestId:randomUUID(),body:'Please add shared team templates for reports.'});
+ const createSource=(await snapshot(workspace.id,createSession.id,undefined,createSession.token)).messages.find(message=>message.suggestion)!;
+ const createInput={type:'create' as const,requestId:randomUUID(),category:'feature_request' as const,title:'Shared team templates',description:createSource.body,conversation:{id:createSession.id,messageId:createSource.id}};
+ const createdResult=await mutateFeedbackAction(workspace.id,board.id,createInput);
+ assert.equal(createdResult.ok,true,'conversion must create a real feature request');
+ const createdPosts=(await db.select().from(feedback)).filter(post=>post.title===createInput.title);
+ assert.equal(createdPosts.length,1);assert.equal(createdPosts[0].category,'feature_request');assert.equal(createdPosts[0].boardId,board.id);
+ assert.equal((await mutateFeedbackAction(workspace.id,board.id,{...createInput,requestId:randomUUID()})).ok,false,'another conversion must not duplicate a completed suggestion');
+ assert.equal((await db.select().from(feedback)).filter(post=>post.title===createInput.title).length,1,'rejected duplicate must roll back');
+ // A completed suggestion survives incremental polls and updates the original Slack action.
+ const source=(await snapshot(workspace.id,session.id,undefined,session.token)).messages.find(message=>message.suggestion)!;
+ await linkVisibleFeedback(workspace.id,session.id,post.id,{userId:owner.id},source.id);
+ await linkVisibleFeedback(workspace.id,session.id,post.id,{userId:owner.id},source.id);
+ const complete=await snapshot(workspace.id,session.id,String(source.sequence),session.token);
+ assert.ok(complete.completedSuggestions?.some(item=>item.messageId===source.id&&item.feedbackId===post.id));
+ const full=await snapshot(workspace.id,session.id,undefined,session.token);
+ assert.equal(full.messages.find(message=>message.id===source.id)?.suggestion?.feedbackId,post.id);
+ await assert.rejects(()=>linkVisibleFeedback(workspace.id,second.id,post.id,{userId:owner.id},source.id));
+ const completedJobs=(await db.select().from(jobs)).filter(job=>job.dedupeKey==='chat:slack:feature_linked:'+source.id);
+ assert.equal(completedJobs.length,1,'retry must not duplicate completion delivery');
+ await deliverChatJob(completedJobs[0]);
+ assert.ok(global.slackPayloads.some(payload=>payload.ts==='200.1'&&JSON.stringify(payload.blocks).includes('Added to board')),'original Slack message must be updated');
+ const updated=global.slackPayloads.find(payload=>payload.ts==='200.1'&&JSON.stringify(payload.blocks).includes('Added to board'))!;
+ assert.ok(!JSON.stringify(updated.blocks).includes('ent_chat_review_feature'),'completed Slack action must be removed');
  await db.update(integrationConnections).set({authorizationState:'disconnected'}).where(eq(integrationConnections.id,connection.id));await receiveSlackEvent({...event,event_id:'EvDisconnected'});await receiveSlackAction({...action,actions:[{...action.actions[0],action_id:'ent_chat_status_open'}]},'disconnected-status');assert.equal((await snapshot(workspace.id,session.id,undefined,session.token)).status,'resolved');assert.equal((await db.select().from(chatMessages).where(eq(chatMessages.requestId,slackRequestId('EvDisconnected')))).length,0);
- console.log('PASS: human-only chat, image ownership and signed links, attachment retry idempotency, workspace isolation, manual replies, operator schedule, Slack signature/replay rejection, typed board alerts, thread replies for chat and boards, member matching, event deduplication, signed status buttons, resolve/reopen/queue sync, stale-action retry safety, action authorization and disconnect enforcement. No live providers contacted.');
+ console.log('PASS: actual feature-request creation and duplicate rollback, incremental suggestion completion, original Slack action update, human-only chat, image ownership and signed links, attachment retry idempotency, workspace isolation, manual replies, operator schedule, Slack signature/replay rejection, typed board alerts, thread replies for chat and boards, member matching, event deduplication, signed status buttons, resolve/reopen/queue sync, stale-action retry safety, action authorization and disconnect enforcement. No live providers contacted.');
 }

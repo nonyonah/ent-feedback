@@ -103,3 +103,7 @@ export async function sendTrialEmail(input:{to:string;key:string;kind:TrialEmail
 export async function sendChatEmail(input:{to:string;key:string;subject:string;heading:string;body:string;url:string;action:string}){await sendEmail({to:input.to,key:input.key,...emailLayout({...input,footer:"You received this email about a support conversation with your workspace."})});}
 
 export async function sendPrepaidReminderEmail(input:{to:string;key:string;workspaceName:string;workspaceId:string;accessUntil:string;appOrigin:string}):Promise<void>{await sendEmail({to:input.to,key:input.key,...prepaidReminderEmail(input)});}
+
+export async function sendGuestVerificationEmail(input:{to:string;url:string;key:string}){
+ await sendEmail({to:input.to,key:input.key,...emailLayout({subject:'Confirm your email · Ent',heading:'Keep the conversation going.',body:'Confirm this email address to receive replies and updates. This link expires in 30 minutes. You can keep using the widget without confirming.',action:'Confirm email',url:input.url,footer:'If you didn’t request this, ignore this email. No conversation details are included until you confirm.'})});
+}

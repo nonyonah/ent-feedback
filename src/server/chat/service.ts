@@ -1,4 +1,6 @@
 import 'server-only';
+import {guestEmailVerified,requestGuestVerification} from '@/server/guest-email';
+import {guestEmailVerifications} from '@/server/db/schema';
 import {featureRequestSuggestion} from '@/lib/chat/feature-request';
 import {linkChatImages,chatImageUrl} from './uploads';
 import {createHash,randomBytes,randomUUID} from 'node:crypto';
@@ -44,8 +46,12 @@ export async function snapshot(workspaceId:string,id:string,cursor?:string,token
  const uploads=messages.length?await db.select().from(chatUploads).where(and(eq(chatUploads.workspaceId,workspaceId),eq(chatUploads.conversationId,id),inArray(chatUploads.requestId,messages.map(m=>m.requestId)))):[];
  const hasMore=messages.length>50;const page=messages.slice(0,50);const last=page.at(-1);
  const links=await db.select({feedbackId:feedback.id,title:feedback.title}).from(conversationFeedback).innerJoin(feedback,and(eq(feedback.id,conversationFeedback.feedbackId),eq(feedback.workspaceId,conversationFeedback.workspaceId))).where(and(eq(conversationFeedback.workspaceId,workspaceId),eq(conversationFeedback.conversationId,id),isNull(feedback.deletedAt)));
+ // Legacy conversions did not save a message ID. Recover only an exact linked
+ // request description match; never mark unrelated or future requests done.
+ const completedId=sql<string>`coalesce(${chatMessages.suggestion}->>'feedbackId',(select f.id::text from ${conversationFeedback} cf join ${feedback} f on f.id=cf.feedback_id and f.workspace_id=cf.workspace_id where cf.workspace_id=${workspaceId} and cf.conversation_id=${id} and f.deleted_at is null and f.category='feature_request' and f.body=coalesce(${chatMessages.suggestion}->>'description',${chatMessages.body}) limit 1))`;
+ const completedSuggestions=await db.select({messageId:chatMessages.id,feedbackId:completedId}).from(chatMessages).where(and(eq(chatMessages.workspaceId,workspaceId),eq(chatMessages.conversationId,id),sql`${completedId} is not null`));
  const presentation=await chatPresentation(workspaceId);
- return {teamReadSequence:row.teamReadSequence,visitorReadSequence:row.visitorReadSequence,presentation,hasName:Boolean(row.visitorName),emailCollection:presentation.details==='none'||!presentation.email?'none':presentation.details==='required'?'required':'optional',id,status:row.status,mode:row.mode,topicIds:row.topicIds,availability:await chatAvailability(workspaceId),hasEmail:Boolean(row.email),messages:page.map(({requestId,authorUserId,...m})=>({...m,suggestion:m.suggestion??(m.role==='visitor'&&!links.length?featureRequestSuggestion(m.body):null),images:uploads.filter(image=>image.requestId===requestId&&image.uploaderUserId===(m.role==='visitor'?null:authorUserId)).map(image=>chatImageUrl(image.id)),createdAt:m.createdAt.toISOString()})),cursor:last?String(last.sequence):cursor??null,hasMore,generating:Boolean(row.generationId&&row.generationExpiresAt&&row.generationExpiresAt>new Date()),links};
+ return {completedSuggestions,teamReadSequence:row.teamReadSequence,visitorReadSequence:row.visitorReadSequence,presentation,hasName:Boolean(row.visitorName),emailCollection:presentation.details==='none'||!presentation.email?'none':presentation.details==='required'?'required':'optional',id,status:row.status,mode:row.mode,topicIds:row.topicIds,availability:await chatAvailability(workspaceId),hasEmail:Boolean(row.email),emailVerified:Boolean(row.email&&await guestEmailVerified({workspaceId,kind:'chat',subjectId:id,email:row.email})),messages:page.map(({requestId,authorUserId,...m})=>({...m,suggestion:(()=>{const suggestion=m.suggestion??(m.role==='visitor'?featureRequestSuggestion(m.body):null);return suggestion?{...suggestion,messageId:m.id}:null;})(),images:uploads.filter(image=>image.requestId===requestId&&image.uploaderUserId===(m.role==='visitor'?null:authorUserId)).map(image=>chatImageUrl(image.id)),createdAt:m.createdAt.toISOString()})),cursor:last?String(last.sequence):cursor??null,hasMore,generating:Boolean(row.generationId&&row.generationExpiresAt&&row.generationExpiresAt>new Date()),links};
 }
 export const queueChatNotice=enqueueConversationNotice;
 
@@ -97,10 +103,19 @@ export async function updateContact(workspaceId:string,id:string,token:string,in
  await requireChat(workspaceId);const value=z.object({email:z.email().max(254).transform(s=>s.toLowerCase()).optional(),name:z.string().trim().min(1).max(120).optional()}).strict().refine(v=>Boolean(v.email||v.name),'Enter your contact details.').parse(input);
  await consumeRateLimit('chat:contact:'+id,5,3600);
  await getDb().transaction(async tx=>{
-  await authenticateConversation(tx,workspaceId,id,token,true);const policy=await chatPresentation(workspaceId,tx);
+  const current=await authenticateConversation(tx,workspaceId,id,token,true);const policy=await chatPresentation(workspaceId,tx);
   if(policy.details==='none'||value.email&&!policy.email||value.name&&!policy.name)throw new ServiceError('conflict','These visitor details are not being collected by this workspace.');
+  if(value.email&&value.email!==current.email)await tx.delete(guestEmailVerifications).where(and(eq(guestEmailVerifications.workspaceId,workspaceId),eq(guestEmailVerifications.kind,'chat'),eq(guestEmailVerifications.subjectId,id)));
   await tx.update(conversations).set({...(value.email?{email:value.email}:{}),...(value.name?{visitorName:value.name}:{}),updatedAt:new Date()}).where(conversationWhere(workspaceId,id));
- });return {saved:true};
+ });
+ let verificationSent=false;if(value.email){try{verificationSent=(await requestGuestVerification({workspaceId,kind:'chat',subjectId:id,email:value.email},hashToken(token))).sent;}catch{/* Contact is saved; the visitor can retry verification without losing their message. */}}
+ return {saved:true,verificationSent};
+}
+
+export async function resendChatVerification(workspaceId:string,id:string,token:string){
+ await requireChat(workspaceId);const row=await authenticateConversation(getDb(),workspaceId,id,token);
+ if(!row.email)throw new ServiceError('validation','Save your email address first.');
+ return requestGuestVerification({workspaceId,kind:'chat',subjectId:id,email:row.email},hashToken(token));
 }
 
 

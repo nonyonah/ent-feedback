@@ -102,7 +102,7 @@ export async function createFirstWorkspaceAction(input: {
 const inviteMembersSchema = z.object({
   workspaceId: z.uuid(),
   emails: z.array(z.email()).min(1).max(10),
-  role: z.enum(["admin", "member"]),
+  role: z.literal("member"),
 });
 
 export async function inviteMembersAction(input: {
@@ -168,6 +168,7 @@ export async function acceptInvitationAction(token: string) {
   return runService(async () => {
     requireFeature("teams");
     const user = await requireAppUser();
+    await consumeRateLimit('team:accept:'+user.id,30,60);
     const result = await acceptInvitation({
       token,
       userId: user.id,
@@ -180,3 +181,13 @@ export async function acceptInvitationAction(token: string) {
 }
 
 export async function checkWorkspaceAvailabilityAction(input:{name:string;handle:string}){return runService(async()=>{const actor=await requireAppUser();await consumeRateLimit("workspace-availability:"+actor.id,60,60);const parsed=z.object({name:z.string().max(60),handle:z.string().max(40)}).parse(input);return checkWorkspaceAvailability(parsed.name,parsed.handle);});}
+
+export async function removeWorkspaceMemberAction(input:{workspaceId:string;memberId:string}){
+ return runService(async()=>{
+  const actor=await requireAppUser();const value=z.object({workspaceId:z.uuid(),memberId:z.uuid()}).strict().parse(input);
+  await consumeRateLimit('team:remove:'+actor.id,30,3600);
+  const {removeWorkspaceMember}=await import('@/server/services/team');
+  await removeWorkspaceMember({...value,userId:actor.id});
+  revalidatePath('/dashboard/settings/team');return {removed:true};
+ });
+}

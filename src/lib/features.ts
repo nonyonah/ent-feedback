@@ -1,7 +1,7 @@
-/** Temporarily unavailable in v1. Keep implementation/data for later releases. */
+/** Team membership is enabled; advanced workspace features remain deferred. */
 export const features = {
   integrations: false,
   customDomains: false,
-  teams: false,
+  teams: true,
 } as const;
 export type Feature = keyof typeof features;

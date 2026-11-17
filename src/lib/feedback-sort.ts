@@ -8,7 +8,7 @@ export const FEEDBACK_SORT_OPTIONS = [
 
 /** Conversation counts twice, so discussion-heavy requests can rise alongside voted posts. */
 export function trendingScore(item: FeedbackItemData): number {
-  return item.votes + item.comments.length * 2;
+  return item.votes + (item.commentCount??item.comments.length) * 2;
 }
 
 /** Top fifth of each board, including ties, with enough activity to avoid empty-board noise. */
@@ -25,7 +25,7 @@ export function getTrendingIds(items: readonly FeedbackItemData[]): ReadonlySet<
     const ranked = [...group].sort((a,b) => trendingScore(b)-trendingScore(a));
     const cutoff = trendingScore(ranked[Math.ceil(ranked.length / 5)-1]);
     for (const item of ranked) {
-      if ((item.votes >= 5 || item.comments.length >= 3) && trendingScore(item) >= cutoff) ids.add(item.id);
+      if ((item.votes >= 5 || (item.commentCount??item.comments.length) >= 3) && trendingScore(item) >= cutoff) ids.add(item.id);
     }
   }
   return ids;
@@ -35,5 +35,5 @@ export function compareFeedback(sort: string, a: FeedbackItemData, b: FeedbackIt
   const tie = b.createdOrder - a.createdOrder || b.id.localeCompare(a.id);
   if (sort === "trending") return trendingScore(b) - trendingScore(a) || b.votes-a.votes || tie;
   if (sort === "newest") return tie;
-  return b.votes - a.votes || b.comments.length-a.comments.length || tie;
+  return b.votes - a.votes || (b.commentCount??b.comments.length)-(a.commentCount??a.comments.length) || tie;
 }

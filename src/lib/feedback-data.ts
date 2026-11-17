@@ -39,6 +39,10 @@ export type FeedbackItemData = {
   pinned?: boolean;
   following?: boolean;
   statusHistory?: {id:string;author:string;previousStatus:FeedbackStatus|null;status:FeedbackStatus;time:string;createdOrder:number}[];
+  commentCount?: number;
+  historyCount?: number;
+  nextCommentCursor?: string|null;
+  nextHistoryCursor?: string|null;
   comments: FeedbackComment[];
 };
 

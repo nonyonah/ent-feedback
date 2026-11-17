@@ -1,11 +1,12 @@
 "use client";
+import {mergeFeedbackItem} from '@/lib/merge-feedback';
 import {captureAnalytics} from "@/lib/analytics";
 
 import * as React from 'react';
 import {usePathname} from 'next/navigation';
 import {useUser} from '@clerk/nextjs';
 import {useProject} from '@/components/feedback/project-provider';
-import {loadFeedbackAction,loadWorkspaceFeedbackAction,mutateFeedbackAction,type FeedbackCommand} from '@/server/actions/feedback';
+import {loadFeedbackActivityAction,loadFeedbackAction,loadWorkspaceFeedbackAction,mutateFeedbackAction,type FeedbackCommand} from '@/server/actions/feedback';
 import {getTrendingIds} from '@/lib/feedback-sort';
 import {createMutationQueue} from '@/lib/mutation-queue';
 import {createFeedbackUploader} from '@/lib/feedback-uploads';
@@ -14,9 +15,10 @@ import {toastManager} from '@/components/ui/toast';
 import type {FeedbackItemData,FeedbackStatus,FeedbackCategory} from '@/lib/feedback-data';
 
 type MutationData=Extract<Awaited<ReturnType<typeof mutateFeedbackAction>>,{ok:true}>['data'];
-type NewFeedbackInput={conversation?:{id:string;token?:string};category?:FeedbackCategory;title:string;description:string;images?:string[];email?:string;name?:string;channel?:'board'|'widget'};
+type NewFeedbackInput={conversation?:{id:string;token?:string;messageId?:string};category?:FeedbackCategory;title:string;description:string;images?:string[];email?:string;name?:string;channel?:'board'|'widget'};
 type FeedbackContextValue={
  trendingIds:ReadonlySet<string>;items:FeedbackItemData[];loading:boolean;error:string;pending:boolean;retry:()=>void;
+ loadMoreActivity:(id:string)=>Promise<void>;
  vote:(id:string)=>void;
  toggleFollow:(id:string)=>Promise<void>;
  addFeedback:(input:NewFeedbackInput)=>Promise<FeedbackItemData>;
@@ -55,12 +57,13 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
    // guest identity instead of creating one per request.
    const saved=visitorToken(wid);
    try{
-    const result=await (workspaceInbox?loadWorkspaceFeedbackAction(wid):loadFeedbackAction(wid,readBoardId,saved));
+    let cursor:string|undefined;const all:FeedbackItemData[]=[];let guestToken:string|undefined;
+    do{const page=await (workspaceInbox?loadWorkspaceFeedbackAction(wid,cursor):loadFeedbackAction(wid,readBoardId,saved,cursor));if(cancelled()||busy.current||scope.current!==key||generation.current!==version)return;if(!page.ok)throw Error(page.error.message);all.push(...page.data.items);guestToken=page.data.guestToken??guestToken;cursor=page.data.nextCursor??undefined;}while(cursor);
+    const result={ok:true as const,data:{items:all,guestToken}};
     if(cancelled()||busy.current||scope.current!==key||generation.current!==version)return;
-    if(!result.ok)throw Error(result.error.message);
     token.current=result.data.guestToken??saved;
     rememberVisitorToken(wid,result.data.guestToken);
-    setFailure({key,message:''});setSnapshot({key,items:result.data.items});
+    setFailure({key,message:''});setSnapshot(previous=>({key,items:result.data.items.map(next=>mergeFeedbackItem(previous.key===key?previous.items.find(old=>old.id===next.id):undefined,next))}));
    }catch(error){if(!cancelled()&&scope.current===key&&generation.current===version)setFailure({key,message:error instanceof Error?error.message:'Feedback could not be loaded. Try again.'});}
   },[valid,key,wid,readBoardId,workspaceInbox]);
  React.useEffect(()=>{
@@ -111,7 +114,8 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
    if(command.type==='comment')captureAnalytics('comment_submitted',{surface,is_reply:Boolean(command.parentCommentId),has_attachment:Boolean(command.images?.length)});
    if(command.type==='vote')captureAnalytics('vote_changed',{surface,active:command.active});
    if(command.type==='create'||command.type==='comment')uploader.current!.clear({workspaceId:wid,boardId:targetBoard,actorKey:key+':'+command.requestId});
-   if(scope.current===key)setSnapshot({key,items:result.data.items});
+   const reaction=command.type==='reaction'?command:undefined;
+   if(scope.current===key)setSnapshot(previous=>({key,items:[...previous.items.filter(item=>item.id!==result.data.deletedId&&!result.data.items.some(next=>next.id===item.id)),...result.data.items.map(next=>{const old=previous.items.find(item=>item.id===next.id);const merged=mergeFeedbackItem(old,next);if(reaction&&!next.comments.some(c=>c.id===reaction.commentId))merged.comments=merged.comments.map(comment=>comment.id===reaction.commentId?{...comment,liked:reaction.active,likes:Math.max(0,(comment.likes??0)+(comment.liked===reaction.active?0:reaction.active?1:-1))}:comment);return merged;})]}));
    try{localStorage.setItem('ent-feedback-updated:'+wid,crypto.randomUUID());}catch{}
    window.dispatchEvent(new CustomEvent('ent-feedback-updated',{detail:wid}));
    return result.data;
@@ -122,7 +126,8 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
   const result=await mutate({type:'create',conversation:input.conversation,category:input.category,channel:input.channel,title:input.title,description:input.description,name:input.name,email:input.email,anonymous:!publicUser,images:input.images});
   const created=result.items.find(item=>item.id===result.createdId);if(!created)throw Error('Feedback was saved. Refresh the board to view it.');return created;
  }
- const value:FeedbackContextValue={trendingIds:getTrendingIds(items),items,loading,error,pending,retry,
+ async function loadMoreActivity(id:string){const item=items.find(item=>item.id===id);if(!item)return;const result=await loadFeedbackActivityAction(wid,item.boardId??bid,id,token.current,item.nextCommentCursor??undefined,item.nextHistoryCursor??undefined);if(!result.ok)throw Error(result.error.message);if(scope.current!==key)return;const next=result.data.items[0];if(next)setSnapshot(previous=>({...previous,items:previous.items.map(current=>current.id!==id?current:{...current,comments:item.nextCommentCursor?[...new Map([...current.comments,...next.comments].map(c=>[c.id,c])).values()]:current.comments,statusHistory:item.nextHistoryCursor?[...new Map([...(current.statusHistory??[]),...(next.statusHistory??[])].map(e=>[e.id,e])).values()]:current.statusHistory,nextCommentCursor:item.nextCommentCursor?next.nextCommentCursor:current.nextCommentCursor,nextHistoryCursor:item.nextHistoryCursor?next.nextHistoryCursor:current.nextHistoryCursor})}));}
+ const value:FeedbackContextValue={loadMoreActivity,trendingIds:getTrendingIds(items),items,loading,error,pending,retry,
   vote:id=>{const item=items.find(item=>item.id===id);if(item)report(mutate({type:'vote',id,active:!item.voted}),'Vote wasn’t saved');},
   toggleFollow:async id=>{const item=items.find(item=>item.id===id);if(item)await mutate({type:'follow',id,active:!item.following});},
   addFeedback,addComment:async(id,body,images,parentCommentId)=>{await mutate({type:'comment',id,body,images,parentCommentId});},

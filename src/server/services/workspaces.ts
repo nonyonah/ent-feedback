@@ -1,4 +1,5 @@
 import "server-only";
+import {z} from "zod";
 import {buildBillingSummary,type BillingSummary} from "@/server/billing/summary";
 import {consumeRateLimit} from "@/server/rate-limit";
 import {requireFeature} from "@/server/features";
@@ -11,6 +12,7 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { getDb, type Queryable } from "@/server/db/client";
 import { isUniqueViolation } from "@/server/db/errors";
 import {
+  lifecycleEmailState,
   boards,
   invitations,
   users,
@@ -335,7 +337,7 @@ export async function listPendingInvitations(input: {
     })
     .from(invitations)
     .where(
-      and(eq(invitations.workspaceId, input.workspaceId), eq(invitations.state, "pending")),
+      and(eq(invitations.workspaceId, input.workspaceId), eq(invitations.state, "pending"),sql`${invitations.expiresAt}>now()`),
     )
     .orderBy(asc(invitations.createdAt));
 
@@ -352,6 +354,7 @@ export async function createInvitations(input: {
   failures: { email: string; message: string }[];
 }> {
   requireFeature("teams");
+  if(input.role!=="member")throw validationError("New teammates join as members. Custom roles are not available yet.");
   const db = getDb();
   await requireWorkspaceRole(db, {
     workspaceId: input.workspaceId,
@@ -360,7 +363,7 @@ export async function createInvitations(input: {
   });
 
   const emails = Array.from(
-    new Set(input.emails.map(normalizeEmail).filter((email) => email.length > 0)),
+    new Set(input.emails.map(email=>z.email().parse(normalizeEmail(email)))),
   );
 
   if (emails.length === 0) {
@@ -376,11 +379,16 @@ export async function createInvitations(input: {
     );
   }
 
-  const [pendingCount] = await db
+  await consumeRateLimit('team:invite:'+input.inviterUserId,20,3600);
+  const {created,skipped,inviter,workspace}=await db.transaction(async tx=>{
+   await tx.select({id:workspaces.id}).from(workspaces).where(eq(workspaces.id,input.workspaceId)).for('update');
+   await requireWorkspaceRole(tx,{workspaceId:input.workspaceId,userId:input.inviterUserId,minimumRole:'admin'});
+   await tx.update(invitations).set({state:'expired',updatedAt:new Date()}).where(and(eq(invitations.workspaceId,input.workspaceId),eq(invitations.state,'pending'),sql`${invitations.expiresAt}<=now()`));
+  const [pendingCount] = await tx
     .select({ value: sql<number>`count(*)::int` })
     .from(invitations)
     .where(
-      and(eq(invitations.workspaceId, input.workspaceId), eq(invitations.state, "pending")),
+      and(eq(invitations.workspaceId, input.workspaceId), eq(invitations.state, "pending"),sql`${invitations.expiresAt}>now()`),
     );
 
   if ((pendingCount?.value ?? 0) + emails.length > PENDING_INVITATION_LIMIT) {
@@ -390,12 +398,12 @@ export async function createInvitations(input: {
     );
   }
 
-  const [inviter] = await db
+  const [inviter] = await tx
     .select({ name: users.name, email: users.email })
     .from(users)
     .where(eq(users.id, input.inviterUserId))
     .limit(1);
-  const [workspace] = await db
+  const [workspace] = await tx
     .select({ name: workspaces.name })
     .from(workspaces)
     .where(eq(workspaces.id, input.workspaceId))
@@ -405,7 +413,7 @@ export async function createInvitations(input: {
     throw new ServiceError("not_found", "Workspace not found.");
   }
 
-  const memberRows = await db
+  const memberRows = await tx
     .select({ email: users.email })
     .from(workspaceMembers)
     .innerJoin(users, eq(users.id, workspaceMembers.userId))
@@ -435,10 +443,12 @@ export async function createInvitations(input: {
       continue;
     }
 
+    const [pending]=await tx.select({id:invitations.id}).from(invitations).where(and(eq(invitations.workspaceId,input.workspaceId),eq(invitations.email,email),eq(invitations.state,'pending'))).limit(1);
+    if(pending){skipped.push({email,message:'An invitation is already pending for this email.'});continue;}
     const { token, tokenHash } = newInvitationToken();
 
-    try {
-      const [invitation] = await db
+    {
+      const [invitation] = await tx
         .insert(invitations)
         .values({
           workspaceId: input.workspaceId,
@@ -458,15 +468,11 @@ export async function createInvitations(input: {
         expiresAt: invitation.expiresAt,
         createdAt: invitation.createdAt,
       });
-    } catch (error) {
-      if (isUniqueViolation(error)) {
-        skipped.push({ email, message: "An invitation is already pending for this email." });
-        continue;
-      }
-
-      throw error;
     }
   }
+
+   return {created,skipped,inviter,workspace};
+  });
 
   const failures: { email: string; message: string }[] = [...skipped];
   const invitationSummaries: PendingInvitationSummary[] = [];
@@ -518,13 +524,15 @@ export async function cancelInvitation(input: {
 }): Promise<void> {
   requireFeature("teams");
   const db = getDb();
-  await requireWorkspaceRole(db, {
+  await db.transaction(async tx=>{
+  await tx.select({id:workspaces.id}).from(workspaces).where(eq(workspaces.id,input.workspaceId)).for('update');
+  await requireWorkspaceRole(tx, {
     workspaceId: input.workspaceId,
     userId: input.userId,
     minimumRole: "admin",
   });
 
-  const [cancelled] = await db
+  const [cancelled] = await tx
     .update(invitations)
     .set({ state: "cancelled", updatedAt: new Date() })
     .where(
@@ -539,6 +547,7 @@ export async function cancelInvitation(input: {
   if (!cancelled) {
     throw new ServiceError("not_found", "Invitation not found.");
   }
+  });
 }
 
 const invitationPreviewSelect = {
@@ -568,6 +577,7 @@ export type InvitationPreview = {
 
 export async function previewInvitation(token: string): Promise<InvitationPreview | null> {
   requireFeature("teams");
+  if(!/^[A-Za-z0-9_-]{43}$/.test(token))return null;
   const db = getDb();
   const [row] = await db
     .select(invitationPreviewSelect)
@@ -591,9 +601,14 @@ export async function acceptInvitation(input: {
 }): Promise<{ workspaceId: string; workspaceName: string }> {
   requireFeature("teams");
   const db = getDb();
+  if(!/^[A-Za-z0-9_-]{43}$/.test(input.token))throw new ServiceError("not_found","This invitation could not be found.");
   const tokenHash = hashToken(input.token);
 
   return db.transaction(async (tx) => {
+    const [destination]=await tx.select({workspaceId:invitations.workspaceId}).from(invitations).where(eq(invitations.tokenHash,tokenHash)).limit(1);
+    if(!destination)throw new ServiceError('not_found','This invitation could not be found.');
+    await tx.select({id:workspaces.id}).from(workspaces).where(eq(workspaces.id,destination.workspaceId)).for('update');
+
     const [invitation] = await tx
       .select({
         id: invitations.id,
@@ -601,6 +616,7 @@ export async function acceptInvitation(input: {
         email: invitations.email,
         role: invitations.role,
         state: invitations.state,
+        acceptedByUserId:invitations.acceptedByUserId,
         expiresAt: invitations.expiresAt,
       })
       .from(invitations)
@@ -613,7 +629,10 @@ export async function acceptInvitation(input: {
     }
 
     if (invitation.state === "accepted") {
-      throw new ServiceError("conflict", "This invitation has already been accepted.");
+      if(invitation.acceptedByUserId!==input.userId)throw new ServiceError("forbidden","This invitation has already been accepted.");
+      await requireWorkspaceRole(tx,{workspaceId:invitation.workspaceId,userId:input.userId,minimumRole:'member'});
+      const [workspace]=await tx.select({name:workspaces.name}).from(workspaces).where(eq(workspaces.id,invitation.workspaceId)).limit(1);
+      return {workspaceId:invitation.workspaceId,workspaceName:workspace.name};
     }
 
     if (invitation.state !== "pending") {
@@ -631,7 +650,8 @@ export async function acceptInvitation(input: {
 
     const userEmail = input.userEmail ? normalizeEmail(input.userEmail) : null;
 
-    if (!userEmail || userEmail !== invitation.email) {
+    const [account]=await tx.select({email:users.email}).from(users).where(eq(users.id,input.userId)).limit(1);
+    if (!userEmail || userEmail !== invitation.email || account?.email!==invitation.email) {
       throw new ServiceError(
         "forbidden",
         "Sign in with the email address this invitation was sent to.",
@@ -672,6 +692,7 @@ export async function acceptInvitation(input: {
       })
       .where(eq(invitations.id, invitation.id));
 
+    await tx.update(lifecycleEmailState).set({onboardingCompletedAt:sql`coalesce(${lifecycleEmailState.onboardingCompletedAt},now())`}).where(eq(lifecycleEmailState.userId,input.userId));
     const [workspace] = await tx
       .select({ id: workspaces.id, name: workspaces.name })
       .from(workspaces)

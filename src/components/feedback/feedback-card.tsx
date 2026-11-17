@@ -45,8 +45,8 @@ export function FeedbackCard({
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-4 text-muted-foreground">
           <span>
-            {item.comments.length}{" "}
-            {item.comments.length === 1 ? "comment" : "comments"}
+            {(item.commentCount??item.comments.length)}{" "}
+            {(item.commentCount??item.comments.length) === 1 ? "comment" : "comments"}
           </span>
           <span>{item.author}</span>
           <span>{item.createdAt}</span>

@@ -64,6 +64,10 @@ export function lifecycleEmail(input: {kind: LifecycleEmail; appOrigin: string; 
 export function activityEmail(input: {subject: string; title: string; url: string}): EmailTemplate {
   return emailLayout({subject: input.subject, heading: input.subject, body: input.title, action: 'Open feedback', url: input.url, footer: 'Manage notifications from the bell on your feedback board. Unfollow a post to stop status updates.'});
 }
+export function invitationAcceptedEmail(input: {workspaceName: string; memberName: string; role: 'owner' | 'admin' | 'member'; appOrigin: string}): EmailTemplate {
+  const roleLabel = input.role === 'admin' ? 'an admin' : input.role === 'owner' ? 'the owner' : 'a member';
+  return emailLayout({subject: `${input.memberName} joined ${input.workspaceName}`, heading: 'Your team just grew.', body: `${input.memberName} accepted your invitation and is now ${roleLabel} of ${input.workspaceName}.`, action: 'Open team settings', url: new URL('/dashboard/settings/team', input.appOrigin).href, footer: 'A note about your workspace team. Manage members and invitations from Settings → Team.'});
+}
 export type TrialEmailKind='started'|'ending';
 export function trialEmail(input:{kind:TrialEmailKind;workspaceName:string;trialEnd:string;cancelAtPeriodEnd:boolean;appOrigin:string}):EmailTemplate{
  const end=new Intl.DateTimeFormat('en',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'}).format(new Date(input.trialEnd))+' UTC';

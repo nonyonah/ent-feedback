@@ -11,13 +11,13 @@ Team membership is enabled on `feature/chat-conversations`. Custom admin-role cr
 
 ## Access and delivery
 
-Invitation creation and membership changes serialize on the workspace. Tokens are random, hashed at rest and expire in seven days. Existing members are skipped; duplicate concurrent invitations do not duplicate email. Cancelled links cannot join. Rejoining reactivates the same membership. Owners cannot be removed. Ordinary members cannot invite or change operator selection.
+Invitation creation and membership changes serialize on the workspace. Tokens are random, hashed at rest and expire in seven days. Existing members are skipped; duplicate concurrent invitations do not duplicate email. Cancelled links cannot join. When an invitation is accepted, the inviter receives a confirmation email naming the new teammate and their role; retrying the same acceptance does not send it twice. Rejoining reactivates the same membership. Owners cannot be removed. Ordinary members cannot invite or change operator selection.
 
 Selected operators can reply in Ent or Slack, appear online in the widget when their presence is current, and receive handoff emails. Selection and active membership are checked again when delivering a queued email. Removing a teammate prunes the operator selection and revokes access. Operator settings refresh after team changes and browser focus; stale IDs are removed from drafts. Shared Slack channel messages retain the channel’s own visibility rules.
 
 ## Evidence
 
-- Isolated database checks: existing/new account joins, verified-email binding, hashed tokens, duplicate invitation concurrency, expiry, cancellation, membership isolation, remove/rejoin, selected presence, reply authorization and email-recipient rechecks.
+- Isolated database checks: existing/new account joins, verified-email binding, hashed tokens, duplicate invitation concurrency, inviter confirmation on acceptance with retry suppression, expiry, cancellation, membership isolation, remove/rejoin, selected presence, reply authorization and email-recipient rechecks.
 - Browser checks: member-only invitation form and list refresh, removal confirmation, light/dark layouts at 320/390/768px; onboarding Send and Skip paths.
 - One requested live invitation was sent, and the recipient confirmed inbox delivery. It used a localhost acceptance link for local testing; production invitations use the deployed app origin.
 - Standalone suite (88 tests), scoped lint, TypeScript, documentation validation and production webpack build passed. Slack/provider traffic in database tests is mocked.

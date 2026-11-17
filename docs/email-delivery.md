@@ -13,11 +13,11 @@ Never expose the API key with a `NEXT_PUBLIC_` prefix or commit it. Restart the 
 
 `src/server/email.ts` sends through `POST https://api.sendbyte.africa/v1/emails`, with a 15-second timeout and a stable `idempotency_key` for retries. A successful response must contain an email ID. Acceptance confirms that Sendbyte accepted the request; it does not prove inbox delivery. Provider response bodies and credentials are excluded from application errors.
 
-Run `node scripts/check-email.mjs` for mocked transport checks. This test sends no email. Live delivery still needs credentials, a verified sender, and a separate delivery check. Notification job processing is not established by switching providers. Team invitations remain disabled for v1.
+Run `node scripts/check-email.mjs` for mocked transport checks. This test sends no email. Live delivery still needs credentials, a verified sender, and a separate delivery check. Notification job processing is not established by switching providers. Team invitations and inviter acceptance confirmations use this transport when teams are enabled.
 
 ## Notification worker
 
-Feedback creation, comments, votes, comment reactions and status changes create recipient-specific inbox entries and email jobs transactionally. Retried submissions do not create another inbox entry. The worker rechecks current preferences, current email and post visibility; status updates also require an active follow.
+Feedback creation, comments, votes, comment reactions and status changes create recipient-specific inbox entries and email jobs transactionally. New feedback notifies every active workspace member regardless of role, except the person who submitted it; each recipient with an email address also receives an email job, subject to their notification preferences. Retried submissions do not create another inbox entry. The worker rechecks current preferences, current email and post visibility; status updates also require an active follow.
 
 Schedule a server-side `POST /api/internal/notification-jobs` once per minute with `Authorization: Bearer <CRON_SECRET>`. Set `CRON_SECRET` to a random value of at least 32 characters in the application and scheduler. Scheduling depends on the chosen host and is not configured automatically. Never call the endpoint from browser code. The route rejects requests when its secret is absent.
 

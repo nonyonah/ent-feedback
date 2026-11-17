@@ -9,9 +9,10 @@ process.env.DATABASE_URL='postgres://test:test@localhost/test';
 process.env.NEXT_PUBLIC_APP_URL='http://localhost:3000';
 const preferences=(userId:string,changes:Partial<typeof notificationPreferences.$inferSelect>={})=>({id:'pref-'+userId,userId,notificationEmail:null,newFeedback:true,feedbackComments:true,commentReplies:true,commentReactions:true,feedbackReactions:true,statusChanges:true,typeChanges:true,createdAt:new Date(0),updatedAt:new Date(0),...changes});
 type Tx=Parameters<typeof publishActivity>[0];
-async function activity(type:ActivityType,options:{parent?:string;actor?:string;prefs?:ReturnType<typeof preferences>[]}={}){
+async function activity(type:ActivityType,options:{parent?:string;actor?:string;prefs?:ReturnType<typeof preferences>[];members?:string[]}={}){
+ const members=options.members??['owner'];
  const writes:Record<string,Record<string,unknown>[]>={};
- const rows:Record<string,unknown[]>={feedback:[{id:'post',authorUserId:'author',status:'planned',category:'feature_request'}],workspaces:[{handle:'workspace',name:'Workspace'}],follows:[{id:'follower'}],workspace_members:[{id:'owner'}],comments:[{author:'commenter'}],users:['author','follower','owner','commenter'].map(id=>({id,email:id+'@example.com'})),notification_preferences:options.prefs??[]};
+ const rows:Record<string,unknown[]>={feedback:[{id:'post',authorUserId:'author',status:'planned',category:'feature_request'}],workspaces:[{handle:'workspace',name:'Workspace'}],follows:[{id:'follower'}],workspace_members:members.map(id=>({id})),comments:[{author:'commenter'}],users:[...new Set(['author','follower','owner','commenter',...members])].map(id=>({id,email:id+'@example.com'})),notification_preferences:options.prefs??[]};
  const tx={select:()=>({from:(table:Parameters<typeof getTableName>[0])=>{let data=rows[getTableName(table)]??[];const query={where:(condition:SQL)=>{if(getTableName(table)==='users'){const {params}=new PgDialect().sqlToQuery(condition);data=data.filter(row=>params.includes((row as {id:string}).id));}return query;},limit:async()=>data,then:(resolve:(value:unknown[])=>unknown)=>Promise.resolve(data).then(resolve)};return query;}}),insert:(table:Parameters<typeof getTableName>[0])=>({values:(value:Record<string,unknown>)=>{const key=getTableName(table);(writes[key]??=[]).push(value);return {onConflictDoNothing:()=>({returning:async()=>[{id:'notice-'+writes[key].length}]})};}})} as unknown as Tx;
  await publishActivity(tx,{type,workspaceId:'workspace',feedbackId:'post',eventId:'event',actorId:options.actor,commentId:type==='comment_reaction'||type==='feedback_comment'?'comment':undefined,parentCommentId:options.parent});
  return writes;
@@ -23,9 +24,12 @@ test('each of the seven preferences independently suppresses its event',()=>{
  assert.equal(wantsActivity(undefined,'new_feedback'),true);
  assert.equal(wantsActivity(preferences('recipient',{newFeedback:false,feedbackComments:false,commentReplies:false,commentReactions:false,feedbackReactions:false}),'status_changed'),true);
 });
-test('new feedback reaches owners; self-notifications are excluded',async()=>{
- assert.deepEqual((await activity('new_feedback')).notifications.map(n=>n.recipientUserId),['owner']);
- assert.equal((await activity('new_feedback',{actor:'owner'})).notifications,undefined);
+test('new feedback reaches every active workspace member; self-notifications are excluded',async()=>{
+ const result=await activity('new_feedback',{members:['owner','admin','member']});
+ assert.deepEqual(result.notifications.map(n=>n.recipientUserId).sort(),['admin','member','owner']);
+ assert.equal(result.jobs.length,3);
+ const authored=await activity('new_feedback',{members:['owner','admin','member'],actor:'member'});
+ assert.deepEqual(authored.notifications.map(n=>n.recipientUserId).sort(),['admin','owner']);
 });
 test('comments reach owners, followers, and post authors, once per recipient',async()=>{
  const result=await activity('feedback_comment');assert.deepEqual(result.notifications.map(n=>n.recipientUserId).sort(),['author','follower','owner']);assert.equal(result.jobs.length,3);

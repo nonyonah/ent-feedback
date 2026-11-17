@@ -1,3 +1,4 @@
+import {z} from "zod";
 import {features} from "@/lib/features";
 import { connection } from "next/server";
 
@@ -19,6 +20,7 @@ export async function GET(
   const { workspaceId } = await params;
 
   const result = await runService(async () => {
+    z.uuid().parse(workspaceId);
     const user = await requireAppUser();
     const membership = await findActiveWorkspaceMembership(getDb(), workspaceId, user.id);
 

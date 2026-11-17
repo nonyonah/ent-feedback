@@ -9,13 +9,21 @@ Connect Slack from **Settings → Integrations**. One connection serves the work
 
 Ent keeps one Slack thread per feedback post or live conversation. Board notifications identify Feedback, Bug or Feature request. Reply inside the thread to send a response back to the corresponding board or chat.
 
-The replying Slack user must be an active member of the Ent workspace, using the same email in both services. Replies from outsiders, bots and unrelated threads are not imported. Standard emoji and up to three supported image attachments of 2 MB each can be mirrored. Custom Slack emoji are not mirrored as remote images.
+The replying Slack user must be an active member of the Ent workspace, using the same email in both services. For live-chat replies and status actions, the member must also be selected as an operator in **Settings → Conversations**. Board replies require active workspace membership but are not controlled by the live-chat operator selection. Replies from outsiders, bots and unrelated threads are not imported.
+
+[Invite teammates and choose operators](/guides/team). Operator selection does not change who can read your Slack channel; Slack’s channel membership controls that. Standard emoji and up to three supported image attachments of 2 MB each can be mirrored. Custom Slack emoji are not mirrored as remote images.
 
 ## Change live-chat status
 
 Live-chat notifications include actions for **In progress**, **Queue** and **Resolve**, excluding the state already shown on that message. Use **In progress** to reopen a resolved chat. Status changes sync with the Ent dashboard and widget; button clicks do not become visitor-facing messages.
 
 Direct button actions post a status confirmation in the Slack thread. The **Status changes** switch controls passive updates from Ent. Old notifications do not gain buttons retroactively; a new conversation or follow-up produces the updated controls.
+
+## Capture feature requests
+
+When a visitor explicitly requests a feature, Slack offers **Review feature request**. It opens the matching conversation in Ent. Check similar requests, then link an existing post or create one in the chosen board.
+
+Once applied, the matching suggestion shows **Added to board** in Ent and the widget. Ent updates its original Slack review action and posts a confirmation in the thread through the delivery queue. This does not mark the feature completed or resolve the chat.
 
 ## Configure your Slack app
 
@@ -33,4 +41,4 @@ For hosted Ent, the application URL is `https://ent.riftlabs.xyz`.
 
 Create one feedback post and start one live chat. Confirm both arrive in the selected channel. Reply in each thread with text, emoji and an image. Resolve and reopen the live conversation, then check its status in Ent.
 
-If controls or replies fail, check the workspace connection, selected channel, Slack app permissions, Interactivity URL and member email match. Disconnecting Slack stops delivery for the workspace’s boards and chat.
+If controls or replies fail, check the workspace connection, selected channel, Slack app permissions, Interactivity URL member email match and, for live chat, operator selection. Disconnecting Slack stops delivery for the workspace’s boards and chat.

@@ -121,7 +121,7 @@ export default async function Page({
           Accepting adds this workspace to your account.
         </p>
         <div className="mt-6">
-          <AcceptInvitationButton token={token} />
+          <AcceptInvitationButton token={token} needsProfile={!user.name?.trim()} />
         </div>
       </div>
     </PageShell>

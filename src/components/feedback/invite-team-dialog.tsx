@@ -10,13 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectPopup,
-  SelectItem,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogTrigger,
   DialogPopup,
@@ -30,7 +23,7 @@ import { useProject } from "@/components/feedback/project-provider";
 import { useWorkspaceTeam } from "@/components/feedback/workspace-team";
 import { toastManager } from "@/components/ui/toast";
 
-type InviteRole = "admin" | "member";
+
 
 function EnabledInviteTeamDialog({
   trigger,
@@ -48,10 +41,10 @@ function EnabledInviteTeamDialog({
   const [internalOpen, setInternalOpen] = React.useState(false);
   const open = controlledOpen ?? internalOpen;
   const [emails, setEmails] = React.useState("");
-  const [role, setRole] = React.useState<InviteRole>("member");
+
   const [error, setError] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
-  const canManage = !project.role || project.role !== "member";
+  const canManage = project.role === "owner" || project.role === "admin";
 
   function setOpen(value: boolean) {
     setInternalOpen(value);
@@ -71,6 +64,8 @@ function EnabledInviteTeamDialog({
       ),
     );
 
+    if (submitting) return;
+    if (list.length > 10) {setError("Invite up to 10 people at a time.");return;}
     if (!list.length || list.some((email) => !/^\S+@[^@.]+\.[^@]+$/.test(email))) {
       setError("Enter valid email addresses, separated by commas.");
       return;
@@ -95,7 +90,7 @@ function EnabledInviteTeamDialog({
     setSubmitting(true);
     let result: Awaited<ReturnType<typeof team.invite>>;
     try {
-      result = await team.invite(list, role);
+      result = await team.invite(list, "member");
     } catch {
       setSubmitting(false);
       setError("The invitations could not be created. Try again.");
@@ -179,6 +174,7 @@ function EnabledInviteTeamDialog({
                 id="invite-emails"
                 placeholder="teammate@company.com"
                 value={emails}
+                disabled={submitting}
                 onChange={(event) => {
                   setEmails(event.target.value);
                   setError("");
@@ -188,32 +184,7 @@ function EnabledInviteTeamDialog({
                 Invite several people with comma-separated addresses.
               </FieldDescription>
             </Field>
-            <Field>
-              <FieldLabel>Role</FieldLabel>
-              <Select
-                items={[
-                  { label: "Member", value: "member" },
-                  { label: "Admin", value: "admin" },
-                ]}
-                value={role}
-                onValueChange={(value) => {
-                  if (value) setRole(value as InviteRole);
-                }}
-              >
-                <SelectTrigger aria-label="Invitation role" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectPopup>
-                  <SelectItem value="member">Member</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectPopup>
-              </Select>
-              <FieldDescription>
-                {role === "admin"
-                  ? "Admins manage workspace settings and feedback."
-                  : "Members review feedback and join conversations."}
-              </FieldDescription>
-            </Field>
+            <p className="text-[13px] leading-5 text-muted-foreground">Members can review feedback and reply to live chats. Existing users sign in; new teammates create an account before accepting.</p>
             {error && (
               <ErrorNotice  className="text-xs text-foreground">
                 {error}

@@ -1,4 +1,5 @@
 import 'server-only';
+import {guestEmailVerified} from '@/server/guest-email';
 import {enqueueSlack} from '@/server/chat/notifications';
 import {and,eq,inArray,isNull} from 'drizzle-orm';
 import type {Database} from '@/server/db/client';
@@ -22,7 +23,7 @@ export async function publishActivity(tx:Tx,input:{type:ActivityType;workspaceId
  if(!post.authorUserId&&post.guestEmail){
   let eligible=Boolean(update&&input.actorId);
   if(input.type==='feedback_comment'&&input.commentId){const [reply]=await tx.select({author:comments.authorUserId}).from(comments).where(and(eq(comments.id,input.commentId),eq(comments.feedbackId,post.id),eq(comments.workspaceId,input.workspaceId),isNull(comments.deletedAt))).limit(1);eligible=Boolean(reply?.author);}
-  if(eligible)await tx.insert(jobs).values({type:'notification_email',dedupeKey:`guest:${input.type}:${input.eventId}:${post.id}`,payload:{guestFeedbackId:post.id,event:input.type,commentId:input.commentId,workspaceId:input.workspaceId,to:post.guestEmail,subject:`${labels[input.type]} · ${workspace.name}`,title,url:new URL(`/p/${encodeURIComponent(workspace.handle)}/items/${post.id}`,getServerEnv().NEXT_PUBLIC_APP_URL).href}}).onConflictDoNothing();
+  if(eligible&&await guestEmailVerified({workspaceId:input.workspaceId,kind:'feedback',subjectId:post.id,email:post.guestEmail},tx))await tx.insert(jobs).values({type:'notification_email',dedupeKey:`guest:${input.type}:${input.eventId}:${post.id}`,payload:{guestFeedbackId:post.id,event:input.type,commentId:input.commentId,workspaceId:input.workspaceId,to:post.guestEmail,subject:`${labels[input.type]} · ${workspace.name}`,title,url:new URL(`/p/${encodeURIComponent(workspace.handle)}/items/${post.id}`,getServerEnv().NEXT_PUBLIC_APP_URL).href}}).onConflictDoNothing();
  }
  const recipients=new Map<string,ActivityType>();
  const followed=await tx.select({id:follows.userId}).from(follows).where(and(eq(follows.feedbackId,post.id),eq(follows.workspaceId,input.workspaceId)));

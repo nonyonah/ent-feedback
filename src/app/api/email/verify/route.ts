@@ -1,0 +1,14 @@
+import {confirmGuestEmail} from '@/server/guest-email';
+import {limitChatRequest} from '@/server/chat/http';
+import {escapeEmailHtml} from '@/server/emails/templates';
+import {ServiceError} from '@/server/result';
+const headers={'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'"};
+function page(content:string,status=200){return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Confirm email · Ent</title></head><body style="font:500 14px/1.6 system-ui,sans-serif;max-width:440px;margin:80px auto;padding:24px">${content}</body></html>`,{status,headers});}
+async function formBody(request:Request){
+ const reader=request.body?.getReader();if(!reader)throw Error('Missing form');let size=0;const parts:Uint8Array[]=[];
+ try{for(;;){const {value,done}=await reader.read();if(done)break;size+=value.byteLength;if(size>1024){await reader.cancel();throw Error('Form too large');}parts.push(value);}}finally{reader.releaseLock();}
+ return new URLSearchParams(Buffer.concat(parts).toString('utf8'));
+}
+// Email scanners may follow GET links. Only an explicit POST confirms ownership.
+export async function GET(request:Request){try{await limitChatRequest(request);const url=new URL(request.url);const id=url.searchParams.get('id')??'',token=url.searchParams.get('token')??'';if(!/^[a-f0-9-]{36}$/i.test(id)||!/^[a-f0-9]{64}$/.test(token))return page('<h1>This link is unavailable.</h1><p>Request a new verification email from the widget.</p>',400);return page(`<h1>Confirm your email</h1><p>Receive replies and updates from this conversation.</p><form method="post" action="/api/email/verify"><input type="hidden" name="id" value="${escapeEmailHtml(id)}"><input type="hidden" name="token" value="${escapeEmailHtml(token)}"><button style="background:#212529;color:white;border:0;border-radius:10px;padding:10px 16px;font:inherit;cursor:pointer">Confirm email</button></form>`);}catch{return page('<h1>Please try again shortly.</h1>',429);}}
+export async function POST(request:Request){try{await limitChatRequest(request);const origin=request.headers.get('origin');if(!origin||new URL(origin).origin!==new URL(request.url).origin)return page('<h1>Please open the link from your email.</h1>',403);const body=await formBody(request);await confirmGuestEmail(body.get('id')??'',body.get('token')??'');return page('<h1>Email confirmed.</h1><p>You can close this tab and return to the widget. Future replies and updates can now reach your inbox.</p>');}catch(error){return page('<h1>Email could not be confirmed.</h1><p>'+escapeEmailHtml(error instanceof ServiceError?error.message:'Request a new link or try again shortly.')+'</p>',400);}}

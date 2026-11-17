@@ -37,7 +37,7 @@ function CommentComposer({itemId,parent,onDone,onCancel}:{itemId:string;parent?:
 
 function CommentNode({comment,item,depth=0}:{comment:FeedbackComment;item:FeedbackItemData;depth?:number}){
  const {toggleCommentLike}=useFeedback();const [replying,setReplying]=React.useState(false);
- const children=item.comments.filter(child=>child.parentCommentId===comment.id);
+ const children=item.comments.filter(child=>child.parentCommentId===comment.id).sort((a,b)=>(a.createdOrder??0)-(b.createdOrder??0));
  const isOwner=features.teams&&comment.kind==="owner";
  return <article className="min-w-0" aria-label={"Comment by "+comment.author}>
   <div className="flex items-start gap-3"><Avatar className="size-8 shrink-0"><AvatarImage src={comment.avatarUrl} alt=""/><AvatarFallback seed={comment.author}/></Avatar>
@@ -53,12 +53,15 @@ function CommentNode({comment,item,depth=0}:{comment:FeedbackComment;item:Feedba
 }
 
 export function CommentThread({item,variant="default"}:{item:FeedbackItemData;variant?:"default"|"dashboard"}):React.ReactElement{
+ const {loadMoreActivity}=useFeedback();const [loadingMore,setLoadingMore]=React.useState(false);const [loadError,setLoadError]=React.useState('');
  const ids=new Set(item.comments.map(comment=>comment.id));
  const roots=item.comments.filter(comment=>!comment.parentCommentId||!ids.has(comment.parentCommentId));
  const events=[...roots.map(comment=>({kind:"comment" as const,id:comment.id,createdOrder:comment.createdOrder??0,comment})),...(item.statusHistory??[]).map(event=>({kind:"status" as const,id:event.id,createdOrder:event.createdOrder,event}))].sort((a,b)=>a.createdOrder-b.createdOrder);
  return <div data-slot="comment-thread" data-variant={variant} className="flex min-w-0 flex-col gap-5">
   <CommentComposer itemId={item.id}/>
+  {loadError&&<ErrorNotice>{loadError}</ErrorNotice>}
   {events.length===0&&<p className="text-sm text-muted-foreground">No comments yet.</p>}
   <div className="flex min-w-0 flex-col gap-5">{events.map(entry=>entry.kind==="comment"?<CommentNode key={entry.id} item={item} comment={entry.comment}/>:<div key={entry.id} data-slot="status-history-event" className="ml-4 flex items-start gap-3 border-l border-border py-2 pl-5"><span className="min-w-0 flex-1 text-sm"><span className="font-medium">{entry.event.author}</span><span className="text-muted-foreground"> changed status to </span><span className="ml-1.5 inline-flex"><StatusLabel status={entry.event.status}/></span><span className="mt-1 block text-xs text-muted-foreground">{entry.event.time}</span></span></div>)}</div>
+  {(item.nextCommentCursor||item.nextHistoryCursor)&&<Button variant="ghost" loading={loadingMore} disabled={loadingMore} onClick={async()=>{setLoadingMore(true);setLoadError('');try{await loadMoreActivity(item.id);}catch(error){setLoadError(error instanceof Error?error.message:'Comments could not be loaded.');}finally{setLoadingMore(false);}}}>Load earlier activity</Button>}
  </div>;
 }

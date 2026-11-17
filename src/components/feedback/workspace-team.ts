@@ -51,12 +51,16 @@ export function notifyTeamChanged() {
 
 export function useWorkspaceTeam(projectId: string) {
   const [state, setState] = React.useState<TeamState>(emptyState);
+  const request=React.useRef(0);
+  const abort=React.useRef<AbortController|null>(null);
 
   const refresh = React.useCallback(async () => {
     if (!projectId) return;
 
+    const current=++request.current;abort.current?.abort();const controller=new AbortController();abort.current=controller;
     try {
       const response = await fetch(`/api/workspaces/${projectId}/team`, {
+        signal:controller.signal,
         cache: "no-store",
         headers: { Accept: "application/json" },
       });
@@ -67,6 +71,7 @@ export function useWorkspaceTeam(projectId: string) {
           }
         | { ok: false; error: { message: string } };
 
+      if(controller.signal.aborted||current!==request.current)return;
       if (!payload.ok) {
         setState({
           members: [],
@@ -84,6 +89,7 @@ export function useWorkspaceTeam(projectId: string) {
         error: null,
       });
     } catch {
+      if(controller.signal.aborted||current!==request.current)return;
       setState({
         members: [],
         invitations: [],
@@ -104,7 +110,7 @@ export function useWorkspaceTeam(projectId: string) {
     };
     window.addEventListener(TEAM_CHANGED_EVENT, handleChange);
     return () => {
-      cancelled = true;
+      cancelled = true;abort.current?.abort();
       window.removeEventListener(TEAM_CHANGED_EVENT, handleChange);
     };
   }, [refresh]);

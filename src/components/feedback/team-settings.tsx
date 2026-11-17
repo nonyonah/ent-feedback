@@ -3,6 +3,9 @@
 import {ErrorNotice} from '@/components/ui/error-notice';
 import {features} from "@/lib/features";
 
+import {removeWorkspaceMemberAction} from '@/server/actions/workspaces';
+import {Skeleton} from '@/components/ui/skeleton';
+import {Dialog,DialogTrigger,DialogHeader,DialogPopup,DialogTitle,DialogDescription,DialogFooter} from '@/components/ui/dialog';
 import { useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,7 +24,11 @@ function EnabledTeamSettings() {
   const { project } = useProject();
   const team = useWorkspaceTeam(project.id);
   const [cancelling, setCancelling] = useState<string | null>(null);
-  const canManage = !project.role || project.role !== "member";
+  const canManage = project.role === "owner" || project.role === "admin";
+  const [removing,setRemoving]=useState<typeof team.members[number]|null>(null);
+  const [removePending,setRemovePending]=useState(false);
+  const [removeError,setRemoveError]=useState('');
+  async function remove(){if(!removing||removePending)return;setRemovePending(true);setRemoveError('');try{const result=await removeWorkspaceMemberAction({workspaceId:project.id,memberId:removing.id});if(!result.ok)throw Error(result.error.message);setRemoving(null);await team.refresh();toastManager.add({title:'Teammate removed',type:'success'});}catch(error){setRemoveError(error instanceof Error?error.message:'This teammate could not be removed.');}finally{setRemovePending(false);}}
 
   async function cancel(invitationId: string) {
     if (cancelling) return;
@@ -58,9 +65,7 @@ function EnabledTeamSettings() {
       )}
       <SettingGroup title="Members">
         {team.loading ? (
-          <p className="px-4 py-6 text-[13px] text-muted-foreground">
-            Loading team…
-          </p>
+          <div aria-busy="true" aria-label="Loading team" className="space-y-3 p-4"><Skeleton className="h-10 w-full"/><Skeleton className="h-10 w-full"/></div>
         ) : team.error ? (
           <ErrorNotice  className="px-4 py-6 text-[13px] text-foreground">
             {team.error}
@@ -77,16 +82,17 @@ function EnabledTeamSettings() {
                 <AvatarFallback seed={member.email ?? member.name ?? member.userId} />
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-medium">
+                <p title={member.name??member.email??undefined} className="truncate text-[13px] font-medium">
                   {member.name ?? member.email ?? "Teammate"}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {member.email ?? "No email on file"}
                 </p>
               </div>
-              <span className="rounded-full bg-muted px-2.5 py-1 text-xs">
+              <span className="shrink-0 rounded-full bg-control-quiet px-2 py-0.5 text-xs">
                 {roleLabel(member.role)}
               </span>
+              {canManage&&member.role==='member'&&<Dialog open={removing?.id===member.id} onOpenChange={open=>{if(open){setRemoveError('');setRemoving(member);}else if(!removePending)setRemoving(null);}}><DialogTrigger render={<Button size="sm" variant="ghost"/>}>Remove<span className="sr-only"> {member.name??member.email??'teammate'}</span></DialogTrigger><DialogPopup bottomStickOnMobile={false}><DialogHeader><DialogTitle>Remove teammate?</DialogTitle><DialogDescription>{member.name??member.email??'This teammate'} will lose access to {project.name}. Their feedback and replies will stay.</DialogDescription></DialogHeader>{removeError&&<ErrorNotice className="mx-6 mb-4">{removeError}</ErrorNotice>}<DialogFooter><Button variant="secondary" disabled={removePending} onClick={()=>setRemoving(null)}>Keep teammate</Button><Button variant="destructive" loading={removePending} disabled={removePending} onClick={()=>void remove()}>Remove teammate</Button></DialogFooter></DialogPopup></Dialog>}
             </div>
           ))
         )}
@@ -128,8 +134,9 @@ function EnabledTeamSettings() {
         )}
       </SettingGroup>
       )}
+
     </SettingsPage>
   );
 }
 
-export function TeamSettings(){return features.teams?<EnabledTeamSettings/>:null;}
+export function TeamSettings(){const {project}=useProject();return features.teams?<EnabledTeamSettings key={project.id}/>:null;}

@@ -1,4 +1,5 @@
 import 'server-only';
+import {canOperateChat,requireChatOperator} from './operators';
 import {setConversationStatus} from './status';
 import {emojify} from 'node-emoji';
 import {createHash,createHmac,timingSafeEqual,randomUUID} from 'node:crypto';
@@ -15,7 +16,7 @@ import {sanitizeImage} from '@/server/image-validation';
 import {putImage,deleteImage} from '@/server/storage';
 import {publishActivity} from '@/server/activity';
 import {enqueueConversationNotice} from './notifications';
-export async function slackApi(token:string,method:string,body:Record<string,unknown>){const read=method==='users.info';const url=new URL('https://slack.com/api/'+method);if(read)url.search=new URLSearchParams(Object.entries(body).map(([key,value])=>[key,String(value)])).toString();const response=await fetch(url.href,{method:read?'GET':'POST',headers:{Authorization:'Bearer '+token,...(!read?{'Content-Type':'application/json; charset=utf-8'}:{})},...(!read?{body:JSON.stringify(body)}:{}),cache:'no-store',signal:AbortSignal.timeout(8000)});const result=await response.json();if(!response.ok||!result.ok){const code=['not_in_channel','channel_not_found','missing_scope','invalid_auth','token_revoked','account_inactive','restricted_action','ratelimited'].includes(result.error)?result.error:null;throw Error(code?'Slack: '+code:'Slack request could not be confirmed');}return result;}
+export async function slackApi(token:string,method:string,body:Record<string,unknown>){const read=method==='users.info'||method==='conversations.replies';const url=new URL('https://slack.com/api/'+method);if(read)url.search=new URLSearchParams(Object.entries(body).map(([key,value])=>[key,String(value)])).toString();const response=await fetch(url.href,{method:read?'GET':'POST',headers:{Authorization:'Bearer '+token,...(!read?{'Content-Type':'application/json; charset=utf-8'}:{})},...(!read?{body:JSON.stringify(body)}:{}),cache:'no-store',signal:AbortSignal.timeout(8000)});const result=await response.json();if(!response.ok||!result.ok){const code=['not_in_channel','channel_not_found','missing_scope','invalid_auth','token_revoked','account_inactive','restricted_action','ratelimited'].includes(result.error)?result.error:null;throw Error(code?'Slack: '+code:'Slack request could not be confirmed');}return result;}
 export function validSlackSignature(raw:string,timestamp:string,signature:string,secret:string,now=Date.now()){if(!/^\d+$/.test(timestamp)||Math.abs(now/1000-Number(timestamp))>300||!/^v0=[a-f0-9]{64}$/.test(signature))return false;const expected='v0='+createHmac('sha256',secret).update('v0:'+timestamp+':'+raw).digest('hex');return timingSafeEqual(Buffer.from(expected),Buffer.from(signature));}
 export function slackRequestId(eventId:string){const hex=createHash('sha256').update('slack:'+eventId).digest('hex');return hex.slice(0,8)+'-'+hex.slice(8,12)+'-4'+hex.slice(13,16)+'-a'+hex.slice(17,20)+'-'+hex.slice(20,32);}
 const fileSchema=z.object({id:z.string(),url_private_download:z.url().optional(),url_private:z.url().optional(),size:z.number().max(2097152),mimetype:z.enum(['image/png','image/jpeg','image/gif','image/webp'])});
@@ -28,13 +29,14 @@ export async function receiveSlackEvent(input:unknown){
  for(const {thread,connection} of mappings){if(!connection.encryptedSecretRef||!connection.allowedChannels.includes(event.channel))continue;const secret=secretSchema.parse(unseal(connection.encryptedSecretRef,key,thread.workspaceId+':slack'));if(secret.teamId!==p.team_id)continue;
   const profile=await slackApi(secret.accessToken,'users.info',{user:event.user});if(profile.user?.is_bot||profile.user?.deleted||profile.user?.is_restricted||profile.user?.is_ultra_restricted)return;const email=profile.user?.profile?.email?.toLowerCase();if(!email)return;
   const [member]=await db.select({id:users.id}).from(workspaceMembers).innerJoin(users,eq(users.id,workspaceMembers.userId)).where(and(eq(workspaceMembers.workspaceId,thread.workspaceId),eq(workspaceMembers.status,'active'),eq(users.email,email))).limit(1);if(!member)return;
+  if(thread.conversationId&&!await canOperateChat(db,thread.workspaceId,member.id)){await slackApi(secret.accessToken,'chat.postEphemeral',{channel:thread.channel,user:event.user,thread_ts:thread.threadTs,text:'You are not selected as a live chat operator. Ask the workspace owner to update Conversations settings in Ent.'});return;}
   const requestId=slackRequestId(p.event_id);const [done]=thread.conversationId?await db.select({id:chatMessages.id}).from(chatMessages).where(and(eq(chatMessages.conversationId,thread.conversationId),eq(chatMessages.requestId,requestId),eq(chatMessages.role,'team'))).limit(1):await db.select({id:comments.id}).from(comments).where(eq(comments.id,requestId)).limit(1);if(done)return;
   // Slack's native Unicode emoji are preserved. Links become plain URLs, never executable markup.
   const body=emojify(event.text).replace(/<([^>|]+)\|([^>]+)>/g,'$2 ($1)').replace(/<(https?:\/\/[^>]+)>/g,'$1').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').trim().slice(0,3000)||'Image attachment';
   const files=await Promise.all((event.files??[]).map(f=>slackImage(f,secret.accessToken)));
   if(thread.conversationId){const conversationId=thread.conversationId;const ids:string[]=[];for(const bytes of files)ids.push(await storeChatImage(thread.workspaceId,conversationId,bytes,member.id));await db.transaction(async tx=>{
    const [active]=await tx.select().from(integrationConnections).where(and(eq(integrationConnections.id,connection.id),eq(integrationConnections.authorizationState,'connected'))).for('update');if(!active||active.updatedAt.getTime()!==connection.updatedAt.getTime())return;
-   await requireWorkspaceRole(tx,{workspaceId:thread.workspaceId,userId:member.id,minimumRole:'member'});
+   await requireChatOperator(tx,thread.workspaceId,member.id);
    await tx.select().from(conversations).where(and(eq(conversations.id,conversationId),eq(conversations.workspaceId,thread.workspaceId))).for('update');
    const [inserted]=await tx.insert(chatMessages).values({workspaceId:thread.workspaceId,conversationId,role:'team',authorUserId:member.id,body,requestId}).onConflictDoNothing().returning({id:chatMessages.id});if(!inserted)return;
    await linkChatImages(tx,thread.workspaceId,conversationId,requestId,ids,member.id);
@@ -74,10 +76,12 @@ export async function receiveSlackAction(input:unknown,eventId:string){
   const email=profile.user?.profile?.email?.toLowerCase();if(!email)return;
   const [member]=await db.select({id:users.id}).from(workspaceMembers).innerJoin(users,eq(users.id,workspaceMembers.userId)).where(and(eq(workspaceMembers.workspaceId,thread.workspaceId),eq(workspaceMembers.status,'active'),eq(users.email,email))).limit(1);
   if(!member){await slackApi(secret.accessToken,'chat.postEphemeral',{channel:thread.channel,user:p.user.id,thread_ts:thread.threadTs,text:'Only active members of this Ent workspace can change conversation status.'});return;}
+  if(!await canOperateChat(db,thread.workspaceId,member.id)){await slackApi(secret.accessToken,'chat.postEphemeral',{channel:thread.channel,user:p.user.id,thread_ts:thread.threadTs,text:'Only selected live chat operators can change this conversation. Ask the workspace owner to update Conversations settings in Ent.'});return;}
   const status=action.action_id==='ent_chat_status_resolved'?'resolved':action.action_id==='ent_chat_status_escalated'?'escalated':'open';
   await db.transaction(async tx=>{
    const [active]=await tx.select().from(integrationConnections).where(and(eq(integrationConnections.id,connection.id),eq(integrationConnections.authorizationState,'connected'))).for('update');
    if(!active||active.updatedAt.getTime()!==connection.updatedAt.getTime())return;
+   await requireChatOperator(tx,thread.workspaceId,member.id);
    await setConversationStatus(tx,{workspaceId:thread.workspaceId,conversationId:action.value,userId:member.id,status,eventId,confirmInSlack:true});
   });
  }

@@ -1,3 +1,5 @@
+> **Current release:** See [team invitations and operators](../team/README.md) and [17 November chat refinements](2026-11-17-chat-refinements.md). AI replies and knowledge controls remain paused. Earlier implementation notes below include historical AI work and verification results.
+
 # Chat and Conversations
 
 Chat is an opt-in widget feature. Visitors can ask questions, reach the team,
@@ -402,3 +404,14 @@ Enable **Manage Distribution → Activate Public Distribution** for an early pil
 The root metadata includes `slack-app-id=A0CHRMN54GP`. Slack’s review guide states that automatic app suggestions require Marketplace listing; the tag is preparatory and does not imply pilot approval or guarantee suggestions before listing.
 
 References: https://docs.slack.dev/app-management/distribution/ , https://docs.slack.dev/authentication/installing-with-oauth/ , https://docs.slack.dev/slack-marketplace/slack-marketplace-review-guide/#app-suggestions
+
+
+### Team membership and chat refinements — November 17, 2026
+
+- Onboarding now has Profile, Workspace and an optional Team invitation step. Settings → Team uses the same service and Sendbyte template. Invite acceptance requires the matching verified email and joins the existing workspace; missing names are saved to Clerk and Ent.
+- Settings → Conversations selects all active members or individual operators. Server actions and Slack imports enforce selection for live-chat replies/status actions. Selected operators drive public presence and handoff-email recipients; queued emails recheck membership and selection. Removing a member prunes their selection without widening access. No selected operators leaves messages queued.
+- The widget has one custom-or-default greeting, with teammate availability and reply expectation grouped in its header.
+- Suggestion conversion persists the source message’s completion, returns it independently of the incremental cursor, and updates the widget/dashboard to Added to board. Durable Slack delivery updates the matching review block and posts confirmation. Duplicate conversion to a different post rolls back.
+- Guest email updates require the new verification flow. Migration 0021 was applied to the configured Neon database; apply it to any separately configured database before deployment.
+- Regression commands: `node scripts/check-chat-db.mjs --team`, `node scripts/check-chat-db.mjs --support`, `node scripts/check-chat-db.mjs --security`, and `npm run check:concurrency`. These use fixtures/mocked providers; the chat runner creates and removes an isolated schema. Browser checks support `--team`, `--onboarding-team`, `--contact-policy` and `--feature-requests` in `scripts/check-chat-ui.mjs` (Playwright must be available).
+- One requested live teammate invitation reached the recipient’s inbox. Its link used localhost for local testing; this does not verify production acceptance or live Slack routing for the new operator restrictions.

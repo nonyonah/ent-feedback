@@ -1,4 +1,5 @@
 import "server-only";
+import {guestEmailVerified} from "@/server/guest-email";
 
 import { and, asc, eq, isNull, lt, lte, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -47,6 +48,7 @@ export async function processNotificationJobs(limit = 3, destination?:{workspace
           const [reply]=guest.commentId?await db.select({author:comments.authorUserId}).from(comments).where(and(eq(comments.id,guest.commentId),eq(comments.feedbackId,guest.guestFeedbackId),eq(comments.workspaceId,guest.workspaceId),isNull(comments.deletedAt))).limit(1):[];
           permitted=Boolean(reply?.author);
         }
+        if(permitted)permitted=await guestEmailVerified({workspaceId:guest.workspaceId,kind:'feedback',subjectId:guest.guestFeedbackId,email:guest.to});
         if(permitted)await sendActivityEmail({...guest,key:job.dedupeKey??job.id});
         await db.update(jobs).set({status:'succeeded',lockedAt:null,lastError:null,updatedAt:new Date()}).where(ownLease);result.succeeded++;continue;
       }

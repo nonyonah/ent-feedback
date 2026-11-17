@@ -9,6 +9,8 @@ import {mkdtempSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createRequire} from 'node:module';
+import {AsyncLocalStorage} from 'node:async_hooks';
+global.__identityStorage=new AsyncLocalStorage();
 import esbuild from 'esbuild';
 import {config} from 'dotenv';
 config({path:'.env.local',quiet:true});
@@ -54,6 +56,16 @@ export async function run(){
   assert.equal(memberships.length,1,'concurrent registration created duplicate memberships');
   createdWorkspaceIds.push(memberships[0].workspaceId);
 
+  // Different requests carry independent Clerk identities, even when interleaved.
+  const identities=Array.from({length:6},()=>{const id='concurrency-distinct-'+randomUUID();return {id,primaryEmailAddress:{emailAddress:randomUUID()+'@example.com',verification:{status:'verified'}},fullName:'Distinct Tester',hasImage:false};});
+  const distinct=await Promise.all(identities.map(identity=>global.__identityStorage.run(identity,()=>getOptionalAppUser())));
+  createdUserIds.push(...distinct.map(account=>account.id));
+  assert.equal(new Set(distinct.map(account=>account.id)).size,identities.length,'separate sign-ins shared an account');
+  distinct.forEach((account,index)=>assert.equal(account.clerkUserId,identities[index].id,'request received another user identity'));
+  const distinctWorkspaces=await Promise.all(distinct.map((account,index)=>createFirstWorkspaceForUser({userId:account.id,name:'Distinct '+index+' '+token,handle:'distinct-'+index+'-'+token})));
+  createdWorkspaceIds.push(...distinctWorkspaces.map(workspace=>workspace.id));
+  assert.equal(new Set(distinctWorkspaces.map(workspace=>workspace.id)).size,identities.length,'separate registrations shared a workspace');
+
   // 3. Parallel first loads with one browser token share one guest identity.
   global.__clerkUserId=null;
   global.__clerkUser=null;
@@ -89,11 +101,11 @@ export async function run(){
 }
 }
 `;
-await esbuild.build({stdin:{contents:entry,resolveDir:process.cwd(),loader:'ts'},bundle:true,packages:'external',banner:{js:`require=require('node:module').createRequire('${process.cwd()}/package.json');`},platform:'node',format:'cjs',outfile:output,plugins:[{name:'boundary',setup(b){b.onResolve({filter:/^server-only$/},(args)=>({path:args.path,namespace:'empty'}));b.onLoad({filter:/.*/,namespace:'empty'},()=>({loader:'js',resolveDir:process.cwd(),contents:''}));b.onResolve({filter:/^@clerk\/nextjs\/server$/},(args)=>({path:args.path,namespace:'clerk'}));b.onLoad({filter:/.*/,namespace:'clerk'},()=>({loader:'js',resolveDir:process.cwd(),contents:`export async function currentUser(){return global.__clerkUser??null;}export async function auth(){return {userId:global.__clerkUserId??null};}export function clerkClient(){return {users:{updateUser:async()=>({}),updateUserMetadata:async()=>({})}};}`}));}}]});
+await esbuild.build({stdin:{contents:entry,resolveDir:process.cwd(),loader:'ts'},bundle:true,packages:'external',banner:{js:`require=require('node:module').createRequire('${process.cwd()}/package.json');`},platform:'node',format:'cjs',outfile:output,plugins:[{name:'boundary',setup(b){b.onResolve({filter:/^server-only$/},(args)=>({path:args.path,namespace:'empty'}));b.onLoad({filter:/.*/,namespace:'empty'},()=>({loader:'js',resolveDir:process.cwd(),contents:''}));b.onResolve({filter:/^@clerk\/nextjs\/server$/},(args)=>({path:args.path,namespace:'clerk'}));b.onLoad({filter:/.*/,namespace:'clerk'},()=>({loader:'js',resolveDir:process.cwd(),contents:`export async function currentUser(){return global.__identityStorage.getStore()??global.__clerkUser??null;}export async function auth(){return {userId:global.__identityStorage.getStore()?.id??global.__clerkUserId??null};}export function clerkClient(){return {users:{updateUser:async()=>({}),updateUserMetadata:async()=>({})}};}`}));}}]});
 const loadModule=createRequire(import.meta.url);
 try{
  await loadModule(output).run();
- console.log('PASS PostgreSQL concurrency: one account under concurrent sign-in, one workspace under concurrent registration, one guest identity under parallel first loads, and no pool exhaustion under concurrent board creation. Fixture rows deleted; Clerk identity mocked.');
+ console.log('PASS PostgreSQL concurrency: independent accounts/workspaces for six simultaneous users, one account under concurrent sign-in, one workspace under concurrent registration, one guest identity under parallel first loads, and no pool exhaustion under concurrent board creation. Fixture rows deleted; Clerk identity mocked.');
  process.exitCode=0;
 }catch(error){
  console.error('Database concurrency check failed:',error.code??error.name,error instanceof Error&&error.name==='AssertionError'?error.message:'');

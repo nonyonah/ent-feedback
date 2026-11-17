@@ -2,7 +2,7 @@ import "server-only";
 
 import { getServerEnv, requireProviderEnv } from "@/server/env";
 import { ServiceError } from "@/server/result";
-import {activityEmail,lifecycleEmail,emailLayout,trialEmail,prepaidReminderEmail,type LifecycleEmail,type TrialEmailKind} from "@/server/emails/templates";
+import {activityEmail,lifecycleEmail,emailLayout,invitationAcceptedEmail,trialEmail,prepaidReminderEmail,type LifecycleEmail,type TrialEmailKind} from "@/server/emails/templates";
 import {applicationEmailUrl} from '@/lib/application-origin';
 
 type InvitationEmailInput = {
@@ -34,6 +34,25 @@ export async function sendInvitationEmail(input: InvitationEmailInput): Promise<
       url: acceptUrl.toString(),
       footer: "This invitation expires in 7 days. If you were not expecting it, you can ignore this email.",
     }),
+  });
+}
+
+export async function sendInvitationAcceptedEmail(input: {
+  to: string;
+  workspaceName: string;
+  memberName: string;
+  role: "owner" | "admin" | "member";
+  key: string;
+}): Promise<void> {
+  const env = requireProviderEnv([
+    "SENDBYTE_API_KEY",
+    "EMAIL_FROM",
+    "NEXT_PUBLIC_APP_URL",
+  ] as const);
+  await sendEmail({
+    to: input.to,
+    key: input.key,
+    ...invitationAcceptedEmail({...input, appOrigin: env.NEXT_PUBLIC_APP_URL}),
   });
 }
 

@@ -6,14 +6,14 @@ Implemented 11 November 2026. The public documentation is drafted and pushed sep
 
 | Email | Eligibility | Timing | Frequency |
 | --- | --- | --- | --- |
-| Welcome | Newly registered application account with a verified email | Next scheduler tick after registration | Once per account; expires after 24 hours if not processed |
+| Welcome | Newly registered application account with a verified email, including invited sign-ups | Next scheduler tick after registration | Once per account; expires after 24 hours if not processed |
 | Finish setup | Workspace onboarding started but not completed | After 24 hours | Once per account |
 | Create a board | Owns a workspace and has no board in any owned workspace | After 3 days from enrollment/workspace creation, whichever is later | Once per account |
 | Return to Ent | Owns a workspace; no authenticated app activity for 30 days | After 30 days | Once per account, not every month |
 | Get more from your board | Existing-user tips draft | Not automatically scheduled | Draft only |
 | Reply / activity | Existing recipient and notification preference rules | Next scheduler tick | Per deduplicated event |
 
-The schedule was approved by the user. “Existing users” does not trigger a retroactive bulk welcome campaign. Existing accounts enroll on their next authenticated app visit, with welcome disabled. Public-board-only participants are excluded from workspace setup, board and inactivity reminders unless they start creating their own workspace. Clerk still sends authentication email.
+The schedule was approved by the user. “Existing users” does not trigger a retroactive bulk welcome campaign. Existing accounts enroll on their next authenticated app visit, with welcome disabled. Accounts created within the previous 24 hours at enrollment remain welcome-eligible, so invitation sign-ups and new users are included even when they verify email or accept later. Public-board-only participants are excluded from workspace setup, board and inactivity reminders unless they start creating their own workspace. Clerk still sends authentication email.
 
 Templates are in `src/server/emails/templates.ts`: charcoal buttons, neutral surfaces, system-safe font stack, responsive table layout and plain text alternatives. No tracking pixels or open/click tracking are added by the application. Activity emails now use the same layout. The provider account's own tracking configuration should be reviewed separately.
 

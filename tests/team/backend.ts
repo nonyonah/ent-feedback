@@ -10,9 +10,9 @@ import {loadChatSettingsAction,saveChatSettingsAction,replyConversationAction} f
 import {enqueueConversationNotice,deliverChatJob} from '@/server/chat/notifications';
 import {defaultOperations} from '@/lib/chat/availability';
 import {removeWorkspaceMember} from '@/server/services/team';
-declare const global:typeof globalThis&{chatUser:typeof users.$inferSelect;emailCalls:{to:string}[];invitationEmails:{to:string;token:string}[]};
+declare const global:typeof globalThis&{chatUser:typeof users.$inferSelect;emailCalls:{to:string}[];invitationEmails:{to:string;token:string}[];invitationAcceptedEmails:{to:string;workspaceName:string;memberName:string;role:string}[]};
 export async function run(){
- const db=getDb();global.invitationEmails=[];
+ const db=getDb();global.invitationEmails=[];global.invitationAcceptedEmails=[];
  const [owner,existing,newUser,outsider]=await db.insert(users).values(['owner','existing','new','outside'].map(name=>({clerkUserId:randomUUID(),email:name+'@example.com',name}))).returning();
  const [workspace,other]=await db.insert(workspaces).values([{name:'Team alpha',handle:'team-alpha'},{name:'Team beta',handle:'team-beta'}]).returning();
  await db.insert(workspaceMembers).values([{workspaceId:workspace.id,userId:owner.id,role:'owner'},{workspaceId:other.id,userId:outsider.id,role:'owner'}]);
@@ -26,13 +26,17 @@ export async function run(){
  assert.notEqual(pending.tokenHash,token);assert.equal(pending.tokenHash,createHash('sha256').update(token).digest('hex'));
  await assert.rejects(()=>acceptInvitation({token,userId:outsider.id,userEmail:outsider.email}));
  await assert.rejects(()=>acceptInvitation({token,userId:existing.id,userEmail:null}));
- const joined=await acceptInvitation({token,userId:existing.id,userEmail:existing.email});assert.equal(joined.workspaceId,workspace.id);assert.equal((await acceptInvitation({token,userId:existing.id,userEmail:existing.email})).workspaceId,workspace.id,'acceptance retry is idempotent');
+ const joined=await acceptInvitation({token,userId:existing.id,userEmail:existing.email});assert.equal(joined.workspaceId,workspace.id);
+ assert.equal(global.invitationAcceptedEmails.length,1,'accepting an invitation notifies the inviter');assert.equal(global.invitationAcceptedEmails[0].to,owner.email);assert.equal(global.invitationAcceptedEmails[0].workspaceName,'Team alpha');assert.equal(global.invitationAcceptedEmails[0].role,'member');assert.equal(global.invitationAcceptedEmails[0].memberName,'existing');
+ assert.equal((await acceptInvitation({token,userId:existing.id,userEmail:existing.email})).workspaceId,workspace.id,'acceptance retry is idempotent');
+ assert.equal(global.invitationAcceptedEmails.length,1,'acceptance retries do not email the inviter again');
  assert.ok((await listWorkspacesForUser(existing.id)).some(row=>row.id===workspace.id),'joined workspace appears in the account');
  const [member]=await db.select().from(workspaceMembers).where(and(eq(workspaceMembers.workspaceId,workspace.id),eq(workspaceMembers.userId,existing.id)));
  assert.equal(member.role,'member');
  await assert.rejects(()=>createInvitations({workspaceId:workspace.id,inviterUserId:existing.id,emails:['other@example.com'],role:'member'}));
  await invite([newUser.email!]);const newToken=global.invitationEmails.at(-1)!.token;
  await acceptInvitation({token:newToken,userId:newUser.id,userEmail:newUser.email});
+ assert.equal(global.invitationAcceptedEmails.length,2,'new signups notify the inviter');assert.equal(global.invitationAcceptedEmails[1].to,owner.email);assert.equal(global.invitationAcceptedEmails[1].memberName,'new');
  assert.ok((await listWorkspacesForUser(newUser.id)).some(row=>row.id===workspace.id),'new signups can join without creating a workspace');
  // Accepted members become selectable operators; selection is enforced in UI data,
  // online avatars, direct replies and email recipients (including delivery-time rechecks).

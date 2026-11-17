@@ -124,7 +124,7 @@ export const getOptionalAppUser = cache(async (): Promise<AppUser | null> => {
     // Activity is only recorded when it moved, so a busy client does not write on every request.
     const now = new Date();
     const stale = new Date(now.getTime() - 5 * 60_000);
-    await getDb().insert(lifecycleEmailState).values({userId:user.id,lastActiveAt:now,welcomeEligible:now.getTime()-user.createdAt.getTime()<60_000})
+    await getDb().insert(lifecycleEmailState).values({userId:user.id,lastActiveAt:now,welcomeEligible:now.getTime()-user.createdAt.getTime()<86_400_000})
       .onConflictDoUpdate({target:lifecycleEmailState.userId,set:{lastActiveAt:now},setWhere:lt(lifecycleEmailState.lastActiveAt,stale)});
     return user;
   } catch (error) {

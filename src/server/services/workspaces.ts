@@ -20,7 +20,7 @@ import {
   workspaceSubscriptions,
   workspaces,
 } from "@/server/db/schema";
-import { sendInvitationEmail } from "@/server/email";
+import { sendInvitationAcceptedEmail, sendInvitationEmail } from "@/server/email";
 import { ServiceError, validationError } from "@/server/result";
 import {
   findActiveWorkspaceMembership,
@@ -604,7 +604,7 @@ export async function acceptInvitation(input: {
   if(!/^[A-Za-z0-9_-]{43}$/.test(input.token))throw new ServiceError("not_found","This invitation could not be found.");
   const tokenHash = hashToken(input.token);
 
-  return db.transaction(async (tx) => {
+  const accepted = await db.transaction(async (tx) => {
     const [destination]=await tx.select({workspaceId:invitations.workspaceId}).from(invitations).where(eq(invitations.tokenHash,tokenHash)).limit(1);
     if(!destination)throw new ServiceError('not_found','This invitation could not be found.');
     await tx.select({id:workspaces.id}).from(workspaces).where(eq(workspaces.id,destination.workspaceId)).for('update');
@@ -617,6 +617,7 @@ export async function acceptInvitation(input: {
         role: invitations.role,
         state: invitations.state,
         acceptedByUserId:invitations.acceptedByUserId,
+        inviterUserId:invitations.inviterUserId,
         expiresAt: invitations.expiresAt,
       })
       .from(invitations)
@@ -650,7 +651,7 @@ export async function acceptInvitation(input: {
 
     const userEmail = input.userEmail ? normalizeEmail(input.userEmail) : null;
 
-    const [account]=await tx.select({email:users.email}).from(users).where(eq(users.id,input.userId)).limit(1);
+    const [account]=await tx.select({email:users.email,name:users.name}).from(users).where(eq(users.id,input.userId)).limit(1);
     if (!userEmail || userEmail !== invitation.email || account?.email!==invitation.email) {
       throw new ServiceError(
         "forbidden",
@@ -698,7 +699,33 @@ export async function acceptInvitation(input: {
       .from(workspaces)
       .where(eq(workspaces.id, invitation.workspaceId))
       .limit(1);
+    const [inviter] = invitation.inviterUserId
+      ? await tx.select({email:users.email,name:users.name}).from(users).where(eq(users.id,invitation.inviterUserId)).limit(1)
+      : [];
 
-    return { workspaceId: workspace.id, workspaceName: workspace.name };
+    return {
+      workspaceId: workspace.id,
+      workspaceName: workspace.name,
+      invitationId: invitation.id,
+      inviter,
+      role: invitation.role,
+      memberName: account?.name ?? userEmail,
+    };
   });
+
+  if ("inviter" in accepted && accepted.inviter?.email) {
+    try {
+      await sendInvitationAcceptedEmail({
+        to: accepted.inviter.email,
+        workspaceName: accepted.workspaceName,
+        memberName: accepted.memberName,
+        role: accepted.role,
+        key: `invitation-accepted:${accepted.invitationId}`,
+      });
+    } catch {
+      // Joining must succeed even when the confirmation email cannot be sent.
+    }
+  }
+
+  return { workspaceId: accepted.workspaceId, workspaceName: accepted.workspaceName };
 }

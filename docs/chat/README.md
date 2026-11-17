@@ -410,8 +410,17 @@ References: https://docs.slack.dev/app-management/distribution/ , https://docs.s
 
 - Onboarding now has Profile, Workspace and an optional Team invitation step. Settings → Team uses the same service and Sendbyte template. Invite acceptance requires the matching verified email and joins the existing workspace; missing names are saved to Clerk and Ent.
 - Settings → Conversations selects all active members or individual operators. Server actions and Slack imports enforce selection for live-chat replies/status actions. Selected operators drive public presence and handoff-email recipients; queued emails recheck membership and selection. Removing a member prunes their selection without widening access. No selected operators leaves messages queued.
-- The widget has one custom-or-default greeting, with teammate availability and reply expectation grouped in its header.
+- The widget Home page has the generic greeting; live chat shows teammate availability and reply expectation in its header without repeating the greeting.
 - Suggestion conversion persists the source message’s completion, returns it independently of the incremental cursor, and updates the widget/dashboard to Added to board. Durable Slack delivery updates the matching review block and posts confirmation. Duplicate conversion to a different post rolls back.
 - Guest email updates require the new verification flow. Migration 0021 was applied to the configured Neon database; apply it to any separately configured database before deployment.
 - Regression commands: `node scripts/check-chat-db.mjs --team`, `node scripts/check-chat-db.mjs --support`, `node scripts/check-chat-db.mjs --security`, and `npm run check:concurrency`. These use fixtures/mocked providers; the chat runner creates and removes an isolated schema. Browser checks support `--team`, `--onboarding-team`, `--contact-policy` and `--feature-requests` in `scripts/check-chat-ui.mjs` (Playwright must be available).
 - One requested live teammate invitation reached the recipient’s inbox. Its link used localhost for local testing; this does not verify production acceptance or live Slack routing for the new operator restrictions.
+
+### Widget Home hub
+
+- Home is the default widget screen. Its bounded public query returns the top three workspace feedback summaries, ranked by votes plus twice the comment count, without exposing contact details or chat messages. Opening an item selects its board and uses the existing details flow.
+- Submitting a Home message opens live chat and sends once automatically after configuration and any required contact collection are ready. Failed sends retain the draft for an explicit retry. Submit report opens the existing feedback creation UI.
+- Navigation uses compact 46×26px indicators with 56px tab targets. Chat-disabled workspaces retain Home and Feedback only. No migration is required.
+- Browser regression: `node scripts/check-chat-ui.mjs --widget-home`.
+
+- Greeting customization is disabled in Widget settings. Saved legacy greetings are not displayed; the generic greeting appears on Home only, keeping conversations focused on messages.

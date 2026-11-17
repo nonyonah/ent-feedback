@@ -1,5 +1,4 @@
 'use client';
-import {CHAT_AI_REPLIES_ENABLED} from '@/lib/chat/contracts';
 import {AttachmentPreview} from '@/components/feedback/composer-tools';
 import {Fragment,useEffect,useRef} from 'react';
 import type {ChatMessage as Message,Idea} from '@/lib/chat/contracts';
@@ -12,7 +11,7 @@ import {ChatTypingIndicator} from './chat-typing-indicator';
 import {ChatDatePill} from './chat-date-pill';
 import {useChatScroll} from './hooks/use-chat-scroll';
 
-export function MessageList({messages,generating,onIdea,greeting,completedSuggestions=[],variant='widget',active=true,readThrough=0,onRead}:{greeting?:string;completedSuggestions?:{messageId:string;feedbackId:string}[];readThrough?:number;onRead?:(sequence:number)=>Promise<void>;messages:Message[];generating?:boolean;onIdea?:(idea:Idea)=>void;variant?:'widget'|'dashboard';active?:boolean}){
+export function MessageList({messages,generating,onIdea,completedSuggestions=[],variant='widget',active=true,readThrough=0,onRead}:{completedSuggestions?:{messageId:string;feedbackId:string}[];readThrough?:number;onRead?:(sequence:number)=>Promise<void>;messages:Message[];generating?:boolean;onIdea?:(idea:Idea)=>void;variant?:'widget'|'dashboard';active?:boolean}){
  const scroll=useChatScroll({itemCount:messages.length,layoutKey:Number(Boolean(generating)),active});
  const acknowledge=useRef(onRead);useEffect(()=>{acknowledge.current=onRead;},[onRead]);
  const acknowledged=useRef(0);
@@ -26,7 +25,7 @@ export function MessageList({messages,generating,onIdea,greeting,completedSugges
  const own=(message:Message)=>variant==='widget'?message.role==='visitor':message.role!=='visitor';
  const sameDay=(a:Message,b:Message)=>new Date(a.createdAt).toDateString()===new Date(b.createdAt).toDateString();
  return <ChatConversation scroll={scroll} label="Conversation messages" jumpLabel="Latest messages" live="off" contentClassName="py-4"><div className="mx-auto w-full max-w-2xl"><span role="status" className="sr-only">{messages.length?messages.length+' messages in this conversation.':''}</span>
-  {!messages.length&&<div className="py-8"><h3 className="text-base font-semibold tracking-tight">{greeting?.trim()||'How can we help?'}</h3>{!greeting?.trim()&&<p className="mt-2 text-[13px] leading-6 text-muted-foreground">Ask a product question or leave a message for the team.</p>}{CHAT_AI_REPLIES_ENABLED&&<p className="mt-3 text-xs leading-5 text-muted-foreground">AI answers use this workspace’s website, documentation and public feedback.</p>}</div>}
+
   {messages.map((message,index)=>{
    const previous=messages[index-1],next=messages[index+1];const newDay=!previous||!sameDay(previous,message);const grouped=Boolean(previous&&!newDay&&previous.role===message.role);const lastInGroup=!next||next.role!==message.role||!sameDay(message,next);const outgoing=own(message);const completed=completedSuggestions.some(item=>item.messageId===message.id)||Boolean(message.suggestion?.feedbackId);
    return <Fragment key={message.id}>{newDay&&<div className="pb-4 pt-2"><ChatDatePill className="static border-0 bg-control-quiet text-xs shadow-none backdrop-blur-none">{new Date(message.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</ChatDatePill></div>}

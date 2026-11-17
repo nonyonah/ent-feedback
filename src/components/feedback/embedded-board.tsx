@@ -18,9 +18,11 @@ function close() {
 export function EmbeddedBoard({ boardSlug }: { boardSlug?: string }) {
   const { project, boards, activeBoard, selectBoard } = useProject();
   const board = boardSlug ? boards.find(item => item.slug === boardSlug) : boards[0];
+  const initialized=React.useRef("");
   React.useEffect(() => {
-    if (board && activeBoard?.id !== board.id) selectBoard(board.id);
-  }, [board, activeBoard?.id, selectBoard]);
+    const key=project.id+":"+(boardSlug??"");
+    if (board && initialized.current!==key) {initialized.current=key;selectBoard(board.id);}
+  }, [board, boardSlug, project.id, selectBoard]);
   React.useEffect(() => {
     const report=()=>{
       const themeMode=project.theme==="dark"||project.theme==="light"?project.theme:"system";
@@ -37,6 +39,6 @@ export function EmbeddedBoard({ boardSlug }: { boardSlug?: string }) {
     return () => window.removeEventListener("keydown", handler);
   }, []);
   if (!board) return <main className="flex min-h-svh items-center justify-center p-6 text-center text-sm text-muted-foreground">This feedback board isn’t available. Check the widget installation settings.</main>;
-  if (activeBoard?.id !== board.id) return <BoardLoading />;
+  if (!activeBoard) return <BoardLoading />;
   return <main className="flex h-dvh min-h-0 flex-col overflow-hidden"><WidgetPanel embedded onClose={close} /></main>;
 }

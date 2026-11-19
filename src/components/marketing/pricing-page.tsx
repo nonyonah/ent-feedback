@@ -13,13 +13,13 @@ import {CheckIcon} from '@/components/icons';
 import s from './pricing-page.module.css';
 
 const signup='/auth?mode=signup&intent=workspace';
-const included=['5 feedback boards','Unlimited posts and voters','No Powered by badge','Embeddable feedback widget','Votes, comments, and replies','Feedback types and custom tags','Statuses and progress history','Search and trending requests','Workspace logo, colors, and theme','In-app and email notifications'];
+const included=['6 feedback boards','Unlimited posts and voters','No Powered by badge','Embeddable feedback widget','Votes, comments, and replies','Feedback types and custom tags','Statuses and progress history','Search and trending requests','Workspace logo, colors, and theme','In-app and email notifications'];
 const questions=[
  ['What does one subscription cover?','Every workspace you own. One subscription covers all of your workspaces, and each workspace keeps the same plan perks and limits. The price is per account, rather than per workspace or per person who leaves feedback.'],
  ['Do my users need to pay?','No. The subscription is for the workspace owner. People who submit feedback, vote, or comment do not need their own paid subscription.'],
  ['Can I embed it in my app?','Yes. Install the widget on your website so people can browse and submit feedback without leaving your product. Your public board is also available as a shareable link.'],
  ['How do I manage my subscription?','Open Settings → Billing → Manage subscription to change your billing period or cancel renewal. Prepaid Essentials renews manually from Billing.'],
- ['Are there any usage limits?','Free includes 2 boards with unlimited posts and voters, plus a small Powered by badge. Essentials includes 5 boards and removes the badge. Attachment size and request-rate limits apply to both plans.'],
+ ['Are there any usage limits?','Free includes 2 boards with unlimited posts and voters, plus a small Powered by badge. Essentials includes 6 boards and removes the badge. Attachment size and request-rate limits apply to both plans.'],
  ['Is there a free trial?','Yes. Card subscriptions include a 14-day trial. Cancel before it ends to avoid the first charge. Pay-once access using card, bank transfer or crypto starts after payment and has no free trial.'],
 ];
 

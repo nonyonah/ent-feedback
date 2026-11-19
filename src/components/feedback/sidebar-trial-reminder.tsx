@@ -59,7 +59,7 @@ export function SidebarTrialReminder(){
  return <aside aria-label="Essentials free trial" className="relative mb-2 rounded-xl border border-sidebar-border bg-sidebar-accent/50 p-3">
   <Button type="button" variant="ghost" size="icon-sm" aria-label="Remind me in seven days" title="Remind me in seven days" onClick={dismiss} className="absolute right-1 top-1 size-7 text-muted-foreground after:absolute after:-inset-1.5"><XIcon className="size-3.5"/></Button>
   <p className="pr-5 text-[13px] font-semibold leading-5 text-sidebar-foreground">Try Essentials free</p>
-  <p className="mt-1 text-[13px] leading-5 text-muted-foreground">14 days with 5 boards and no Powered by badge.</p>
+  <p className="mt-1 text-[13px] leading-5 text-muted-foreground">14 days with 6 boards and no Powered by badge.</p>
   <Button size="sm" className="mt-3 w-full rounded-[10px] text-[13px] max-md:min-h-11" render={<Link href="/dashboard/settings/billing"/>} onClick={()=>setOpenMobile(false)}>Explore the free trial</Button>
   <p className="mt-2 text-[11px] leading-4 text-muted-foreground">Card required. Cancel before billing starts.</p>
  </aside>;

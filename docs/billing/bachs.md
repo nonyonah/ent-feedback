@@ -12,7 +12,7 @@ Set these server-only values in `.env.local` or the deployment secret manager:
 - `BACHS_ORGANIZATION_ID`: organization that owns the products.
 - `BACHS_MONTHLY_TRIAL_PRODUCT_ID`, `BACHS_YEARLY_TRIAL_PRODUCT_ID`: fixed USD products with one-month / one-year billing and a 14-day trial.
 - `BACHS_MONTHLY_PRODUCT_ID`, `BACHS_YEARLY_PRODUCT_ID`: matching products without trials.
-- Plan entitlements are always enforced. Free includes 2 boards, unlimited posts and voters, and a small Powered by badge. Essentials and its active trial include 5 boards and no badge. Data export is reserved for Essentials and is not implemented yet.
+- Plan entitlements are always enforced. Free includes 2 boards, unlimited posts and voters, and a small Powered by badge. Essentials and its active trial include 6 boards and no badge. Data export is reserved for Essentials and is not implemented yet.
 
 Run `npm run db:migrate` before using billing. The migration adds workspace subscriptions, checkout attempts, and deduplicated webhook receipts. Use separate databases and credentials for sandbox and production; sandbox subscription records must never authorize production access.
 
@@ -53,7 +53,7 @@ Billing opens checkout using the official `@bachs/js` overlay, selecting the san
 
 | Capability | Free | Essentials / trial |
 | --- | --- | --- |
-| Boards per workspace | 2 | 5 |
+| Boards per workspace | 2 | 6 |
 | Posts and voters | Unlimited | Unlimited |
 | Powered by badge | Required | Hidden |
 | Data export | Unavailable | Reserved; coming next |

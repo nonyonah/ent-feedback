@@ -1,2 +1,2 @@
 import Link from 'next/link';
-export function PublicAttribution(){return <footer className="mt-auto flex shrink-0 justify-center px-4 pb-5 pt-2"><Link href="/" className="rounded-md bg-muted/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground">Powered by Ent Feedback</Link></footer>;}
+export function PublicAttribution(){return <footer data-public-attribution className="mt-auto flex shrink-0 items-center justify-center px-4 pb-[max(20px,env(safe-area-inset-bottom))] pt-4"><Link href="/" className="rounded-md bg-muted/60 px-2.5 py-1 text-[11px] font-medium leading-4 text-muted-foreground hover:text-foreground">Powered by Ent Feedback</Link></footer>;}

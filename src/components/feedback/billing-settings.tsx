@@ -25,7 +25,7 @@ export function BillingSettings(){
  return <WorkspaceBillingSettings key={project.id}/>;
 }
 function WorkspaceBillingSettings(){
- const {project,workspaceReady}=useProject();const params=useSearchParams();const cache=useBillingCache();
+ const {project,boards,workspaceReady}=useProject();const params=useSearchParams();const cache=useBillingCache();
  const [summary,setSummary]=React.useState<Summary|null>(()=>cache?.get(project.id)??null),[pending,setPending]=React.useState(false),[attempt,setAttempt]=React.useState(0);
  const [interval,setInterval]=React.useState<BillingInterval>(params.get('interval')==='yearly'?'yearly':'monthly');
  const [trialNoticeOpen,setTrialNoticeOpen]=React.useState(false);
@@ -39,7 +39,7 @@ function WorkspaceBillingSettings(){
   const refresh=async()=>{const version=summaryRevision.current;try{const result=await loadBillingAction(project.id);if(cancelled||version!==summaryRevision.current)return;if(!result.ok)throw Error(result.error.message);cache?.set(project.id,result.data);setSummary(result.data);}catch(e){if(!cancelled)toastManager.add({id:'billing-load-error',type:'error',title:'Billing could not be loaded',description:e instanceof Error?e.message:'Try again.',actionProps:{children:'Retry',onClick:()=>setAttempt(value=>value+1)}});}};
   void refresh();const timer=window.setInterval(()=>{if(document.visibilityState==='visible')void refresh();},15_000);
   return()=>{cancelled=true;window.clearInterval(timer);};
- },[project.id,workspaceReady,attempt,cache]);
+ },[project.id,workspaceReady,attempt,cache,boards.length]);
  async function openCheckout(checkoutMode:BillingMode=effectiveMode){
   if(pending)return;
   setPending(true);
@@ -104,7 +104,7 @@ function WorkspaceBillingSettings(){
    <SettingGroup title="Usage">
     <UsageRow title="Posts and voters" value="Unlimited"/>
     <div className="mx-4 h-px bg-border/60"/>
-    <UsageRow title="Feedback boards" value={`${summary.boardCount} of ${summary.boardLimit}`} usage={{count:summary.boardCount,limit:summary.boardLimit}}/>
+    <UsageRow title="Feedback boards" value={`${boards.length} of ${summary.boardLimit}`} usage={{count:boards.length,limit:summary.boardLimit}}/>
     <div className="mx-4 h-px bg-border/60"/>
     <UsageRow title="Powered by badge" value={summary.hideAttribution?'Hidden':'Included'}/>
     <div className="mx-4 h-px bg-border/60"/>

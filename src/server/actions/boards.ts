@@ -1,11 +1,11 @@
 "use server";
 
 import {getWorkspaceEntitlements} from "@/server/billing/access";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql, or } from "drizzle-orm";
 import { z } from "zod";
 import { requireAppUser } from "@/server/auth";
 import { getDb } from "@/server/db/client";
-import { boards, workspaces } from "@/server/db/schema";
+import { boards, workspaces, feedback, comments, attachments } from "@/server/db/schema";
 import { requireWorkspaceRole } from "@/server/services/access";
 import { runService, ServiceError } from "@/server/result";
 
@@ -95,4 +95,25 @@ export async function reorderBoardsAction(workspaceId: string, orderedIds: strin
         .orderBy(asc(boards.position), asc(boards.id));
     });
   });
+}
+
+export async function deleteBoardAction(workspaceId:string,boardId:string){
+ return runService(async()=>{
+  const actor=await requireAppUser();const wid=uuid.parse(workspaceId),bid=uuid.parse(boardId);const db=getDb();
+  await requireWorkspaceRole(db,{workspaceId:wid,userId:actor.id,minimumRole:"admin"});
+  return db.transaction(async tx=>{
+   // Share the creation lock so deleting a board releases its plan slot atomically.
+   const [workspace]=await tx.select({id:workspaces.id}).from(workspaces).where(eq(workspaces.id,wid)).for("update");
+   if(!workspace)throw new ServiceError("not_found","Workspace not found. Refresh and try again.");
+   const [board]=await tx.select({id:boards.id}).from(boards).where(and(eq(boards.workspaceId,wid),eq(boards.id,bid))).for("update");
+   if(!board)throw new ServiceError("not_found","Board not found in this workspace. Refresh and try again.");
+   const posts=tx.select({id:feedback.id}).from(feedback).where(and(eq(feedback.workspaceId,wid),eq(feedback.boardId,bid)));
+   const replies=tx.select({id:comments.id}).from(comments).where(and(eq(comments.workspaceId,wid),sql`${comments.feedbackId} in (${posts})`));
+   // Retain object keys for the existing retryable storage cleanup worker.
+   await tx.update(attachments).set({feedbackId:null,commentId:null,status:'pending',attachedAt:null,expiresAt:new Date(Date.now()-1000),updatedAt:new Date()}).where(and(eq(attachments.workspaceId,wid),or(sql`${attachments.feedbackId} in (${posts})`,sql`${attachments.commentId} in (${replies})`)));
+   await tx.update(feedback).set({mergedIntoId:null}).where(and(eq(feedback.workspaceId,wid),sql`${feedback.mergedIntoId} in (${posts})`));
+   await tx.delete(boards).where(and(eq(boards.workspaceId,wid),eq(boards.id,bid)));
+   return {deletedId:bid,boards:await tx.select(selection).from(boards).where(eq(boards.workspaceId,wid)).orderBy(asc(boards.position),asc(boards.id))};
+  });
+ });
 }

@@ -32,7 +32,7 @@ type FeedbackContextValue={
 const FeedbackContext=React.createContext<FeedbackContextValue|null>(null);
 const isId=(value:string)=>/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(value);
 export function FeedbackProvider({children}:{children:React.ReactNode}){
- const {project,activeBoard,workspaceReady,publicUser}=useProject();const {user,isLoaded}=useUser();
+ const {project,boards,activeBoard,workspaceReady,publicUser}=useProject();const {user,isLoaded}=useUser();
  const pathname=usePathname();const workspaceInbox=pathname.startsWith('/dashboard');
  const wid=project.id,bid=activeBoard?.id??'';const key=wid+':'+(workspaceInbox?'inbox':bid)+':'+(user?.id??'guest');
  const valid=pathname!=="/"&&pathname!=="/landing-v2"&&workspaceReady&&isLoaded&&isId(wid)&&isId(bid);
@@ -46,7 +46,7 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
  const queuedCount=React.useRef(0);
  const [pending,setPending]=React.useState(false);const busy=React.useRef(false);const token=React.useRef<string|undefined>(undefined);const scope=React.useRef(key);const generation=React.useRef(0);
  React.useLayoutEffect(()=>{scope.current=key;},[key]);
- const items=snapshot.key===key?snapshot.items:[];
+ const items=snapshot.key===key?snapshot.items.filter(item=>!item.boardId||boards.some(board=>board.id===item.boardId)):[];
  const failureMessage=failure.key===key?failure.message:'';
  const error=snapshot.key===key?'':failureMessage;
  const loading=valid&&snapshot.key!==key&&!error;

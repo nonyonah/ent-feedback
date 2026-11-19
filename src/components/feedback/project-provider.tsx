@@ -3,7 +3,7 @@ import {captureAnalytics} from "@/lib/analytics";
 
 import * as React from "react";
 import {features} from "@/lib/features";
-import {createBoardAction,renameBoardAction,reorderBoardsAction} from "@/server/actions/boards";
+import {createBoardAction,renameBoardAction,reorderBoardsAction,deleteBoardAction} from "@/server/actions/boards";
 import {useUser} from "@clerk/nextjs";
 import {loadNotificationSettingsAction,loadSettingsAction,saveBrandingAction,saveWidgetSettingsAction,saveNotificationSettingsAction} from "@/server/actions/settings";
 import {usePathname} from "next/navigation";
@@ -150,6 +150,7 @@ type ProjectContextValue = {
   ) => Promise<FeedbackBoard>;
   selectBoard: (id: string) => void;
   renameBoard: (id: string, name: string) => Promise<void>;
+  deleteBoard: (id:string)=>Promise<void>;
   boardsPending: boolean;
   widgetSettings: WidgetSettings;
   updateWidgetSettings: (next: WidgetSettings) => Promise<boolean>;
@@ -344,6 +345,18 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       setBoards(current=>current.map(board=>board.id===id&&board.projectId===workspaceId?result.data:board));
     });
   }
+  async function deleteBoard(id:string){
+    const workspaceId=project.id;
+    await mutateBoard(async()=>{
+      const result=await deleteBoardAction(workspaceId,id);
+      if(!result.ok)throw new Error(result.error.message);
+      const remaining=result.data.boards.map(board=>({...board,emoji:board.emoji??undefined}));
+      setBoards(current=>[...current.filter(board=>board.projectId!==workspaceId),...remaining]);
+      if(activeWorkspaceRef.current===workspaceId)selectBoard(current=>current===id?(remaining[0]?.id??""):current);
+      window.dispatchEvent(new CustomEvent('ent-feedback-updated',{detail:workspaceId}));
+      try{localStorage.setItem('ent-feedback-updated:'+workspaceId,String(Date.now()));}catch{}
+    });
+  }
   async function updateWidgetSettings(next: WidgetSettings) {
     const workspaceId=project.id;
     return persist(()=>saveWidgetSettingsAction(workspaceId,next),()=>setWidgetByProject(current=>({...current,[workspaceId]:next})));
@@ -444,6 +457,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         boards,
         activeBoard,
         renameBoard,
+        deleteBoard,
         widgetSettings,
         updateWidgetSettings,
         teamInvites,

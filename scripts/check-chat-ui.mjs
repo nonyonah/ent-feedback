@@ -3,7 +3,7 @@ import {compile} from '@tailwindcss/node';import {Scanner} from '@tailwindcss/ox
 const dir=mkdtempSync(join(tmpdir(),'ent-chat-ui-')),root=process.cwd();
 const wid='11111111-1111-4111-8111-111111111111',cid='22222222-2222-4222-8222-222222222222',fid='33333333-3333-4333-8333-333333333333';
 const modules={
- project:`export const useProject=()=>({project:{id:'${wid}',name:'Acme workspace',slug:'acme',logo:'',role:'owner',chatEnabled:new URLSearchParams(location.search).has('unknown-chat')?undefined:!new URLSearchParams(location.search).has('disabled')},activeBoard:{id:'${fid}',name:'Product feedback',slug:'product'},boards:[{id:'${fid}',name:'Product feedback',slug:'product'}],widgetSettings:{enabled:true,details:'optional',email:true,name:false},publicUser:{name:'Alex',email:'alex@example.com'},selectBoard:()=>{},setPublicUser:()=>{}});`,
+ project:`export const useProject=()=>({project:{id:'${wid}',name:'Acme workspace',slug:'acme',logo:'',role:'owner',chatEnabled:new URLSearchParams(location.search).has('unknown-chat')?undefined:!new URLSearchParams(location.search).has('disabled')},activeBoard:{id:'${fid}',name:'Product feedback',slug:'product'},boards:[{id:'${fid}',name:'Product feedback',slug:'product'}],widgetSettings:{enabled:true,details:'optional',email:true,name:false},publicUser:{name:'Alex',email:'alex@example.com'},deleteBoard:async id=>{window.fixture.deleteCalls=(window.fixture.deleteCalls??0)+1;if(window.fixture.failDelete)throw Error('Board could not be deleted. Try again.');window.fixture.deletedBoard=id;},boardsPending:false,selectBoard:()=>{},setPublicUser:()=>{}});`,
  feedback:`import {useState} from 'react';export const useFeedback=()=>{const [voted,setVoted]=useState(false);return {items:[{id:'${fid}',title:'Export options',description:'More exports',boardId:'${fid}',category:'feature_request',status:'planned',author:'Alex',createdAt:'1d ago',createdOrder:1,votes:3,voted,comments:[]}],vote:()=>setVoted(v=>!v),addFeedback:async input=>{window.fixture.created=input;if(input.conversation?.messageId)window.fixture.completedSuggestions=[{messageId:input.conversation.messageId,feedbackId:'${fid}'}];return {id:'${fid}'};},loading:new URLSearchParams(location.search).has('feedback_loading'),error:new URLSearchParams(location.search).has('feedback_error')?'Unavailable':undefined,retry:()=>{},trendingIds:new Set()};};`,
  navigation:`export const useSearchParams=()=>new URLSearchParams(location.search);export const usePathname=()=>'/dashboard/conversations';export const useRouter=()=>({push:()=>{},replace:href=>{window.fixture.destination=href;},refresh:()=>{}});`,
  clerk:`export const useUser=()=>({user:null,isLoaded:true});export const useClerk=()=>({openSignIn:()=>{},signOut:()=>{}});export const SignInButton=({children})=>children;export const SignUpButton=({children})=>children;`,
@@ -18,6 +18,19 @@ const teamFixture=`window.fixture.team={members:[{id:'${fid}',userId:'owner',nam
 
 const server=createServer((req,res)=>{const path=req.url.split('?')[0];if(path==='/app.js'||path==='/app.css'){res.setHeader('Content-Type',path.endsWith('js')?'text/javascript':'text/css');return res.end(readFileSync(join(dir,path.slice(1))));}if(path.startsWith('/brand/')||path.startsWith('/illustrations/')){res.statusCode=404;return res.end();}res.setHeader('Content-Type','text/html');res.end('<!doctype html><html lang="en" class="font-sans" style="--font-inter:Arial;--font-allo:Arial"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chat UI check</title><link rel="stylesheet" href="/app.css"></head><body><div id="root"></div><script>'+fixture+teamFixture+'</script><script src="/app.js"></script></body></html>');});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const url='http://127.0.0.1:'+server.address().port;const require=createRequire(import.meta.url);const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');const browser=await chromium.launch();const errors=[],results=[];
+if(process.argv.includes('--delete-board')){
+ try{
+  const page=await browser.newPage({viewport:{width:320,height:740}});await page.goto(url+'/?screen=delete-board');
+  await page.getByRole('button',{name:'Open board deletion'}).click();await page.locator('[data-slot=dialog-popup]').waitFor();
+  await page.getByRole('button',{name:'Cancel',exact:true}).click();assert.equal(await page.evaluate(()=>window.fixture.deleteCalls??0),0);
+  await page.getByRole('button',{name:'Open board deletion'}).click();await page.evaluate(()=>window.fixture.failDelete=true);
+  await page.getByRole('button',{name:'Delete board',exact:true}).click();await page.getByText('Board could not be deleted. Try again.',{exact:true}).waitFor();
+  assert.ok(await page.locator('[data-slot=dialog-popup]').isVisible());assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.evaluate(()=>window.fixture.failDelete=false);await page.getByRole('button',{name:'Retry deleting',exact:true}).click();await page.locator('[data-slot=dialog-popup]').waitFor({state:'hidden'});
+  assert.equal(await page.evaluate(()=>window.fixture.deletedBoard),'33333333-3333-4333-8333-333333333333');
+  console.log('PASS: mobile board deletion confirmation, safe cancellation, visible failure, retry and successful dismissal.');
+ }finally{await browser.close();server.close();}process.exit(0);
+}
 if(process.argv.includes('--widget-home')){
  try{
   const page=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'});

@@ -1,6 +1,8 @@
 "use client";
 
-import {BoardLoading,BoardState} from "@/components/feedback/board-states";
+import {PublicPageHeading} from "./public-page-heading";
+import {PublicLoadError} from "./public-load-error";
+import {BoardLoading} from "@/components/feedback/board-states";
 import { NoBoard } from "@/components/feedback/board-context";
 import * as React from "react";
 import { PlusIcon } from "@/components/icons";
@@ -24,13 +26,12 @@ export function BoardView(): React.ReactElement {
   const visibleItems = items.filter((item) => filter === "all" || item.status === filter).sort((a, b) => compareFeedback(sort, a, b));
 
   if(loading)return <BoardLoading/>;
-  if(error)return <main id="public-content" tabIndex={-1} className="scroll-mt-28 md:scroll-mt-16 mx-auto w-full max-w-5xl px-4 py-8 sm:px-8"><BoardState kind="error" onRetry={retry}/></main>;
+  if(error)return <main id="public-content" tabIndex={-1} className="scroll-mt-28 md:scroll-mt-16 mx-auto w-full max-w-5xl px-4 pb-8 pt-12 sm:px-8"><PublicPageHeading resource="feedback" className="mb-5"/><PublicLoadError resource="feedback" onRetry={retry}/></main>;
   if (!activeBoard) return <main id="public-content" tabIndex={-1} className="scroll-mt-28 md:scroll-mt-16 mx-auto w-full max-w-5xl px-4 py-16 sm:px-8"><NoBoard/></main>;
   return (
     <>
-      <main id="public-content" tabIndex={-1} className="scroll-mt-28 md:scroll-mt-16 mx-auto w-full max-w-5xl flex-1 px-4 pb-28 pt-8 sm:px-8">
+      <main id="public-content" tabIndex={-1} className="scroll-mt-28 md:scroll-mt-16 mx-auto w-full max-w-5xl flex-1 px-4 pb-28 pt-12 sm:px-8">
         <div className="mx-auto w-full">
-          <h1 className="sr-only">{activeBoard.name}</h1>
           <BoardToolbar filter={filter} onFilterChange={setFilter} sort={sort} onSortChange={setSort}>
             <SubmitDialog trigger={<Button><PlusIcon data-icon="inline-start"/>Submit feedback</Button>}/>
           </BoardToolbar>

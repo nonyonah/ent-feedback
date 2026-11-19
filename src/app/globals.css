@@ -423,3 +423,17 @@ button:not([role="checkbox"]):not([role="radio"])::before,
   [data-material="toolbar"] { background: var(--background); backdrop-filter: none; border-bottom: 1px solid var(--foreground); }
   [data-slot="button"]:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; }
 }
+
+/* Base UI marks background toast portals inert while a modal is open. Their
+   explicit content pointer-events must not override that modal protection. */
+[data-slot="toast-portal"][data-base-ui-inert],
+[data-slot="toast-portal"][data-base-ui-inert] * {
+  pointer-events: none !important;
+}
+
+/* Frequent keyboard roadmap navigation should respond without an animated indicator. */
+[data-roadmap][data-keyboard-navigation] [data-slot="tab-indicator"] {
+  transition: none;
+}
+
+[data-roadmap][data-keyboard-navigation] [data-roadmap-chevron] { transition: none; }

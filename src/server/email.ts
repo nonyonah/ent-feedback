@@ -126,3 +126,7 @@ export async function sendPrepaidReminderEmail(input:{to:string;key:string;works
 export async function sendGuestVerificationEmail(input:{to:string;url:string;key:string}){
  await sendEmail({to:input.to,key:input.key,...emailLayout({subject:'Confirm your email · Ent',heading:'Keep the conversation going.',body:'Confirm this email address to receive replies and updates. This link expires in 30 minutes. You can keep using the widget without confirming.',action:'Confirm email',url:input.url,footer:'If you didn’t request this, ignore this email. No conversation details are included until you confirm.'})});
 }
+
+export async function sendRoadmapEmail(input:{to:string;key:string;title:string;note:string|null;url:string;unsubscribeUrl:string}){
+ await sendEmail({to:input.to,key:input.key,...emailLayout({subject:`${input.title} has shipped`,heading:`${input.title} has shipped`,body:input.note||'An idea you voted for is now available.',action:'View roadmap',url:input.url,unsubscribeUrl:input.unsubscribeUrl,footer:'You received this update because you voted for this item. Unsubscribe to stop shipped updates for this workspace.'})});
+}

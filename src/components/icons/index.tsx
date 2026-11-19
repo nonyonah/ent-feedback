@@ -144,3 +144,9 @@ export function MessagesIcon(props:IconProps){return <HugeiconsIcon icon={Messag
 
 import HomeData from "@hugeicons/core-free-icons/Home01Icon";
 export function HomeIcon(props:IconProps){return <HugeiconsIcon icon={HomeData} size={16} strokeWidth={2.25} aria-hidden="true" {...props}/>;}
+import RoadmapData from '@hugeicons/core-free-icons/Route02Icon';
+export function RoadmapIcon(props:IconProps){return <HugeiconsIcon icon={RoadmapData} size={16} strokeWidth={2.25} aria-hidden="true" {...props}/>;}
+import EyeData from '@hugeicons/core-free-icons/EyeIcon';
+export function EyeIcon(props:IconProps){return <HugeiconsIcon icon={EyeData} size={16} strokeWidth={2.25} aria-hidden="true" {...props}/>;}
+import EyeOffData from '@hugeicons/core-free-icons/EyeOffIcon';
+export function EyeOffIcon(props:IconProps){return <HugeiconsIcon icon={EyeOffData} size={16} strokeWidth={2.25} aria-hidden="true" {...props}/>;}

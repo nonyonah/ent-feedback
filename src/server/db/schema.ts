@@ -2,6 +2,7 @@ import {defaultOperations,type ChatOperations} from '@/lib/chat/availability';
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  doublePrecision,
   bigserial,
   bigint,
   check,
@@ -238,6 +239,11 @@ export const feedback = pgTable(
     body: text("body").notNull().default(""),
     category: text("category").$type<"feedback" | "bug" | "feature_request">().notNull().default("feedback"),
     status: feedbackStatus("status").notNull().default("open"),
+    roadmapVisible: boolean("roadmap_visible").notNull().default(true),
+    roadmapOrder: doublePrecision("roadmap_order"),
+    publicNote: text("public_note"),
+    shippedAt: timestamp("shipped_at", {withTimezone:true}),
+    shippedNotifiedAt: timestamp("shipped_notified_at", {withTimezone:true}),
     mergedIntoId: uuid("merged_into_id"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps(),
@@ -251,6 +257,8 @@ export const feedback = pgTable(
     unique("feedback_id_workspace_id_unique").on(table.id, table.workspaceId),
     foreignKey({name:'feedback_merged_target_fk',columns:[table.mergedIntoId,table.workspaceId],foreignColumns:[table.id,table.workspaceId]}),
     check('feedback_merge_not_self_check',sql`${table.mergedIntoId} is null or ${table.mergedIntoId} <> ${table.id}`),
+    index("feedback_roadmap_idx").on(table.workspaceId,table.status,table.roadmapOrder),
+    check("feedback_public_note_length",sql`${table.publicNote} is null or length(${table.publicNote}) <= 140`),
     index("feedback_board_created_at_idx").on(table.boardId, table.createdAt),
     index("feedback_board_status_created_at_idx").on(table.boardId, table.status, table.createdAt),
     index("feedback_workspace_created_at_idx").on(table.workspaceId, table.createdAt),
@@ -262,7 +270,7 @@ export const feedback = pgTable(
     check("feedback_title_not_empty_check", sql`length(trim(${table.title})) between 1 and 200`),
     check("feedback_guest_email_normalized_check", sql`${table.guestEmail} is null or ${table.guestEmail} = lower(${table.guestEmail})`),
   ],
-);
+).enableRLS();
 
 export const comments = pgTable(
   "comments",
@@ -793,3 +801,8 @@ export const guestEmailVerifications=pgTable('guest_email_verifications',{
  verifiedAt:timestamp('verified_at',{withTimezone:true}),
  ...timestamps(),
 },t=>[unique('guest_email_subject_unique').on(t.workspaceId,t.kind,t.subjectId),index('guest_email_token_idx').on(t.tokenHash),check('guest_email_kind_check',sql`${t.kind} in ('feedback','chat')`)]).enableRLS();
+
+export const voterEmailOptouts=pgTable('voter_email_optouts',{
+ workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ email:text('email').notNull(),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[primaryKey({columns:[t.workspaceId,t.email]})]).enableRLS();

@@ -30,7 +30,7 @@ export function BoardView(): React.ReactElement {
   if (!activeBoard) return <main id="public-content" tabIndex={-1} className="scroll-mt-28 md:scroll-mt-16 mx-auto w-full max-w-5xl px-4 py-16 sm:px-8"><NoBoard/></main>;
   return (
     <>
-      <main id="public-content" tabIndex={-1} className="scroll-mt-28 md:scroll-mt-16 mx-auto w-full max-w-5xl flex-1 px-4 pb-28 pt-12 sm:px-8">
+      <main id="public-content" tabIndex={-1} className="scroll-mt-28 md:scroll-mt-16 mx-auto w-full max-w-5xl flex-1 px-4 pb-8 pt-12 sm:px-8">
         <div className="mx-auto w-full">
           <BoardToolbar filter={filter} onFilterChange={setFilter} sort={sort} onSortChange={setSort}>
             <SubmitDialog trigger={<Button><PlusIcon data-icon="inline-start"/>Submit feedback</Button>}/>

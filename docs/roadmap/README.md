@@ -1,6 +1,6 @@
 # Roadmap implementation
 
-The roadmap is a view of Ent’s existing `feedback` records. It is available at `/p/:workspace/roadmap`, the workspace subdomain’s `/roadmap`, `/dashboard/roadmap` (owner only), and the widget’s fourth tab, after Feedback.
+The roadmap is a view of Ent’s existing `feedback` records. It is available at `/p/:workspace/roadmap`, the workspace subdomain’s `/roadmap`, `/dashboard/roadmap` (owner editing; invited members have the public read-only view), and the widget’s fourth tab, after Feedback.
 
 The owner dashboard has an additional Open column. Public and widget roadmaps never include Open items. Compact draggable cards follow the latest Paper export; clicking a title opens a coss dialog for status, visibility and note editing. Roadmap is grouped under Product updates in the sidebar; Changelog is deferred.
 

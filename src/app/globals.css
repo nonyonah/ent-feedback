@@ -282,6 +282,8 @@
 }
 
 
+/* Keep mobile tour controls above Driver’s body-level overlay. */
+[data-slot="sheet-viewport"]:has(.driver-popover.ent-tour) { z-index: 1000000001; }
 .driver-popover.ent-tour {
   background: var(--background);
   color: var(--foreground);

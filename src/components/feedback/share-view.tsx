@@ -3,6 +3,8 @@ import {XMark as XLogoIcon,LinkedInMark as LinkedinLogoIcon,FacebookMark as Face
 
 import { LinkIcon, CopyIcon, ArrowUpRightIcon } from "@/components/icons";
 import * as React from "react";
+import {Button} from "@/components/ui/button";
+import {toastManager} from "@/components/ui/toast";
 import { useProject } from "@/components/feedback/project-provider";
 import { NoBoard } from "@/components/feedback/board-context";
 import { boardHref } from "@/lib/project-links";
@@ -14,13 +16,12 @@ export function ShareView() {
     activeBoard
   } = useProject();
   const origin = React.useSyncExternalStore(subscribe, () => window.location.origin, () => "");
-  const [message, setMessage] = React.useState("");
   const path = activeBoard ? boardHref(project, activeBoard) : "/dashboard/boards";
   const domainReady=Boolean(workspaceBaseDomain());
   const url = domainReady?workspaceDomainAddress(project.slug,"/boards/"+encodeURIComponent(activeBoard?.slug??"")):origin+path;
   const text = "We’re building " + project.name + " with you. Share an idea, vote on requests, and help shape what comes next: " + url;
   const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  const snippet = '<script src="' + origin + '/widget.js" data-project="' + project.slug + '" data-board="' + (activeBoard?.slug ?? '') + '" defer></script>';
+  const snippet = '<script src="' + origin + '/widget.js" data-project="' + escape(project.slug) + '" data-board="' + escape(activeBoard?.slug ?? '') + '" defer></script>';
   const direct = '<a href="' + escape(url + '/submit') + '">Share feedback</a>';
   const visitorCode = 'Visitor details are configured in Widget settings.\n' + origin + '/dashboard/settings/widget';
   const social = {
@@ -33,23 +34,23 @@ export function ShareView() {
   async function copy(value: string, label: string) {
     try {
       await navigator.clipboard.writeText(value);
-      setMessage(label);
+      toastManager.add({type:"success",title:label});
     } catch {
-      setMessage('Select the text and copy it manually.');
+      toastManager.add({type:'error',title:'Couldn’t copy',description:'Select the text and copy it manually.'});
     }
   }
   if (!activeBoard) return <NoBoard />;
   return <div className="[font-synthesis:none] wrap-anywhere w-full min-h-full bg-[var(--dashboard-body)] antialiased text-xs/4">
       <div className="w-full max-w-3xl py-10 px-6 sm:px-8 mx-auto">
         <div className="mb-8">
-          <div className="text-[14px] leading-[150%] wrap-normal font-sans font-semibold text-foreground">
+          <h1 className="text-[20px] leading-7 tracking-[-0.4px] font-sans font-semibold text-foreground">
             Collect feedback
-          </div>
+          </h1>
           <div className="text-[13px] leading-[142.857%] mt-1 wrap-normal font-sans text-muted-foreground">
             Get {project.name} in front of your users.
           </div>
         </div>
-        <div className="mb-8 p-6 rounded-[18px] overflow-clip relative bg-background/80 dark:bg-card border border-solid border-border/60">
+        <div className="mb-8 p-6 rounded-[18px] overflow-clip relative bg-background dark:bg-card border border-solid border-border/60">
           <LinkIcon aria-hidden="true" style={{
             height: '112px',
             width: '112px',
@@ -71,7 +72,7 @@ export function ShareView() {
           </div>
           {!domainReady&&<p className="mt-2 text-xs leading-5 text-muted-foreground">Share this link to open your feedback board.</p>}
           <div className="relative mt-4 flex min-w-0 flex-wrap items-start gap-2">
-            <button data-slot="button" className="flex min-h-7 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-2xl border border-primary bg-primary px-2.25 py-1 text-center text-primary-foreground shadow-sm" type={"button"} onClick={() => void copy(url, "Board link copied")}>
+            <Button size="sm" className="flex min-h-7 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-2xl border border-primary bg-primary px-2.25 py-1 text-center text-primary-foreground shadow-sm" type={"button"} onClick={() => void copy(url, "Board link copied")}>
               <CopyIcon style={{
                 height: '16px',
                 flexShrink: '0',
@@ -84,7 +85,7 @@ export function ShareView() {
               <div className="min-w-0 whitespace-normal break-words text-center font-sans text-[13px] font-medium leading-5 text-primary-foreground">
                 Copy link
               </div>
-            </button>
+            </Button>
             <a className="relative inline-flex min-h-7 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md px-2 py-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring" href={path}>
               <div className="inline-block text-[13px] leading-[142.857%] w-max wrap-normal relative font-sans font-medium text-foreground">
                 {domainReady?"Visit":"Preview"}
@@ -102,7 +103,7 @@ export function ShareView() {
             </a>
           </div>
         </div>
-        <div className="mb-6 min-h-4" role={"status"} aria-live={"polite"}>{message}</div>
+
         <div className="flex flex-col gap-10">
           <div className="scroll-mbs-8 scroll-mt-8">
             <div className="mb-10">
@@ -113,7 +114,7 @@ export function ShareView() {
                 Announce your board where your users already are.
               </div>
               <div className="flex flex-col mt-5 gap-2">
-                <div className="grid grid-cols-[repeat(2,minmax(0px,1fr))] gap-x-8 gap-y-6">
+                <div className="grid grid-cols-[repeat(2,minmax(0px,1fr))] gap-x-4 gap-y-6 sm:gap-x-8">
                   <a className="items-start flex gap-3" href={social["X"]} target={"_blank"} rel={"noopener noreferrer"}>
                     <XLogoIcon style={{
                       height: '28px',
@@ -238,11 +239,11 @@ export function ShareView() {
                         </div>
                       </div>
                       <div className="pointer-events-none absolute rounded-xl [box-shadow:#0000000D_0px_0px_0px_1px_inset] inset-0" />
-                      <button data-slot="button" className="absolute right-2 text-center top-2 content-center py-1 px-2 rounded-md [backdrop-filter:blur(8px)] border border-border bg-popover shadow-xs" type={"button"} aria-label={"Copy installation snippet"} onClick={() => void copy(snippet, "Code copied")}>
+                      <Button size="sm" className="absolute right-2 text-center top-2 content-center py-1 px-2 rounded-md [backdrop-filter:blur(8px)] border border-border bg-popover shadow-xs" type={"button"} aria-label={"Copy installation snippet"} onClick={() => void copy(snippet, "Code copied")}>
                         <div className="text-[13px] leading-[150%] text-center wrap-normal font-sans font-medium text-muted-foreground">
                           Copy
                         </div>
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   <div>
@@ -263,11 +264,11 @@ export function ShareView() {
                         </div>
                       </div>
                       <div className="pointer-events-none absolute rounded-xl [box-shadow:#0000000D_0px_0px_0px_1px_inset] inset-0" />
-                      <button data-slot="button" className="absolute right-2 text-center top-2 content-center py-1 px-2 rounded-md [backdrop-filter:blur(8px)] border border-border bg-popover shadow-xs" type={"button"} aria-label={"Copy direct feedback link"} onClick={() => void copy(direct, "Code copied")}>
+                      <Button size="sm" className="absolute right-2 text-center top-2 content-center py-1 px-2 rounded-md [backdrop-filter:blur(8px)] border border-border bg-popover shadow-xs" type={"button"} aria-label={"Copy direct feedback link"} onClick={() => void copy(direct, "Code copied")}>
                         <div className="text-[13px] leading-[150%] text-center wrap-normal font-sans font-medium text-muted-foreground">
                           Copy
                         </div>
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -289,26 +290,26 @@ export function ShareView() {
                       </div>
                     </div>
                     <div className="pointer-events-none absolute rounded-xl [box-shadow:#0000000D_0px_0px_0px_1px_inset] inset-0" />
-                    <button data-slot="button" className="absolute right-2 text-center top-2 content-center py-1 px-2 rounded-md [backdrop-filter:blur(8px)] border border-border bg-popover shadow-xs" type={"button"} aria-label={"Copy visitor details instructions"} onClick={() => void copy(visitorCode, "Code copied")}>
+                    <Button size="sm" className="absolute right-2 text-center top-2 content-center py-1 px-2 rounded-md [backdrop-filter:blur(8px)] border border-border bg-popover shadow-xs" type={"button"} aria-label={"Copy visitor details instructions"} onClick={() => void copy(visitorCode, "Code copied")}>
                       <div className="text-[13px] leading-[150%] text-center wrap-normal font-sans font-medium text-muted-foreground">
                         Copy
                       </div>
-                    </button>
+                    </Button>
                   </div>
                 </div>
-                <div className="items-center flex mt-4 gap-3">
-                  <button data-slot="button" className="items-center flex shrink-0 justify-center min-h-7 text-center py-0.75 px-2.25 rounded-2xl gap-1.5 [box-shadow:#FFFFFF29_0px_1px_0px_inset,#1717173D_0px_1px_2px] bg-primary text-primary-foreground border border-solid border-primary" type={"button"} onClick={() => void copy(snippet + "\n\n" + direct, "Installation code copied")}>
+                <div className="items-center flex flex-wrap mt-4 gap-3">
+                  <Button size="sm" className="items-center flex shrink-0 justify-center min-h-7 text-center py-0.75 px-2.25 rounded-2xl gap-1.5 [box-shadow:#FFFFFF29_0px_1px_0px_inset,#1717173D_0px_1px_2px] bg-primary text-primary-foreground border border-solid border-primary" type={"button"} onClick={() => void copy(snippet + "\n\n" + direct, "Installation code copied")}>
                     <div className="text-[13px] leading-[142.857%] text-center w-max wrap-normal font-sans font-medium text-[#FAFAFA]">
                       Copy all
                     </div>
-                  </button>
+                  </Button>
                   <a className="items-center flex shrink-0 justify-center min-h-7 py-0.75 px-2.25 rounded-2xl gap-1.5 bg-background border border-solid border-border" href={mail("Install feedback widget", snippet + "\n\n" + direct)}>
                     <div className="text-[13px] leading-[142.857%] w-max wrap-normal font-sans font-medium text-foreground">
                       Send to your developer
                     </div>
                   </a>
                   <a className="text-[13px] leading-[150%] wrap-normal font-sans font-medium text-muted-foreground" href={"/dashboard/settings/widget"}>
-                    View docs →
+                    Widget settings →
                   </a>
                 </div>
               </div>

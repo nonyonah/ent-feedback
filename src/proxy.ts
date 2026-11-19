@@ -22,7 +22,7 @@ const applicationProxy=clerkMiddleware(async (auth, request) => {
       else if(next==="/")destination.searchParams.set("next","/p/"+tenant+"/boards");
       return NextResponse.redirect(destination);
     }
-    if(pathname==="/"||pathname==="/boards"||pathname.startsWith("/boards/")||pathname.startsWith("/items/")||pathname==="/submit"||pathname==="/following"){
+    if(pathname==="/"||pathname==="/boards"||pathname.startsWith("/boards/")||pathname.startsWith("/items/")||pathname==="/submit"||pathname==="/following"||pathname==="/roadmap"){
       const rewritten=request.nextUrl.clone();
       rewritten.pathname="/p/"+tenant+(pathname==="/"?"/boards":pathname);
       return NextResponse.rewrite(rewritten);

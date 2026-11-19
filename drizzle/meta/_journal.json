@@ -155,6 +155,34 @@
       "when": 1794903556837,
       "tag": "0021_damp_lyja",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795090650886,
+      "tag": "0022_slippery_thunderball",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795091196989,
+      "tag": "0023_cooing_scream",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795095707884,
+      "tag": "0024_roadmap_open_column",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1795102217522,
+      "tag": "0025_connected_apps",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,7 @@
 'use client';
-import {SlackMark,DiscordMark} from './app-logos';
+import {UpcomingIntegrations} from './upcoming-integrations';
+import {SlackMark} from './app-logos';
+import {LoadFailure} from '@/components/ui/load-failure';
 import {SettingsActions} from '@/components/feedback/settings-layout';
 
 
@@ -28,21 +30,21 @@ export function WorkspaceIntegrationsSettings(){const {project}=useProject();ret
 function WorkspaceIntegrationsContent({workspaceId}:{workspaceId:string}){
  const query=useSearchParams();
  const [data,setData]=useState<Data|null>(null);const [draft,setDraft]=useState<Data['settings']|null>(null);
- const [error,setError]=useState('');const [pending,setPending]=useState<'save'|'connect'|'disconnect'|null>(null);const [reload,setReload]=useState(0);
- useEffect(()=>{let cancelled=false;void loadWorkspaceSlackSettingsAction(workspaceId).then(result=>{if(cancelled)return;try{const next=unwrap(result);setData(next);setDraft(next.settings);setError('');}catch(e){setError(e instanceof Error?e.message:'Integrations could not be loaded.');}});return()=>{cancelled=true;};},[workspaceId,reload]);
+ const [error,setError]=useState('');const [actionError,setActionError]=useState('');const [pending,setPending]=useState<'save'|'connect'|'disconnect'|null>(null);const [reload,setReload]=useState(0);
+ useEffect(()=>{let cancelled=false;void loadWorkspaceSlackSettingsAction(workspaceId).then(result=>{if(cancelled)return;try{const next=unwrap(result);setData(next);setDraft(current=>current??next.settings);setError('');}catch(e){setError(e instanceof Error?e.message:'Integrations could not be loaded.');}}).catch(()=>{if(!cancelled)setError('Integrations could not be loaded.');});return()=>{cancelled=true;};},[workspaceId,reload]);
  const dirty=Boolean(data&&draft&&JSON.stringify(data.settings)!==JSON.stringify(draft));
  async function act(action:'save'|'connect'|'disconnect'){
-  setPending(action);setError('');let navigating=false;
+  if(pending)return;setPending(action);setActionError('');let navigating=false;
   try{
    if(action==='connect'){const result=unwrap(await connectIntegrationAction({provider:'slack',workspaceId,returnTo:'/dashboard/settings/integrations'}));window.location.assign(result.url);navigating=true;return;}
    if(action==='disconnect'){unwrap(await disconnectIntegrationAction({provider:'slack',workspaceId}));setData(current=>current?{...current,slack:{connected:false,label:'',repliesReady:false}}:current);toastManager.add({type:'success',title:'Slack disconnected'});}
    if(action==='save'&&draft){unwrap(await saveWorkspaceSlackSettingsAction(workspaceId,draft));setData(current=>current?{...current,settings:draft}:current);toastManager.add({type:'success',title:'Slack preferences saved'});}
-  }catch(e){const message=e instanceof Error?e.message:'Slack settings could not be updated.';setError(message);toastManager.add({type:'error',title:message});}finally{if(!navigating)setPending(null);}
+  }catch(e){const message=e instanceof Error?e.message:'Slack settings could not be updated.';setActionError(message);toastManager.add({type:'error',title:message});}finally{if(!navigating)setPending(null);}
  }
  return <SettingsPage title="Integrations"><div className="flex flex-col gap-8">
   <p className="px-4 text-sm leading-6 text-muted-foreground">Connect your workspace tools. One Slack connection serves all boards and live chat.</p>
   {!data&&!error&&<Skeleton className="h-48 w-full"/>}
-  {error&&<ErrorNotice>{error}{!data&&<Button variant="ghost" size="sm" onClick={()=>setReload(value=>value+1)}>Retry</Button>}</ErrorNotice>}
+  {error&&<LoadFailure resource="integrations" refresh={Boolean(data)} onRetry={()=>{setError('');setReload(value=>value+1);}}/>}
   {data?.deliveryIssue&&<ErrorNotice>{data.deliveryIssue}<Button size="sm" variant="secondary" onClick={()=>setReload(value=>value+1)}>Refresh status</Button></ErrorNotice>}
   {data&&draft&&<fieldset disabled={Boolean(pending)||!data.canManage} className="contents">
    <SettingGroup title="Slack"><SettingRow title={<span className="inline-flex items-center gap-2 align-middle"><SlackMark className="size-[18px]"/>Slack</span>} description={data.slack.connected?(data.slack.label||'Connected to this workspace'):'Choose a channel to receive board and live chat notifications.'}>
@@ -52,8 +54,8 @@ function WorkspaceIntegrationsContent({workspaceId}:{workspaceId:string}){
    {data.canManage&&data.slack.connected&&!data.slack.repliesReady&&<SettingRow title="Enable Slack replies" description="Add the Slack signing secret and reconnect to grant reply permissions."><ActionButton size="sm" variant="secondary" state={pending==='connect'?'pending':'idle'} pendingLabel="Reconnecting…" onClick={()=>void act('connect')}>Reconnect Slack</ActionButton></SettingRow>}
    {events.map(({key,title,description})=><div key={key} className="border-t border-border/60"><SettingRow title={title} description={description}><Switch disabled={!data.slack.connected} aria-label={title} checked={draft[key]} onCheckedChange={checked=>setDraft({...draft,[key]:checked})}/></SettingRow></div>)}
    </SettingGroup>
-   <SettingsActions parentGap={32}><p className="mr-auto text-xs text-muted-foreground">{!data.canManage?'Workspace admins manage integrations.':dirty?'Unsaved changes':!data.slack.connected?'Notifications start when Slack is connected.':''}</p><Button size="sm" variant="ghost" disabled={!dirty} onClick={()=>setDraft(data.settings)}>Discard</Button><ActionButton size="sm" disabled={!dirty} state={pending==='save'?'pending':'idle'} pendingLabel="Saving…" onClick={()=>void act('save')}>Save changes</ActionButton></SettingsActions>
+   <SettingsActions parentGap={32}><p className="mr-auto text-xs text-muted-foreground">{!data.canManage?'Workspace admins manage integrations.':dirty?'Unsaved changes':!data.slack.connected?'Notifications start when Slack is connected.':''}</p><Button size="sm" variant="ghost" disabled={!dirty} onClick={()=>{setDraft(data.settings);setActionError('');}}>Discard</Button><ActionButton size="sm" disabled={!dirty} state={pending==='save'?'pending':actionError?'error':'idle'} retryLabel="Retry saving" pendingLabel="Saving…" onClick={()=>void act('save')}>Save changes</ActionButton></SettingsActions>
   </fieldset>}
-  <SettingGroup title="Discord"><SettingRow title={<span className="inline-flex items-center gap-2 align-middle"><DiscordMark className="size-[18px]"/>Discord<span className="text-muted-foreground">· Coming soon</span></span>} description="Discord connections are not available yet."><Button size="sm" variant="outline" disabled>Coming soon</Button></SettingRow></SettingGroup>
+  <UpcomingIntegrations key={workspaceId} workspaceId={workspaceId}/>
  </div></SettingsPage>;
 }

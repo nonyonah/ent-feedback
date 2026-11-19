@@ -6,3 +6,5 @@ export function feedbackHref(project: Pick<Project,"slug">, id: string) {
   const path = "/items/" + encodeURIComponent(id);
   return workspaceBaseDomain() ? workspacePublicUrl(project.slug, path) : "/p/" + encodeURIComponent(project.slug) + path;
 }
+
+export function roadmapHref(project:Pick<Project,"slug">){return workspaceBaseDomain()?workspacePublicUrl(project.slug,"/roadmap"):"/p/"+encodeURIComponent(project.slug)+"/roadmap";}

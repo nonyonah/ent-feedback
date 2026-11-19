@@ -1,5 +1,6 @@
 "use client";
 
+import {LoadFailure} from '@/components/ui/load-failure';
 import {ErrorNotice} from '@/components/ui/error-notice';
 import {features} from "@/lib/features";
 
@@ -67,10 +68,7 @@ function EnabledTeamSettings() {
         {team.loading ? (
           <div aria-busy="true" aria-label="Loading team" className="space-y-3 p-4"><Skeleton className="h-10 w-full"/><Skeleton className="h-10 w-full"/></div>
         ) : team.error ? (
-          <ErrorNotice  className="px-4 py-6 text-[13px] text-foreground">
-            {team.error}
-            <Button variant="ghost" size="sm" className="ml-2" onClick={() => void team.refresh()}>Retry</Button>
-          </ErrorNotice>
+          <LoadFailure resource="team members" onRetry={()=>void team.refresh()}/>
         ) : (
           team.members.map((member) => (
             <div
@@ -92,7 +90,7 @@ function EnabledTeamSettings() {
               <span className="shrink-0 rounded-full bg-control-quiet px-2 py-0.5 text-xs">
                 {roleLabel(member.role)}
               </span>
-              {canManage&&member.role==='member'&&<Dialog open={removing?.id===member.id} onOpenChange={open=>{if(open){setRemoveError('');setRemoving(member);}else if(!removePending)setRemoving(null);}}><DialogTrigger render={<Button size="sm" variant="ghost"/>}>Remove<span className="sr-only"> {member.name??member.email??'teammate'}</span></DialogTrigger><DialogPopup bottomStickOnMobile={false}><DialogHeader><DialogTitle>Remove teammate?</DialogTitle><DialogDescription>{member.name??member.email??'This teammate'} will lose access to {project.name}. Their feedback and replies will stay.</DialogDescription></DialogHeader>{removeError&&<ErrorNotice className="mx-6 mb-4">{removeError}</ErrorNotice>}<DialogFooter><Button variant="secondary" disabled={removePending} onClick={()=>setRemoving(null)}>Keep teammate</Button><Button variant="destructive" loading={removePending} disabled={removePending} onClick={()=>void remove()}>Remove teammate</Button></DialogFooter></DialogPopup></Dialog>}
+              {canManage&&member.role==='member'&&<Dialog open={removing?.id===member.id} onOpenChange={open=>{if(open){setRemoveError('');setRemoving(member);}else if(!removePending)setRemoving(null);}}><DialogTrigger render={<Button size="sm" variant="destructive-outline"/>}>Remove<span className="sr-only"> {member.name??member.email??'teammate'}</span></DialogTrigger><DialogPopup bottomStickOnMobile={false}><DialogHeader><DialogTitle>Remove teammate?</DialogTitle><DialogDescription>{member.name??member.email??'This teammate'} will lose access to {project.name}. Their feedback and replies will stay.</DialogDescription></DialogHeader>{removeError&&<ErrorNotice className="mx-6 mb-4">{removeError}</ErrorNotice>}<DialogFooter><Button variant="secondary" disabled={removePending} onClick={()=>setRemoving(null)}>Keep teammate</Button><Button variant="destructive" loading={removePending} disabled={removePending} onClick={()=>void remove()}>Remove teammate</Button></DialogFooter></DialogPopup></Dialog>}
             </div>
           ))
         )}

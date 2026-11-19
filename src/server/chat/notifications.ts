@@ -1,4 +1,5 @@
 import 'server-only';
+import {enqueueDiscord} from '@/server/connected-apps/queue';
 import {completedSlackBlocks} from '@/lib/chat/slack-suggestion';
 import {guestEmailVerified} from '@/server/guest-email';
 import {featureRequestSuggestion} from '@/lib/chat/feature-request';
@@ -21,6 +22,7 @@ export async function enqueueConversationNotice(tx:Queryable,workspaceId:string,
  const recipients=event==='reply'?[]:await tx.select({id:users.id}).from(workspaceMembers).innerJoin(users,eq(users.id,workspaceMembers.userId)).where(and(eq(workspaceMembers.workspaceId,workspaceId),eq(workspaceMembers.status,'active'),operations.allOperators?undefined:inArray(workspaceMembers.userId,operations.operatorIds),sql`${users.email} is not null`));
  for(const r of recipients)await tx.insert(jobs).values({type:'chat_delivery',dedupeKey:`chat:email:${event}:${emailEventId}:${r.id}`,payload:{...payload,delivery:'email',userId:r.id}}).onConflictDoNothing();
  if(event==='reply'&&conv.email&&await guestEmailVerified({workspaceId,kind:'chat',subjectId:id,email:conv.email},tx))await tx.insert(jobs).values({type:'chat_delivery',dedupeKey:`chat:reply:${eventId}`,payload:{...payload,delivery:'email'}}).onConflictDoNothing();
+ await enqueueDiscord(tx,{...payload,eventId});
  if(!skipSlack)await enqueueSlack(tx,{...payload,eventId});
 }
 export async function enqueueSlack(tx:Queryable,input:{workspaceId:string;event:string;eventId:string;conversationId?:string;feedbackId?:string;forceStatus?:boolean}){

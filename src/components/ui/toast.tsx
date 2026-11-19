@@ -8,6 +8,7 @@ import { InfoIcon } from "@/components/icons";
 import { Spinner } from "@/components/ui/spinner";
 import { WarningIcon as TriangleAlertIcon } from "@/components/icons";
 import type React from "react";
+import {createContext,useContext,useEffect,useRef,useState} from "react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -48,8 +49,10 @@ function getSwipeDirection(position: ToastPosition): SwipeDirection[] {
 function Toasts({
   position,
   portalProps,
+  scoped=false,
 }: {
   position: ToastPosition;
+  scoped?:boolean;
   portalProps?: React.ComponentProps<typeof Toast.Portal>;
 }): React.ReactElement {
   const { toasts } = Toast.useToastManager();
@@ -59,8 +62,9 @@ function Toasts({
     <Toast.Portal data-slot="toast-portal" {...portalProps}>
       <Toast.Viewport
         className={cn(
-          "fixed z-60 mx-auto flex w-[calc(100%-var(--toast-inset)*2)] max-w-90 [--toast-inset:--spacing(4)] sm:[--toast-inset:--spacing(8)]",
+          "z-60 mx-auto flex w-[calc(100%-var(--toast-inset)*2)] max-w-90 [--toast-inset:--spacing(4)] sm:[--toast-inset:--spacing(8)]",
           // Vertical positioning
+          scoped?"absolute [--toast-inset:--spacing(3)]":"fixed",
           "data-[position*=top]:top-(--toast-inset)",
           "data-[position*=bottom]:bottom-(--toast-inset)",
           // Horizontal positioning
@@ -283,16 +287,26 @@ export interface ToastProviderProps extends Toast.Provider.Props {
   portalProps?: React.ComponentProps<typeof Toast.Portal>;
 }
 
+const ToastPortalContext=createContext<((container:HTMLElement|null)=>void)|null>(null);
+
+/** Keep widget notifications inside its nonmodal focus scope and away from the composer. */
+export function ToastPortalScope({children}:{children:React.ReactNode}){
+ const setContainer=useContext(ToastPortalContext),ref=useRef<HTMLDivElement>(null);
+ useEffect(()=>{setContainer?.(ref.current);return()=>setContainer?.(null);},[setContainer]);
+ return <div ref={ref} className="relative flex min-h-0 flex-1 flex-col">{children}</div>;
+}
+
 export function ToastProvider({
   children,
   position = "bottom-right",
   portalProps,
   ...props
 }: ToastProviderProps): React.ReactElement {
+  const [container,setContainer]=useState<HTMLElement|null>(null);
   return (
     <Toast.Provider toastManager={toastManager} {...props}>
-      {children}
-      <Toasts portalProps={portalProps} position={position} />
+      <ToastPortalContext.Provider value={setContainer}>{children}</ToastPortalContext.Provider>
+      <Toasts portalProps={container?{...portalProps,container}:portalProps} scoped={Boolean(container)} position={container?"top-center":position} />
     </Toast.Provider>
   );
 }

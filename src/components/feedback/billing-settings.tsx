@@ -7,7 +7,8 @@ import {Skeleton} from '@/components/ui/skeleton';
 import {usePathname,useRouter,useSearchParams} from 'next/navigation';
 import {useBillingCache} from './billing-cache';
 import {useProject} from './project-provider';
-import {SettingGroup} from './settings-layout';
+import {LoadFailure} from '@/components/ui/load-failure';
+import {SettingsPage,SettingGroup} from './settings-layout';
 import {toastManager} from '@/components/ui/toast';
 import {BrandLogo} from './brand-logo';
 import {Button} from '@/components/ui/button';
@@ -28,6 +29,7 @@ function WorkspaceBillingSettings(){
  const {project,boards,workspaceReady}=useProject();const params=useSearchParams();const cache=useBillingCache();
  const [summary,setSummary]=React.useState<Summary|null>(()=>cache?.get(project.id)??null),[pending,setPending]=React.useState(false),[attempt,setAttempt]=React.useState(0);
  const [interval,setInterval]=React.useState<BillingInterval>(params.get('interval')==='yearly'?'yearly':'monthly');
+ const [loadError,setLoadError]=React.useState('');
  const [trialNoticeOpen,setTrialNoticeOpen]=React.useState(false);
  const [awaitingConfirmation,setAwaitingConfirmation]=React.useState<{mode:BillingMode;previousUntil:string|null}|null>(null);
  const effectiveMode:BillingMode=summary?.prepaidActive?'prepaid':'subscription';
@@ -36,7 +38,7 @@ function WorkspaceBillingSettings(){
  React.useEffect(()=>()=>{overlay.current?.close();overlay.current=null;},[project.id]);
  React.useEffect(()=>{
   if(!workspaceReady)return;let cancelled=false;
-  const refresh=async()=>{const version=summaryRevision.current;try{const result=await loadBillingAction(project.id);if(cancelled||version!==summaryRevision.current)return;if(!result.ok)throw Error(result.error.message);cache?.set(project.id,result.data);setSummary(result.data);}catch(e){if(!cancelled)toastManager.add({id:'billing-load-error',type:'error',title:'Billing could not be loaded',description:e instanceof Error?e.message:'Try again.',actionProps:{children:'Retry',onClick:()=>setAttempt(value=>value+1)}});}};
+  const refresh=async()=>{const version=summaryRevision.current;try{const result=await loadBillingAction(project.id);if(cancelled||version!==summaryRevision.current)return;if(!result.ok)throw Error(result.error.message);cache?.set(project.id,result.data);setSummary(result.data);setLoadError('');}catch(e){if(!cancelled)setLoadError(e instanceof Error?e.message:'Billing could not be loaded.');}};
   void refresh();const timer=window.setInterval(()=>{if(document.visibilityState==='visible')void refresh();},15_000);
   return()=>{cancelled=true;window.clearInterval(timer);};
  },[project.id,workspaceReady,attempt,cache,boards.length]);
@@ -74,8 +76,9 @@ function WorkspaceBillingSettings(){
  const needsCheckout=summary&&!['active','trialing','past_due','paused','unpaid'].includes(summary.status);
  const status=summary?.status==='trialing'?'Free trial':summary?.status==='active'?'Active':summary?.status==='past_due'?'Payment needs attention':summary?.status==='prepaid'?'Prepaid · No automatic renewal':summary?.status==='none'?'Not subscribed':summary?.status.replaceAll('_',' ');
  const planLabel=summary?.plan==='free'?'Free Plan':summary?.status==='trialing'?'Essentials · Free trial':'Essentials Plan';
- return <section className="mx-auto w-full max-w-[760px] px-6 pb-16 pt-8 antialiased sm:pt-14">
-  <h1 className="mb-8 px-4 text-[26px] font-semibold leading-[1.5] tracking-[-0.65px]">Billing</h1>
+ return <SettingsPage title="Billing">
+  {loadError&&<LoadFailure resource="billing" refresh={Boolean(summary)} onRetry={()=>{setLoadError('');setAttempt(value=>value+1);}}/>}
+  {!summary&&!loadError&&<div role="status" aria-label="Loading billing" className="space-y-6"><Skeleton className="h-24 w-full rounded-[18px]"/><Skeleton className="h-64 w-full rounded-[18px]"/></div>}
   <div className="flex flex-col gap-5">
   {summary&&<>
    <div className="flex flex-col gap-3">
@@ -116,10 +119,10 @@ function WorkspaceBillingSettings(){
    </SettingGroup>
    <p className="px-4 text-[13px] font-medium leading-5 text-muted-foreground">Subscription changes are processed securely by Bachs.</p>
   </>}
- </div><TrialCardNotice open={trialNoticeOpen} onOpenChange={setTrialNoticeOpen} interval={interval} onContinue={()=>void openCheckout('subscription')}/></section>;
+ </div><TrialCardNotice open={trialNoticeOpen} onOpenChange={setTrialNoticeOpen} interval={interval} onContinue={()=>void openCheckout('subscription')}/></SettingsPage>;
 }
 
 function UsageRow({title,value,usage}:{title:string;value:string;usage?:{count:number;limit:number}}){
  const percent=usage&&usage.limit>0?Math.max(0,Math.min(100,usage.count/usage.limit*100)):0;
- return <div className="flex items-center justify-between gap-4 px-4 py-3"><p className="text-[13px] font-medium tracking-[-0.065px]">{title}</p><div role={usage?'progressbar':undefined} aria-label={usage?title:undefined} aria-valuemin={usage?0:undefined} aria-valuemax={usage?.limit} aria-valuenow={usage?Math.min(usage.count,usage.limit):undefined} aria-valuetext={usage?value:undefined} className="relative flex h-[22px] w-[148px] shrink-0 items-center justify-center overflow-hidden rounded-[7px] bg-muted text-[11px] font-medium tabular-nums tracking-[-0.055px] text-muted-foreground">{usage&&<span aria-hidden="true" className="absolute inset-[3px] overflow-hidden rounded-[4px]"><span className="block h-full rounded-[4px] bg-emerald-600" style={{width:`${percent}%`}}/></span>}<span className={usage?`relative ${percent>=100?'text-white':'text-muted-foreground'}`:undefined}>{value}</span></div></div>;
+ return <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4"><p className="text-[13px] font-medium tracking-[-0.065px]">{title}</p><div role={usage?'progressbar':undefined} aria-label={usage?title:undefined} aria-valuemin={usage?0:undefined} aria-valuemax={usage?.limit} aria-valuenow={usage?Math.min(usage.count,usage.limit):undefined} aria-valuetext={usage?value:undefined} className="relative flex h-[22px] w-[148px] shrink-0 items-center justify-center overflow-hidden rounded-[7px] bg-muted text-[11px] font-medium tabular-nums tracking-[-0.055px] text-muted-foreground">{usage&&<span aria-hidden="true" className="absolute inset-[3px] overflow-hidden rounded-[4px]"><span className="block h-full rounded-[4px] bg-emerald-600" style={{width:`${percent}%`}}/></span>}<span className={usage?`relative ${percent>=100?'text-white':'text-muted-foreground'}`:undefined}>{value}</span></div></div>;
 }

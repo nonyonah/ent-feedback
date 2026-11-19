@@ -806,3 +806,22 @@ export const voterEmailOptouts=pgTable('voter_email_optouts',{
  workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
  email:text('email').notNull(),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
 },t=>[primaryKey({columns:[t.workspaceId,t.email]})]).enableRLS();
+
+// Launch-gated integrations use separate storage so existing Slack installs stay intact.
+export const connectedApps=pgTable('connected_apps',{
+ id:uuid('id').primaryKey().defaultRandom(),workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ provider:text('provider').notNull().$type<'linear'|'discord'>(),externalId:text('external_id').notNull(),label:text('label').notNull(),
+ encryptedCredentials:text('encrypted_credentials'),settings:jsonb('settings').$type<Record<string,unknown>>().notNull().default({}),
+ connected:boolean('connected').notNull().default(true),createdByUserId:uuid('created_by_user_id').references(()=>users.id,{onDelete:'set null'}),...timestamps(),
+},t=>[unique('connected_apps_workspace_provider_unique').on(t.workspaceId,t.provider),check('connected_apps_provider_check',sql`${t.provider} in ('linear','discord')`)]).enableRLS();
+export const linearIssueLinks=pgTable('linear_issue_links',{
+ id:uuid('id').primaryKey().defaultRandom(),workspaceId:uuid('workspace_id').notNull(),connectionId:uuid('connection_id').notNull().references(()=>connectedApps.id,{onDelete:'cascade'}),
+ feedbackId:uuid('feedback_id').notNull(),issueId:text('issue_id').notNull(),identifier:text('identifier').notNull(),url:text('url').notNull(),syncedAt:timestamp('synced_at',{withTimezone:true}),...timestamps(),
+},t=>[foreignKey({columns:[t.feedbackId,t.workspaceId],foreignColumns:[feedback.id,feedback.workspaceId]}).onDelete('cascade'),unique('linear_issue_feedback_unique').on(t.connectionId,t.feedbackId),unique('linear_issue_external_unique').on(t.connectionId,t.issueId)]).enableRLS();
+export const discordIdentities=pgTable('discord_identities',{
+ workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),discordUserId:text('discord_user_id').notNull(),
+},t=>[primaryKey({columns:[t.workspaceId,t.userId]}),unique('discord_identity_external_unique').on(t.workspaceId,t.discordUserId)]).enableRLS();
+export const discordDeliveries=pgTable('discord_deliveries',{
+ id:uuid('id').primaryKey().defaultRandom(),workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),connectionId:uuid('connection_id').notNull().references(()=>connectedApps.id,{onDelete:'cascade'}),
+ eventKey:text('event_key').notNull(),messageId:text('message_id').notNull(),channelId:text('channel_id').notNull(),conversationId:uuid('conversation_id'),feedbackId:uuid('feedback_id'),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[unique('discord_delivery_event_unique').on(t.connectionId,t.eventKey),unique('discord_delivery_message_unique').on(t.connectionId,t.messageId),foreignKey({columns:[t.feedbackId,t.workspaceId],foreignColumns:[feedback.id,feedback.workspaceId]}).onDelete('cascade'),foreignKey({columns:[t.conversationId,t.workspaceId],foreignColumns:[conversations.id,conversations.workspaceId]}).onDelete('cascade'),check('discord_delivery_target_check',sql`num_nonnulls(${t.feedbackId},${t.conversationId})=1`)]).enableRLS();

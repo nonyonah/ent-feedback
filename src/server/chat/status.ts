@@ -1,4 +1,5 @@
 import 'server-only';
+import {enqueueDiscord} from '@/server/connected-apps/queue';
 import {and,eq} from 'drizzle-orm';
 import type {Queryable} from '@/server/db/client';
 import {conversations,jobs} from '@/server/db/schema';
@@ -23,4 +24,5 @@ export async function setConversationStatus(tx:Queryable,input:{workspaceId:stri
  }
  await tx.update(conversations).set({status:input.status,mode:'human',generationId:null,generationExpiresAt:null,unread:input.status==='escalated',updatedAt:new Date()}).where(where);
  await enqueueSlack(tx,{workspaceId:input.workspaceId,conversationId:input.conversationId,event:'status_changed',eventId:input.eventId,forceStatus:input.confirmInSlack});
+ await enqueueDiscord(tx,{workspaceId:input.workspaceId,conversationId:input.conversationId,event:'status_changed',eventId:input.eventId});
 }

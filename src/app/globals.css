@@ -437,3 +437,37 @@ button:not([role="checkbox"]):not([role="radio"])::before,
 }
 
 [data-roadmap][data-keyboard-navigation] [data-roadmap-chevron] { transition: none; }
+
+/* Settings share one control density and keep long labels inside narrow panels. */
+[data-slot="settings-control"] > :is([data-slot="select-trigger"], [data-slot="input-control"]) { max-width: 100%; }
+[data-slot="settings-page"] [data-slot="select-trigger"] { background: var(--control-quiet); box-shadow: none; }
+[data-slot="settings-actions"] > p { min-width: 0; flex: 1 1 100%; margin: 0; overflow-wrap: anywhere; }
+[data-slot="settings-actions"] > p:empty { display: none; }
+@media (min-width: 640px) { [data-slot="settings-actions"] > p { flex: 1 1 auto; } }
+html[data-input-modality="keyboard"] :is([data-slot="switch"], [data-slot="sidebar-menu-button"]) { transition: none !important; }
+
+[data-slot="settings-page"] [data-slot="select-trigger"] {
+  max-width: 100%;
+  background: var(--control-quiet);
+  box-shadow: none;
+}
+[data-slot="settings-page"] [data-slot="settings-actions"] > p {
+  min-width: 0;
+  flex: 1 1 100%;
+  margin-inline-end: 0;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 640px) {
+  [data-slot="settings-page"] [data-slot="settings-actions"] > p { flex: 1 1 auto; }
+}
+/* Settings toggles have immediate keyboard feedback; pointer changes keep their short transition. */
+html[data-input-modality="keyboard"] [data-slot="settings-page"] [data-slot="switch"] { transition: none; }
+[data-slot="settings-card"] [data-slot="settings-actions"] { padding-bottom: 16px; }
+
+/* Board sorting follows direct pointer/keyboard input without decorative motion. */
+html[data-input-modality="keyboard"] [data-board-id] {
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-board-id] { transition: none !important; }
+}

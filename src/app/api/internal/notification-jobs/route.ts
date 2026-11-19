@@ -1,3 +1,4 @@
+import {processIntegrationJobs} from '@/server/connected-apps/worker';
 import {processRoadmapJobs} from '@/server/roadmap/emails';
 import {cleanChatUploads} from '@/server/chat/uploads';
 import {processChatJobs} from '@/server/chat/notifications';
@@ -27,11 +28,12 @@ export async function POST(request: Request) {
     // A trial job may make two 15s provider calls. Leave room for cleanup on
     // the host's 60s request budget; deferred jobs stay pending for the next tick.
     const trial=Date.now()-started<20_000?await processTrialEmails(1):{configured:notifications.configured,skipped:true};
+    const integrations=Date.now()-started<25_000?await processIntegrationJobs(1):{skipped:true};
     const roadmap=Date.now()-started<35_000?await processRoadmapJobs(1):{configured:notifications.configured,skipped:true};
     // Expired uploads and spent rate-limit windows are only reclaimed here.
     const cleanup=await cleanExpiredAttachments(3);if(Date.now()-started<45000)await cleanChatUploads();
     const ready=notifications.configured&&(!lifecycleQueue.enabled||lifecycle.configured);
-    return Response.json({roadmap,chat,notifications,prepaidQueue,lifecycleQueue,lifecycle,trial,cleanup},{status:ready&&trial.configured?200:503,headers:{"Cache-Control":"no-store"}});
+    return Response.json({integrations,roadmap,chat,notifications,prepaidQueue,lifecycleQueue,lifecycle,trial,cleanup},{status:ready&&trial.configured?200:503,headers:{"Cache-Control":"no-store"}});
   } catch {
     return Response.json({error:"Notification maintenance could not complete."},{status:503,headers:{"Cache-Control":"no-store"}});
   }

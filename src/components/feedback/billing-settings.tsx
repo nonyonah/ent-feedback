@@ -5,6 +5,7 @@ import * as React from 'react';
 import {ErrorNotice} from '@/components/ui/error-notice';
 import {Skeleton} from '@/components/ui/skeleton';
 import {usePathname,useRouter,useSearchParams} from 'next/navigation';
+import {useUser} from '@clerk/nextjs';
 import {useBillingCache} from './billing-cache';
 import {useProject} from './project-provider';
 import {LoadFailure} from '@/components/ui/load-failure';
@@ -26,7 +27,10 @@ export function BillingSettings(){
  return <WorkspaceBillingSettings key={project.id}/>;
 }
 function WorkspaceBillingSettings(){
- const {project,boards,workspaceReady}=useProject();const params=useSearchParams();const cache=useBillingCache();
+ const {project,boards,workspaceReady}=useProject();const params=useSearchParams();const cache=useBillingCache();const {user}=useUser();
+ const trialNoticeKey=user?`ent:trial-notice:${user.id}:${project.id}`:null;
+ const trialNoticeAcknowledged=()=>{if(!trialNoticeKey)return false;try{return localStorage.getItem(trialNoticeKey)==='1';}catch{return false;}};
+ const acknowledgeTrialNotice=()=>{if(!trialNoticeKey)return;try{localStorage.setItem(trialNoticeKey,'1');}catch{}};
  const [summary,setSummary]=React.useState<Summary|null>(()=>cache?.get(project.id)??null),[pending,setPending]=React.useState(false),[attempt,setAttempt]=React.useState(0);
  const [interval,setInterval]=React.useState<BillingInterval>(params.get('interval')==='yearly'?'yearly':'monthly');
  const [loadError,setLoadError]=React.useState('');
@@ -93,7 +97,7 @@ function WorkspaceBillingSettings(){
      </div>
     </div>
     {summary.owner&&<div className="flex flex-wrap items-center gap-2.5 px-4">
-     {needsCheckout&&<Button loading={pending} size="sm" className="h-9 max-sm:h-11 rounded-[10px] px-4 text-[13px]" disabled={pending||!summary.configured} onClick={()=>{if(summary.trialUsed||summary.prepaidActive)void openCheckout('prepaid');else setTrialNoticeOpen(true);}}>{pending?'Opening…':summary.prepaidActive?'Extend Essentials':summary.trialUsed?`Pay $${interval==='yearly'?'70':'7'}`:'Start free trial'}</Button>}
+     {needsCheckout&&<Button loading={pending} size="sm" className="h-9 max-sm:h-11 rounded-[10px] px-4 text-[13px]" disabled={pending||!summary.configured} onClick={()=>{if(summary.trialUsed||summary.prepaidActive)void openCheckout('prepaid');else if(trialNoticeAcknowledged())void openCheckout('subscription');else setTrialNoticeOpen(true);}}>{pending?'Opening…':summary.prepaidActive?'Extend Essentials':summary.trialUsed?`Pay $${interval==='yearly'?'70':'7'}`:'Start free trial'}</Button>}
      {summary.canManage&&<ManageSubscriptionDialog key={project.id} workspaceId={project.id} onUpdated={updateSummary} disabled={pending||!summary.configured}/>}
 
     </div>}
@@ -119,7 +123,7 @@ function WorkspaceBillingSettings(){
    </SettingGroup>
    <p className="px-4 text-[13px] font-medium leading-5 text-muted-foreground">Subscription changes are processed securely by Bachs.</p>
   </>}
- </div><TrialCardNotice open={trialNoticeOpen} onOpenChange={setTrialNoticeOpen} interval={interval} onContinue={()=>void openCheckout('subscription')}/></SettingsPage>;
+ </div><TrialCardNotice open={trialNoticeOpen} onOpenChange={setTrialNoticeOpen} interval={interval} onContinue={()=>{acknowledgeTrialNotice();void openCheckout('subscription');}}/></SettingsPage>;
 }
 
 function UsageRow({title,value,usage}:{title:string;value:string;usage?:{count:number;limit:number}}){

@@ -4,6 +4,7 @@ import {and,eq,sql} from 'drizzle-orm';
 import {getDb} from '@/server/db/client';
 import {users,workspaces,boards,feedback,votes,comments,workspaceMembers,voterEmailOptouts,jobs,notificationPreferences,guestActors,guestEmailVerifications} from '@/server/db/schema';
 import {roadmapVotesAction} from '@/server/actions/roadmap';
+import {loadFeedbackAction} from '@/server/actions/feedback';
 import {readRoadmap,updateRoadmap} from '@/server/roadmap/service';
 import {processRoadmapJobs} from '@/server/roadmap/emails';
 import {GET as publicRoute} from '@/app/api/public/roadmap/route';
@@ -27,11 +28,21 @@ export async function run(){
   {workspaceId:other.id,boardId:otherBoard.id,title:'Other secret',status:'planned' as const},
  ]).returning();
  const publicData=await readRoadmap(workspace.id);assert.deepEqual(publicData.planned.map(row=>row.id),[planned.id,second.id]);assert.equal(publicData.in_progress.length,1);assert.equal(publicData.shipped.length,1);assert.ok(!JSON.stringify(publicData).includes('email'));assert.ok(!JSON.stringify(publicData).includes(otherPost.id));assert.ok(!JSON.stringify(publicData).includes(open.id));
+ // Public readers must see guest-authored and anonymized registered posts.
+ global.chatUser=null;
+ const [anonymous,masked]=await db.insert(feedback).values([
+  {workspaceId:workspace.id,boardId:board.id,title:'Guest public visibility',body:'Anonymous visitor report',guestName:'Anonymous',status:'planned',roadmapOrder:20},
+  {workspaceId:workspace.id,boardId:board.id,title:'Masked public visibility',body:'Registered anonymous report',authorUserId:owner.id,guestName:'Anonymous',status:'planned',roadmapOrder:21},
+ ]).returning();
+ const guestBoard=await loadFeedbackAction(workspace.id,board.id);assert.equal(guestBoard.ok,true);
+ if(guestBoard.ok){for(const id of [anonymous.id,masked.id]){const row:{author:string;avatarUrl?:string}|undefined=guestBoard.data.items.find(item=>item.id===id);assert.ok(row);assert.equal(row.author,'Anonymous');assert.equal(row.avatarUrl,undefined);}}
+ const guestRoadmap=await publicRoute(new Request('https://ent.test/api/public/roadmap?projectKey=roadmap-fixture'));assert.equal(guestRoadmap.status,200);const guestColumns=await guestRoadmap.json();for(const id of [anonymous.id,masked.id])assert.ok(guestColumns.planned.some((item:{id:string})=>item.id===id));assert.ok(!JSON.stringify(guestColumns).includes('authorUserId'));
+ await db.delete(feedback).where(sql`${feedback.id} in (${anonymous.id},${masked.id})`);
  global.chatUser=owner;assert.ok((await readRoadmap(workspace.id,{admin:true})).open_items?.some(row=>row.id===open.id));assert.ok((await readRoadmap(workspace.id,{admin:true})).planned.some(row=>row.id===hidden.id));
  const api=await publicRoute(new Request('https://ent.test/api/public/roadmap?projectKey=roadmap-fixture'));assert.equal(api.status,200);assert.ok(api.headers.get('Cache-Control')?.includes('no-store'));const safe=JSON.stringify(await api.json());assert.ok(!safe.includes(hidden.id));assert.ok(!safe.includes('roadmap_visible'));assert.equal((await publicRoute(new Request('https://ent.test/api/public/roadmap?projectKey=invalid!'))).status,400);
  global.chatUser=outsider;await assert.rejects(()=>updateRoadmap(planned.id,{projectId:workspace.id,status:'shipped'}));await assert.rejects(()=>readRoadmap(workspace.id,{admin:true}));
  global.chatUser=owner;await assert.rejects(()=>updateRoadmap(otherPost.id,{projectId:workspace.id,status:'shipped'}));await assert.rejects(()=>updateRoadmap(planned.id,{projectId:workspace.id,status:'reviewing'}));await assert.rejects(()=>updateRoadmap(planned.id,{projectId:workspace.id,public_note:'x'.repeat(141)}));
- const moved=await updateRoadmap(progress.id,{projectId:workspace.id,status:'planned',before_id:planned.id,after_id:second.id});assert.equal(moved.roadmap_order,1);assert.equal((await readRoadmap(workspace.id)).planned[1].id,progress.id);await assert.rejects(()=>updateRoadmap(hidden.id,{projectId:workspace.id,before_id:planned.id,after_id:second.id}));
+ const moved=await updateRoadmap(progress.id,{projectId:workspace.id,status:'planned',before_id:planned.id,after_id:second.id});assert.equal(moved.roadmap_order,1);assert.equal((await readRoadmap(workspace.id)).planned[1].id,progress.id);const rebased=await updateRoadmap(hidden.id,{projectId:workspace.id,before_id:planned.id,after_id:second.id});assert.equal(rebased.roadmap_order,0.5,'stale adjacent anchors resolve to the current successor');
  await updateRoadmap(progress.id,{projectId:workspace.id,roadmap_order:-1});assert.equal((await readRoadmap(workspace.id)).planned[0].id,progress.id);
  await updateRoadmap(progress.id,{projectId:workspace.id,roadmap_visible:false});assert.ok(!(await readRoadmap(workspace.id)).planned.some(row=>row.id===progress.id));await updateRoadmap(progress.id,{projectId:workspace.id,roadmap_visible:true});
  await db.insert(votes).values([voter,opted,disabled].map(user=>({workspaceId:workspace.id,feedbackId:planned.id,userId:user.id})));

@@ -44,9 +44,13 @@ export async function updateRoadmap(id:string,input:unknown){
    const neighbors=ids.length?await tx.select({id:feedback.id,order:feedback.roadmapOrder}).from(feedback).where(and(eq(feedback.workspaceId,wid),eq(feedback.status,status),inArray(feedback.id,ids),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId))):[];
    if(neighbors.length!==ids.length)throw new ServiceError('conflict','The roadmap changed. Refresh and try again.');
    const before=neighbors.find(row=>row.id===value.before_id)?.order,after=neighbors.find(row=>row.id===value.after_id)?.order;
-   const [intervening]=await tx.select({id:feedback.id}).from(feedback).where(and(eq(feedback.workspaceId,wid),eq(feedback.status,status),sql`${feedback.id} <> ${bid}`,isNull(feedback.deletedAt),isNull(feedback.mergedIntoId),before!=null?sql`${feedback.roadmapOrder} > ${before}`:undefined,after!=null?sql`${feedback.roadmapOrder} < ${after}`:undefined)).limit(1);
-   if(intervening)throw new ServiceError('conflict','The column order changed. Refresh and try again.');
-   order=fractionalOrder(before,after);
+   // Resolve against the current column while holding its advisory lock. A
+   // background update may have inserted another card between these anchors.
+   // Keep the user's preceding anchor, then use its current successor instead
+   // of rejecting an otherwise valid drop from a slightly older snapshot.
+   const [successor]=await tx.select({order:feedback.roadmapOrder}).from(feedback).where(and(eq(feedback.workspaceId,wid),eq(feedback.status,status),sql`${feedback.id} <> ${bid}`,isNull(feedback.deletedAt),isNull(feedback.mergedIntoId),before!=null?sql`(${feedback.roadmapOrder}, ${feedback.id}) > (${before}::double precision, ${value.before_id}::uuid)`:undefined)).orderBy(asc(feedback.roadmapOrder),asc(feedback.id)).limit(1);
+   order=fractionalOrder(before,successor?.order??after);
+
   }
   if(value.notify_voters&&(status!=='shipped'||!(value.roadmap_visible??post.roadmapVisible)))throw new ServiceError('validation','Only visible shipped items can notify voters.');
   await tx.update(feedback).set({...(value.status?{status:value.status}:{}),...(order!==undefined?{roadmapOrder:order}:{}),...(value.roadmap_visible!==undefined?{roadmapVisible:value.roadmap_visible}:{}),...(value.public_note!==undefined?{publicNote:value.public_note||null}:{}),updatedAt:new Date()}).where(eq(feedback.id,bid));

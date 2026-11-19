@@ -35,7 +35,7 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
  const {project,boards,activeBoard,workspaceReady,publicUser}=useProject();const {user,isLoaded}=useUser();
  const pathname=usePathname();const workspaceInbox=pathname.startsWith('/dashboard');
  const wid=project.id,bid=activeBoard?.id??'';const key=wid+':'+(workspaceInbox?'inbox':bid)+':'+(user?.id??'guest');
- const valid=pathname!=="/"&&pathname!=="/landing-v2"&&workspaceReady&&isLoaded&&isId(wid)&&isId(bid);
+ const valid=pathname!=="/"&&pathname!=="/landing-v2"&&workspaceReady&&(!workspaceInbox||isLoaded)&&isId(wid)&&isId(bid);
  const [snapshot,setSnapshot]=React.useState<{key:string;items:FeedbackItemData[]}>({key:'',items:[]});
  const [failure,setFailure]=React.useState<{key:string;message:string}>({key:'',message:''});
  const uploader=React.useRef<ReturnType<typeof createFeedbackUploader>|null>(null);

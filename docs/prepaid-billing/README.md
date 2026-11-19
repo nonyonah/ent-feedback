@@ -9,6 +9,7 @@ Settings → Billing retains the compact monthly/yearly tabs. The primary action
 | Recurring USD card checkout only | Separate one-time checkout with no pinned billing currency or payment method | Allows Bachs to offer local cards, bank transfer and crypto where supported |
 | Subscription status alone grants access | Independently verified prepaid expiry also grants access | Preserves card subscription records and permits manual prepaid extensions |
 | A client completion event could appear successful before confirmation | Access and success state follow verified server confirmation | Redirects and overlay events cannot grant paid access |
+| The trial notice reappeared on every Billing visit | Continue records acknowledgment per account and workspace in this browser; used-trial and prepaid actions skip the notice | Explain trial billing once without repeatedly blocking checkout |
 
 ## Fulfillment
 
@@ -29,6 +30,7 @@ Active card subscriptions cannot simultaneously start prepaid checkout. Active p
 - PostgreSQL prepaid lifecycle fixtures passed with mocked Bachs; all fixtures rolled back. Coverage includes local-currency payment confirmation, duplicate delivery, extension, refund, late replay, underpayment and organization rejection.
 - Actual-component offline browser fixture: 19 checks passed at 320/375/768/1280px, light/dark, LTR/RTL, 200% CSS zoom and reduced motion. Mobile screenshot inspected. Offline font/image loading does not represent deployed assets.
 - Read-only sandbox account settings confirmed adaptive pricing and card, bank-transfer and crypto methods are enabled. One unpaid sandbox checkout confirmed raw USD pricing and `recurring: null`; no charge was made.
+- Actual-component browser fixtures passed trial-notice padding at 320px, dark-mode fit, Escape/cancel, one checkout after confirmation, once-only acknowledgment and used-trial bypass.
 
 Actual hosted currency selection, completed provider payments, physical Safari/VoiceOver and deployed end-to-end delivery remain unverified. Refund routing depends on provider checkout/payment identifiers being present in the event; the full refund/dispute event contract was not independently verified.
 
@@ -37,5 +39,7 @@ References: [Payment method support](https://docs.bachs.io/guides/payments/payme
 ## Direct checkout and trial eligibility
 
 The temporary Ent checkout-choice dialog has been removed. Eligible users go directly to Bachs card-trial checkout. Users with a used trial go directly to one-time checkout, with Bachs currency and payment-method selection. Bachs does not support combining both checkout modes inside a single hosted session.
+
+Starting the free trial still shows the Ent trial explanation notice. Continuing acknowledges it for the signed-in account and workspace in that browser; used-trial and prepaid actions skip it. The acknowledgment is browser-local and is not entitlement state.
 
 See `docs/trial-abuse/README.md` for server-enforced eligibility and verification.

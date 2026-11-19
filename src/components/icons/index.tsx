@@ -150,3 +150,6 @@ import EyeData from '@hugeicons/core-free-icons/EyeIcon';
 export function EyeIcon(props:IconProps){return <HugeiconsIcon icon={EyeData} size={16} strokeWidth={2.25} aria-hidden="true" {...props}/>;}
 import EyeOffData from '@hugeicons/core-free-icons/EyeOffIcon';
 export function EyeOffIcon(props:IconProps){return <HugeiconsIcon icon={EyeOffData} size={16} strokeWidth={2.25} aria-hidden="true" {...props}/>;}
+
+import TrashData from "@hugeicons/core-free-icons/Delete02Icon";
+export function TrashIcon(props:IconProps){return <HugeiconsIcon icon={TrashData} size={16} strokeWidth={2.25} aria-hidden="true" data-icon-library="hugeicons" {...props}/>;}

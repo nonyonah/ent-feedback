@@ -53,7 +53,6 @@ const serverEnvSchema = z.object({
   ANALYTICS_VISITOR_SALT:z.string().min(16).optional(),
   INTERNAL_HOSTS:z.string().optional(),
   INTERNAL_EMAILS:z.string().optional(),
-  NEXT_PUBLIC_INTERNAL_EMAILS:z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

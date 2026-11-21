@@ -14,8 +14,7 @@ export function AnalyticsProvider(){
  const {user,isLoaded}=useUser();
   const userId=isLoaded?user?.id??null:undefined;
   const userEmail=isLoaded?user?.primaryEmailAddress?.emailAddress?.toLowerCase():undefined;
-  const internalEmails=(process.env.NEXT_PUBLIC_INTERNAL_EMAILS??'').split(',').map(value=>value.trim().toLowerCase()).filter(Boolean);
-  const isInternal=Boolean(userEmail&&internalEmails.includes(userEmail));
+  const isInternal=false;
   const [visible,setVisible]=React.useState(false);
  const [storageError,setStorageError]=React.useState(false);
  const [blocked,setBlocked]=React.useState(false);

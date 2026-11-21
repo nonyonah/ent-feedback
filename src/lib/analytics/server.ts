@@ -28,7 +28,7 @@ export function hashAnalyticsVisitor(visitorId:string,boardId:string){
   const value=hash(visitorId+':'+boardId+':'+salt).slice(0,24);
   return 'v_'+value;
 }
-export function analyticsHostFromHeaders(headers:Headers){
+export function analyticsHostFromHeaders(headers:{get(name:string):string|null}){
   const origin=headers.get('origin');
   if(origin){try{return new URL(origin).hostname.toLowerCase().replace(/^www\./,'');}catch{}}
   const referer=headers.get('referer');

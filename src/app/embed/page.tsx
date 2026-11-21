@@ -1,6 +1,7 @@
 import type {Viewport} from 'next';
 export const viewport:Viewport={width:'device-width',initialScale:1,viewportFit:'cover'};
 import { notFound } from "next/navigation";
+import {headers} from 'next/headers';
 import { EmbeddedBoard } from "@/components/feedback/embedded-board";
 import { PublicWorkspaceBoundary } from "@/components/feedback/public-workspace-boundary";
 import { getPublicWorkspace } from "@/server/public-workspace";
@@ -9,8 +10,7 @@ import {analyticsHostFromHeaders,isInternalAnalyticsHost,markWidgetFirstLoaded,t
 
 export const instant = false;
 
-export default async function Page({ request,searchParams }: {
-  request: Request;
+export default async function Page({ searchParams }: {
   searchParams: Promise<{ project?: string | string[]; board?: string | string[] }>;
 }) {
   const query = await searchParams;
@@ -21,7 +21,7 @@ export default async function Page({ request,searchParams }: {
   if (!workspace) notFound();
   const boardId=workspace.boards.find(board=>board.slug===query.board)?.id??workspace.boards[0]?.id;
   if(boardId){
-   const host=analyticsHostFromHeaders(request.headers),isExternal=!isInternalAnalyticsHost(host);
+   const host=analyticsHostFromHeaders(await headers()),isExternal=!isInternalAnalyticsHost(host);
    after(async()=>{
     trackServerAnalytics('widget_loaded',{origin_domain:host,is_external:isExternal},{boardId,defer:false});
     if(host)await markWidgetFirstLoaded({workspaceId:workspace.project.id,boardId,originDomain:host,isExternal}).catch(()=>{});

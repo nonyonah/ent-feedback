@@ -7,6 +7,7 @@ import {driver,type Driver,type DriveStep} from "driver.js";
 import CancelData from "@hugeicons/core-free-icons/Cancel01Icon";
 import {useSidebar} from "@/components/ui/sidebar";
 import {Button} from "@/components/ui/button";
+import {TourIcon} from "@/components/icons";
 const version='v3';
 const newUserWindowMs=7*24*60*60*1000;
 const tourStartEvent='ent-tour-start';
@@ -17,5 +18,5 @@ export function ProductTour({autoStart=true,showButton=true}:{autoStart?:boolean
  React.useEffect(()=>{if(!autoStart||!tourKey||!pathname.startsWith('/dashboard'))return;let finished=false;try{finished=Boolean(localStorage.getItem(tourKey));}catch{}if(finished)return;const requested=new URL(window.location.href).searchParams.get('tour')==='welcome';const createdAt=user?.createdAt;const isNewUser=typeof createdAt==='number'&&Date.now()-createdAt<newUserWindowMs;if(!requested&&(!isNewUser||(pathname!=='/dashboard'&&!pathname.startsWith('/dashboard/boards'))))return;start();return()=>{if(launchTimer.current)clearTimeout(launchTimer.current);};},[autoStart,tourKey,pathname,user?.createdAt,start]);
  React.useEffect(()=>()=>{if(launchTimer.current)clearTimeout(launchTimer.current);instance.current?.destroy();},[pathname]);
  if(!showButton)return null;
- return <Button type="button" variant="ghost" size="sm" className="w-full justify-start rounded-xl px-2 text-xs text-muted-foreground" onClick={()=>window.dispatchEvent(new Event(tourStartEvent))}>Take a quick tour</Button>;
+  return <Button type="button" variant="ghost" size="sm" className="w-full justify-start gap-2 rounded-xl px-2 text-xs text-muted-foreground [&>svg]:size-[15px]" onClick={()=>window.dispatchEvent(new Event(tourStartEvent))}><TourIcon/>Take a quick tour</Button>;
 }

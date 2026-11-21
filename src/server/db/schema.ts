@@ -119,6 +119,7 @@ export const workspaces = pgTable(
     logoUrl: text("logo_url"),
     theme: workspaceTheme("theme").notNull().default("dynamic"),
     hideAttribution: boolean("hide_attribution").notNull().default(false),
+    widgetFirstLoadedAt: timestamp("widget_first_loaded_at", { withTimezone: true }),
     ...timestamps(),
   },
   (table) => [

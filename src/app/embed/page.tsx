@@ -4,10 +4,13 @@ import { notFound } from "next/navigation";
 import { EmbeddedBoard } from "@/components/feedback/embedded-board";
 import { PublicWorkspaceBoundary } from "@/components/feedback/public-workspace-boundary";
 import { getPublicWorkspace } from "@/server/public-workspace";
+import {after} from 'next/server';
+import {analyticsHostFromHeaders,isInternalAnalyticsHost,markWidgetFirstLoaded,trackServerAnalytics} from '@/lib/analytics/server';
 
 export const instant = false;
 
-export default async function Page({ searchParams }: {
+export default async function Page({ request,searchParams }: {
+  request: Request;
   searchParams: Promise<{ project?: string | string[]; board?: string | string[] }>;
 }) {
   const query = await searchParams;
@@ -16,6 +19,14 @@ export default async function Page({ searchParams }: {
   }
   const workspace = await getPublicWorkspace(query.project);
   if (!workspace) notFound();
+  const boardId=workspace.boards.find(board=>board.slug===query.board)?.id??workspace.boards[0]?.id;
+  if(boardId){
+   const host=analyticsHostFromHeaders(request.headers),isExternal=!isInternalAnalyticsHost(host);
+   after(async()=>{
+    trackServerAnalytics('widget_loaded',{origin_domain:host,is_external:isExternal},{boardId,defer:false});
+    if(host)await markWidgetFirstLoaded({workspaceId:workspace.project.id,boardId,originDomain:host,isExternal}).catch(()=>{});
+   });
+  }
   return <PublicWorkspaceBoundary project={workspace.project} boards={workspace.boards} widget={workspace.widget}>
     <EmbeddedBoard boardSlug={typeof query.board === "string" ? query.board : undefined} />
   </PublicWorkspaceBoundary>;

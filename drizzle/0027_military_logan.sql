@@ -1,0 +1,1 @@
+ALTER TABLE "workspaces" ADD COLUMN "widget_first_loaded_at" timestamp with time zone;

@@ -8,6 +8,7 @@ import { getDb } from "@/server/db/client";
 import { boards, workspaces, feedback, comments, attachments } from "@/server/db/schema";
 import { requireWorkspaceRole } from "@/server/services/access";
 import { runService, ServiceError } from "@/server/result";
+import { trackServerAnalytics } from "@/lib/analytics/server";
 
 const uuid = z.string().uuid();
 const nameSchema = z.string().trim().min(1, "Enter a board name.").max(60);
@@ -29,7 +30,7 @@ export async function createBoardAction(workspaceId: string, input: z.input<type
     const value = markerSchema.parse(input);
     const db = getDb();
     await requireWorkspaceRole(db, { workspaceId: wid, userId: actor.id, minimumRole: "admin" });
-    return db.transaction(async tx => {
+    const created=await db.transaction(async tx => {
       // Serialize board creation and ordering for this workspace, including empty boards.
       const [workspace] = await tx.select({ id: workspaces.id }).from(workspaces)
         .where(eq(workspaces.id, wid)).for("update");
@@ -52,6 +53,8 @@ export async function createBoardAction(workspaceId: string, input: z.input<type
       }).returning(selection);
       return { ...created, emoji: created.emoji ?? undefined };
     });
+    trackServerAnalytics('board_created',{},{boardId:created.id,user:actor});
+    return created;
   });
 }
 

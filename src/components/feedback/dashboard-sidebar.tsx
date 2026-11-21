@@ -1,5 +1,6 @@
 "use client";
 import {RoadmapIcon,DocsIcon} from "@/components/icons";
+import {captureAnalytics} from '@/lib/analytics';
 import {ConversationsNavigation} from '@/components/chat/conversations-inbox';
 import { DropdownChevron } from "@/components/ui/dropdown-chevron";
 
@@ -61,6 +62,6 @@ export function DashboardSidebar({view,filter,onFilterChange,onCopyLink,copied}:
    </nav>
   </SidebarContent>
 
-  <div className="mt-auto p-2"><SidebarTrialReminder/><ProductTour autoStart={false}/><a href="/docs" className="mt-1 flex h-8 w-full items-center gap-2 rounded-xl px-2 text-xs text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground"><DocsIcon className="size-[15px] shrink-0"/><span>Docs</span></a></div>
+  <div className="mt-auto p-2"><SidebarTrialReminder/><ProductTour autoStart={false}/><a href="/docs" onClick={()=>captureAnalytics('docs_link_clicked')} className="mt-1 flex h-8 w-full items-center gap-2 rounded-xl px-2 text-xs text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground"><DocsIcon className="size-[15px] shrink-0"/><span>Docs</span></a></div>
  </Sidebar>;
 }

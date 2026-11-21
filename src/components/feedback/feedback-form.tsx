@@ -16,8 +16,8 @@ import {Select,SelectTrigger,SelectValue,SelectPopup,SelectItem} from "@/compone
 import {useFeedback} from "@/components/feedback/feedback-provider";
 import {useProject} from "@/components/feedback/project-provider";
 import {ComposerTools} from "@/components/feedback/composer-tools";
-export function FeedbackForm({onDone,initialDraft,conversation}:{onDone?:()=>void;initialDraft?:{title:string;description:string};conversation?:{id:string;token?:string;messageId?:string}}){
- const [checkedExisting,setCheckedExisting]=React.useState(Boolean(initialDraft&&conversation));
+export function FeedbackForm({onDone,initialDraft,conversation,skipCheckExisting=false}:{onDone?:()=>void;initialDraft?:{title:string;description:string};conversation?:{id:string;token?:string;messageId?:string};skipCheckExisting?:boolean}){
+ const [checkedExisting,setCheckedExisting]=React.useState(skipCheckExisting||Boolean(initialDraft&&conversation));
  const [createdId,setCreatedId]=React.useState('');
  const [preparing,setPreparing]=React.useState(false);
  const [category,setCategory]=React.useState<FeedbackCategory>(initialDraft?"feature_request":"feedback");

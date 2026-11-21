@@ -6,6 +6,7 @@
 .statusDropdown{min-width:0;max-width:124px}
 .statusTrigger{width:auto;max-width:124px;min-width:0;min-height:44px;padding-inline:8px;gap:4px;font-size:13px}
 .sortTrigger{width:40px;min-width:40px;min-height:44px;padding:0;justify-content:center;gap:0;box-shadow:none}
+.sortTrigger [data-slot="select-icon"] svg{margin-inline-end:0}
 .submit{min-width:0}
 .submit>button{min-height:44px;max-width:128px;padding-inline:10px;font-size:13px;line-height:1.25;white-space:normal;gap:0}
 .submit>button svg{display:none}

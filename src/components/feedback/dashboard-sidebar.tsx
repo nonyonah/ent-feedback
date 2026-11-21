@@ -61,6 +61,6 @@ export function DashboardSidebar({view,filter,onFilterChange,onCopyLink,copied}:
    </nav>
   </SidebarContent>
 
- <div className="mt-auto p-2"><SidebarTrialReminder/><ProductTour/></div>
+ <div className="mt-auto p-2"><SidebarTrialReminder/><ProductTour autoStart={false}/><a href="/docs" className="mt-1 flex h-8 w-full items-center rounded-xl px-2 text-xs text-muted-foreground underline-offset-4 hover:bg-sidebar-accent/60 hover:text-foreground hover:underline">Docs</a></div>
  </Sidebar>;
 }

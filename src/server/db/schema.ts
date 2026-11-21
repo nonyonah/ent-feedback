@@ -503,6 +503,7 @@ export const widgetSettings = pgTable(
     collectName: boolean("collect_name").notNull().default(false),
     greeting: text("greeting").notNull().default(""),
     replyTime: widgetReplyTime("reply_time").notNull().default("automatic"),
+    submitNotice: boolean("submit_notice").notNull().default(true),
     ...timestamps(),
   },
   (table) => [

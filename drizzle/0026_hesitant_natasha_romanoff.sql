@@ -1,0 +1,1 @@
+ALTER TABLE "widget_settings" ADD COLUMN "submit_notice" boolean DEFAULT true NOT NULL;

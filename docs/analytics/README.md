@@ -8,11 +8,11 @@ Add the **project token**, not a personal API key, to `.env.local` and the hosti
 
 ```dotenv
 NEXT_PUBLIC_POSTHOG_KEY=your_project_token
-NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com
 NEXT_PUBLIC_POSTHOG_ENABLE_IN_DEVELOPMENT=false
 ```
 
-Use `https://eu.i.posthog.com` for an EU project. Public variables are bundled at build time: restart development after changes and rebuild deployed assets. Enable the development flag explicitly for local testing; events include `environment=development` or `environment=production`. This flag does not bypass consent. Use separate PostHog projects for isolated test/production data when available, or filter every dashboard by environment.
+Use `https://us.i.posthog.com` for a US project; the host must match the region shown in the PostHog project settings. A US host with an EU project token returns `401` and drops ingestion. Public variables are bundled at build time: restart development after changes and rebuild deployed assets. Enable the development flag explicitly for local testing; events include `environment=development` or `environment=production`. This flag does not bypass consent. Use separate PostHog projects for isolated test/production data when available, or filter every dashboard by environment.
 
 The local configuration has development collection enabled for testing. `.env.local` remains ignored by Git.
 

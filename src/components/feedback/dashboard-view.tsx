@@ -25,6 +25,7 @@ import { useFeedback } from "@/components/feedback/feedback-provider";
 import { useProject } from "@/components/feedback/project-provider";
 import { NoBoard } from "@/components/feedback/board-context";
 import { DashboardSidebar } from "@/components/feedback/dashboard-sidebar";
+import { ProductTour } from "@/components/feedback/product-tour";
 import { DashboardRequestDetail } from "@/components/feedback/dashboard-request-detail";
 import {FeedbackTypeLabel} from "./feedback-type-label";
 import { FEEDBACK_CATEGORIES, STATUS_LABELS, type FeedbackCategory, type FeedbackStatus } from "@/lib/feedback-data";
@@ -62,6 +63,7 @@ export function DashboardView({view="requests",settingsSection="branding",initia
   function resetSelection() { setSelectedId(null); setDetailOpen(false); }
   return <SidebarProvider className="h-dvh min-h-0 overflow-hidden bg-sidebar" style={{"--sidebar-width":"260px","--sidebar":"var(--dashboard-sidebar)"} as React.CSSProperties}>
     <a href="#feedback-inbox" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:p-3 focus:ring-2 focus:ring-ring">Skip to feedback</a>
+    <ProductTour showButton={false}/>
     {view === "settings" ? <SettingsSidebar section={settingsSection}/> : <DashboardSidebar view={view} filter={filter} onFilterChange={value=>{setFilter(value);resetSelection();}} onCopyLink={()=>void copyLink()} copied={copied}/>}
     <SidebarInset data-tour="workspace-content" className="h-dvh min-w-0 overflow-hidden bg-[var(--dashboard-body)]" id="feedback-inbox">
       {!(view==="settings"&&settingsSection==="billing")&&<BillingNotice/>}

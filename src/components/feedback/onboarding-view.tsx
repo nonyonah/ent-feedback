@@ -142,7 +142,7 @@ export function OnboardingView({
             }
 
             captureAnalytics("workspace_created");
-            router.push("/dashboard/boards");
+            router.push("/dashboard/boards?tour=welcome");
           }}
         >
           <Field>

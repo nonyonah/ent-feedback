@@ -97,6 +97,7 @@ export type WidgetSettings = {
   name: boolean;
   greeting: string;
   replyTime: "automatic" | "day" | "days" | "week";
+  submitNotice: boolean;
 };
 export const defaultWidgetSettings: WidgetSettings = {
   enabled: true,
@@ -105,6 +106,7 @@ export const defaultWidgetSettings: WidgetSettings = {
   name: false,
   greeting: "",
   replyTime: "automatic",
+  submitNotice: true,
 };
 export type TeamInvite = {
   id: string;

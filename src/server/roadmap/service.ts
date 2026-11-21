@@ -8,6 +8,8 @@ import {requireAppUser} from '@/server/auth';
 import {requireWorkspaceRole} from '@/server/services/access';
 import {consumeRateLimit} from '@/server/rate-limit';
 import {ServiceError} from '@/server/result';
+import {after} from 'next/server';
+import {trackServerAnalytics} from '@/lib/analytics/server';
 import {publishActivity} from '@/server/activity';
 import {roadmapStatuses,adminRoadmapStatuses,columnKey,fractionalOrder,type RoadmapData,type RoadmapVoter} from '@/lib/roadmap';
 
@@ -32,13 +34,21 @@ export const roadmapPatch=z.object({projectId:z.uuid(),status:z.enum(adminRoadma
 export async function updateRoadmap(id:string,input:unknown){
  const bid=z.uuid().parse(id),value=roadmapPatch.parse(input),wid=value.projectId,user=await requireAppUser(),db=getDb();
  await requireWorkspaceRole(db,{workspaceId:wid,userId:user.id,minimumRole:'owner'});
- await consumeRateLimit('roadmap:write:'+user.id,120,60);
- return db.transaction(async tx=>{
+  await consumeRateLimit('roadmap:write:'+user.id,120,60);
+  let statusFrom:'open'|'planned'|'in-progress'|'shipped'|undefined;
+  let statusTo:'open'|'planned'|'in-progress'|'shipped'|undefined;
+  let boardId:string|undefined;
+  let editAction:'reorder'|'hide'|'note'|undefined;
+  const updated=await db.transaction(async tx=>{
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${wid+':roadmap'},0))`);
   const [post]=await tx.select().from(feedback).where(and(eq(feedback.id,bid),eq(feedback.workspaceId,wid),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId))).for('update');
   if(!post)throw new ServiceError('not_found','This item is no longer available.');
-  const status=value.status??post.status;
-  let order=value.roadmap_order;
+   const status=value.status??post.status;
+   boardId=post.boardId;
+   if(value.roadmap_order!==undefined||'before_id' in value||'after_id' in value)editAction='reorder';
+   if(value.roadmap_visible===false)editAction='hide';
+   if(value.public_note!==undefined)editAction='note';
+   let order=value.roadmap_order;
   if('before_id' in value||'after_id' in value){
    const ids=[value.before_id,value.after_id].filter((id):id is string=>Boolean(id));if(ids.includes(bid)||new Set(ids).size!==ids.length)throw new ServiceError('validation','Invalid roadmap position.');
    const neighbors=ids.length?await tx.select({id:feedback.id,order:feedback.roadmapOrder}).from(feedback).where(and(eq(feedback.workspaceId,wid),eq(feedback.status,status),inArray(feedback.id,ids),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId))):[];
@@ -55,11 +65,17 @@ export async function updateRoadmap(id:string,input:unknown){
   if(value.notify_voters&&(status!=='shipped'||!(value.roadmap_visible??post.roadmapVisible)))throw new ServiceError('validation','Only visible shipped items can notify voters.');
   await tx.update(feedback).set({...(value.status?{status:value.status}:{}),...(order!==undefined?{roadmapOrder:order}:{}),...(value.roadmap_visible!==undefined?{roadmapVisible:value.roadmap_visible}:{}),...(value.public_note!==undefined?{publicNote:value.public_note||null}:{}),updatedAt:new Date()}).where(eq(feedback.id,bid));
   if(order!==undefined)await tx.update(feedback).set({roadmapOrder:order}).where(eq(feedback.id,bid));
-  if(post.status!==status){await tx.insert(statusHistory).values({workspaceId:wid,feedbackId:bid,actorUserId:user.id,previousStatus:post.status,newStatus:status});await publishActivity(tx,{type:'status_changed',workspaceId:wid,feedbackId:bid,actorId:user.id,eventId:randomUUID(),skipEmail:true});}
+   if(post.status!==status){statusFrom=post.status;statusTo=status;await tx.insert(statusHistory).values({workspaceId:wid,feedbackId:bid,actorUserId:user.id,previousStatus:post.status,newStatus:status});await publishActivity(tx,{type:'status_changed',workspaceId:wid,feedbackId:bid,actorId:user.id,eventId:randomUUID(),skipEmail:true});}
   if(value.notify_voters&&!post.shippedNotifiedAt){
    const now=new Date();await tx.update(feedback).set({shippedNotifiedAt:now}).where(eq(feedback.id,bid));
    await tx.insert(jobs).values({type:'roadmap_fanout',dedupeKey:'roadmap:fanout:'+bid,payload:{workspaceId:wid,feedbackId:bid,cutoff:now.toISOString(),cursor:null}}).onConflictDoNothing();
   }
-  const [updated]=await tx.select({...fields,roadmap_visible:feedback.roadmapVisible,shipped_notified_at:sql<string|null>`${feedback.shippedNotifiedAt}::text`}).from(feedback).where(eq(feedback.id,bid));return updated;
- });
+   const [updated]=await tx.select({...fields,roadmap_visible:feedback.roadmapVisible,shipped_notified_at:sql<string|null>`${feedback.shippedNotifiedAt}::text`}).from(feedback).where(eq(feedback.id,bid));return updated;
+  });
+  after(async()=>{
+   const context={boardId,user:{id:user.id}};
+   if(statusFrom&&statusTo){trackServerAnalytics('status_changed',{from:statusFrom,to:statusTo},context);if(statusTo==='shipped')trackServerAnalytics('item_shipped',{},context);}
+   if(editAction)trackServerAnalytics('roadmap_edited',{action:editAction},context);
+  });
+  return updated;
 }

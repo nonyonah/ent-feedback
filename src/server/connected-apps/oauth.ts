@@ -14,6 +14,7 @@ import {seal,unseal,verifyOAuthState} from '@/server/integration-crypto';
 import {ServiceError} from '@/server/result';
 import {appConfig,appFetch,appEnabled} from './config';
 import {linearCredentials,linearToken,linearGraph} from './linear';
+import {resolveAnalyticsBoard,trackServerAnalytics} from '@/lib/analytics/server';
 export const discordCredentials=z.object({accessToken:z.string(),refreshToken:z.string(),webhookId:z.string().regex(/^\d+$/),webhookToken:z.string().min(1),channelId:z.string().regex(/^\d+$/)});
 const stateSchema=z.object({nonce:z.string(),userId:z.uuid(),workspaceId:z.uuid(),provider:connectedProviderSchema,expires:z.number(),verifier:z.string(),identity:z.boolean()});
 export async function startAppOAuth(provider:ConnectedProvider,workspaceId:string,identity=false){
@@ -48,8 +49,8 @@ export async function appOAuthCallback(provider:ConnectedProvider,request:Reques
  const [existing]=await tx.select().from(connectedApps).where(and(eq(connectedApps.workspaceId,s.workspaceId),eq(connectedApps.provider,provider))).for('update');
  if(existing&&existing.externalId!==externalId)await tx.delete(connectedApps).where(eq(connectedApps.id,existing.id));
  await tx.insert(connectedApps).values({workspaceId:s.workspaceId,provider,externalId,label,encryptedCredentials:seal(credentials,c.key,s.workspaceId+':'+provider),createdByUserId:user.id}).onConflictDoUpdate({target:[connectedApps.workspaceId,connectedApps.provider],set:{externalId,label,encryptedCredentials:seal(credentials,c.key,s.workspaceId+':'+provider),connected:true,updatedAt:new Date()}});
- });destination.searchParams.set('result','connected');
- }catch{/* Never put OAuth codes, tokens or provider error bodies in redirects/logs. */}
+  });const boardId=await resolveAnalyticsBoard(s.workspaceId);trackServerAnalytics('integration_enabled',{type:provider},{boardId,user:{id:user.id}});destination.searchParams.set('result','connected');
+  }catch{/* Never put OAuth codes, tokens or provider error bodies in redirects/logs. */}
  return NextResponse.redirect(destination);
 }
 export async function disconnectApp(provider:ConnectedProvider,workspaceId:string){

@@ -1,6 +1,5 @@
 "use client";
 import {mergeFeedbackItem} from '@/lib/merge-feedback';
-import {captureAnalytics} from "@/lib/analytics";
 
 import * as React from 'react';
 import {usePathname} from 'next/navigation';
@@ -15,7 +14,7 @@ import {toastManager} from '@/components/ui/toast';
 import type {FeedbackItemData,FeedbackStatus,FeedbackCategory} from '@/lib/feedback-data';
 
 type MutationData=Extract<Awaited<ReturnType<typeof mutateFeedbackAction>>,{ok:true}>['data'];
-type NewFeedbackInput={conversation?:{id:string;token?:string;messageId?:string};category?:FeedbackCategory;title:string;description:string;images?:string[];email?:string;name?:string;channel?:'board'|'widget'};
+type NewFeedbackInput={conversation?:{id:string;token?:string;messageId?:string};category?:FeedbackCategory;title:string;description:string;images?:string[];email?:string;name?:string;channel?:'board'|'widget';source?:'widget'|'board'|'roadmap'};
 type FeedbackContextValue={
  trendingIds:ReadonlySet<string>;items:FeedbackItemData[];loading:boolean;error:string;pending:boolean;retry:()=>void;
  loadMoreActivity:(id:string)=>Promise<void>;
@@ -33,7 +32,7 @@ const FeedbackContext=React.createContext<FeedbackContextValue|null>(null);
 const isId=(value:string)=>/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(value);
 export function FeedbackProvider({children}:{children:React.ReactNode}){
  const {project,boards,activeBoard,workspaceReady,publicUser}=useProject();const {user,isLoaded}=useUser();
- const pathname=usePathname();const workspaceInbox=pathname.startsWith('/dashboard');
+  const pathname=usePathname();const workspaceInbox=pathname.startsWith('/dashboard');const interactionSource=pathname.includes('/roadmap')?'roadmap':pathname.startsWith('/embed')?'widget':'board';
  const wid=project.id,bid=activeBoard?.id??'';const key=wid+':'+(workspaceInbox?'inbox':bid)+':'+(user?.id??'guest');
  const valid=pathname!=="/"&&pathname!=="/landing-v2"&&workspaceReady&&(!workspaceInbox||isLoaded)&&isId(wid)&&isId(bid);
  const [snapshot,setSnapshot]=React.useState<{key:string;items:FeedbackItemData[]}>({key:'',items:[]});
@@ -108,12 +107,8 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
    if(command.type==='create'||command.type==='comment'){const images=await uploader.current!.upload(command.images,{workspaceId:wid,boardId:targetBoard,actorKey:key+":"+command.requestId,guestToken:token.current});if(scope.current!==key)throw Error('The board changed. Return to your draft to submit it.');command={...command,images};}
    const result=await new Promise<Awaited<ReturnType<typeof mutateFeedbackAction>>>((resolve,reject)=>React.startTransition(async()=>{try{resolve(await mutateFeedbackAction(wid,targetBoard,command,token.current,workspaceInbox));}catch(error){reject(error);}}));
    if(!result.ok)throw Error(Object.values(result.error.fieldErrors??{})[0]?.[0]??result.error.message);
-   retries.current.delete(fingerprint);
-   const surface=workspaceInbox?'dashboard':'public_board';
-   if(command.type==='create')captureAnalytics('feedback_submitted',{surface,feedback_type:command.category??'feedback',has_attachment:Boolean(command.images?.length)});
-   if(command.type==='comment')captureAnalytics('comment_submitted',{surface,is_reply:Boolean(command.parentCommentId),has_attachment:Boolean(command.images?.length)});
-   if(command.type==='vote')captureAnalytics('vote_changed',{surface,active:command.active});
-   if(command.type==='create'||command.type==='comment')uploader.current!.clear({workspaceId:wid,boardId:targetBoard,actorKey:key+':'+command.requestId});
+    retries.current.delete(fingerprint);
+    if(command.type==='create'||command.type==='comment')uploader.current!.clear({workspaceId:wid,boardId:targetBoard,actorKey:key+':'+command.requestId});
    const reaction=command.type==='reaction'?command:undefined;
    if(scope.current===key)setSnapshot(previous=>({key,items:[...previous.items.filter(item=>item.id!==result.data.deletedId&&!result.data.items.some(next=>next.id===item.id)),...result.data.items.map(next=>{const old=previous.items.find(item=>item.id===next.id);const merged=mergeFeedbackItem(old,next);if(reaction&&!next.comments.some(c=>c.id===reaction.commentId))merged.comments=merged.comments.map(comment=>comment.id===reaction.commentId?{...comment,liked:reaction.active,likes:Math.max(0,(comment.likes??0)+(comment.liked===reaction.active?0:reaction.active?1:-1))}:comment);return merged;})]}));
    try{localStorage.setItem('ent-feedback-updated:'+wid,crypto.randomUUID());}catch{}
@@ -123,14 +118,14 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
  }
  function report(operation:Promise<unknown>,title='Change wasn’t saved'){void operation.catch(error=>toastManager.add({title,description:error instanceof Error?error.message:'Try again.',type:'error'}));}
  async function addFeedback(input:NewFeedbackInput){
-  const result=await mutate({type:'create',conversation:input.conversation,category:input.category,channel:input.channel,title:input.title,description:input.description,name:input.name,email:input.email,anonymous:!publicUser,images:input.images});
+  const result=await mutate({type:'create',conversation:input.conversation,category:input.category,channel:input.channel,source:input.source??(input.channel==='widget'?'widget':'board'),title:input.title,description:input.description,name:input.name,email:input.email,anonymous:!publicUser,images:input.images});
   const created=result.items.find(item=>item.id===result.createdId);if(!created)throw Error('Feedback was saved. Refresh the board to view it.');return created;
  }
  async function loadMoreActivity(id:string){const item=items.find(item=>item.id===id);if(!item)return;const result=await loadFeedbackActivityAction(wid,item.boardId??bid,id,token.current,item.nextCommentCursor??undefined,item.nextHistoryCursor??undefined);if(!result.ok)throw Error(result.error.message);if(scope.current!==key)return;const next=result.data.items[0];if(next)setSnapshot(previous=>({...previous,items:previous.items.map(current=>current.id!==id?current:{...current,comments:item.nextCommentCursor?[...new Map([...current.comments,...next.comments].map(c=>[c.id,c])).values()]:current.comments,statusHistory:item.nextHistoryCursor?[...new Map([...(current.statusHistory??[]),...(next.statusHistory??[])].map(e=>[e.id,e])).values()]:current.statusHistory,nextCommentCursor:item.nextCommentCursor?next.nextCommentCursor:current.nextCommentCursor,nextHistoryCursor:item.nextHistoryCursor?next.nextHistoryCursor:current.nextHistoryCursor})}));}
  const value:FeedbackContextValue={loadMoreActivity,trendingIds:getTrendingIds(items),items,loading,error,pending,retry,
-  vote:id=>{const item=items.find(item=>item.id===id);if(item)report(mutate({type:'vote',id,active:!item.voted}),'Vote wasn’t saved');},
+   vote:id=>{const item=items.find(item=>item.id===id);if(item)report(mutate({type:'vote',id,active:!item.voted,source:interactionSource}),'Vote wasn’t saved');},
   toggleFollow:async id=>{const item=items.find(item=>item.id===id);if(item)await mutate({type:'follow',id,active:!item.following});},
-  addFeedback,addComment:async(id,body,images,parentCommentId)=>{await mutate({type:'comment',id,body,images,parentCommentId});},
+   addFeedback,addComment:async(id,body,images,parentCommentId)=>{await mutate({type:'comment',id,body,images,parentCommentId,source:interactionSource});},
   toggleCommentLike:(id,commentId)=>{const comment=items.find(item=>item.id===id)?.comments.find(comment=>comment.id===commentId);if(comment)report(mutate({type:'reaction',id,commentId,active:!comment.liked}),'Reaction wasn’t saved');},
   updateStatus:(id,status)=>report(mutate({type:'status',id,status}),'Status wasn’t updated'),
   updateCategory:async(id,category)=>{await mutate({type:'category',id,category});},

@@ -4,6 +4,32 @@
   if (!script || document.getElementById("ent-feedback-widget")) return;
   const origin = new URL(script.src).origin;
   const project = script.dataset.project || "ent";
+  const surface = script.dataset.surface === "board" ? "board" : "widget";
+  const visitorKey = "ent-analytics-visitor:" + project;
+  function randomVisitorId() {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID().replace(/-/g, "");
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+  }
+  let visitorId = "";
+  try {
+    visitorId = localStorage.getItem(visitorKey) || "";
+    if (!/^[A-Za-z0-9_-]{16,64}$/.test(visitorId)) {
+      visitorId = randomVisitorId();
+      localStorage.setItem(visitorKey, visitorId);
+    }
+  } catch {
+    visitorId = randomVisitorId();
+  }
+  function publicEvent(type) {
+    const payload = JSON.stringify({projectKey: project, visitorId: visitorId, type: type, surface: surface});
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(origin + "/api/public/events", new Blob([payload], {type: "application/json"}));
+    } else {
+      void fetch(origin + "/api/public/events", {method: "POST", body: payload, headers: {"Content-Type": "application/json"}, keepalive: true, credentials: "omit"}).catch(() => {});
+    }
+  }
   const root = document.createElement("div");
   root.id = "ent-feedback-widget";
   const button = document.createElement("button");
@@ -100,11 +126,11 @@
       activeAnimation = null;
     };
   }
-  button.addEventListener("click", event => setOpen(!open, event.detail === 0));
+  button.addEventListener("click", event => {setOpen(!open, event.detail === 0);if(!open)publicEvent("widget_opened");});
   button.addEventListener("keydown", event => { if (event.key === "Escape") setOpen(false, true); });
   window.addEventListener("message", event => {
     if (event.source !== frame.contentWindow || event.origin !== origin || !event.data) return;
-    if (event.data.type === "ent:ready") frame.contentWindow.postMessage({type:"ent:visibility",open:open},new URL(frame.src).origin);
+    if (event.data.type === "ent:ready") frame.contentWindow.postMessage({type:"ent:visibility",open:open,visitorId:visitorId},new URL(frame.src).origin);
     if (event.data.type === "ent:close") setOpen(false, event.data.inputModality === "keyboard");
     if (event.data.type === "ent:appearance" && /^#[0-9a-f]{6}$/i.test(event.data.accent)) {
       followSystem();

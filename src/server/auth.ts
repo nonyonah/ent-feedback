@@ -8,12 +8,21 @@ import { getDb } from "@/server/db/client";
 import { isUniqueViolation } from "@/server/db/errors";
 import { users, lifecycleEmailState } from "@/server/db/schema";
 import { ServiceError } from "@/server/result";
+import { getServerEnv } from "@/server/env";
+import { identifyAnalyticsUser, trackServerAnalytics } from "@/lib/analytics/server";
 
 export type AppUser = typeof users.$inferSelect;
 
 function normalizeEmail(value: string | null | undefined): string | null {
   const email = value?.trim().toLowerCase();
   return email ? email : null;
+}
+
+function recordSignup(user:AppUser,method:'google'|'email'){
+  const internal=(getServerEnv().INTERNAL_EMAILS??'').split(',').map(value=>value.trim().toLowerCase()).filter(Boolean);
+  const isInternal=Boolean(user.email&&internal.includes(user.email.toLowerCase()));
+  identifyAnalyticsUser({id:user.id,email:user.email,isInternal});
+  trackServerAnalytics('signed_up',{method},{user:{id:user.id,email:user.email,isInternal}});
 }
 
 async function upsertAppUser(clerkUserId: string): Promise<AppUser> {
@@ -31,6 +40,7 @@ async function upsertAppUser(clerkUserId: string): Promise<AppUser> {
       : null;
   const name = clerkUser.fullName ?? clerkUser.firstName ?? clerkUser.username ?? null;
   const avatarUrl = clerkUser.hasImage ? clerkUser.imageUrl : null;
+  const signupMethod:'google'|'email'=clerkUser.externalAccounts.some(account=>account.provider==='google')?'google':'email';
 
   // One round trip resolves this account and the current owner of the email.
   const matches = await db
@@ -74,6 +84,7 @@ async function upsertAppUser(clerkUserId: string): Promise<AppUser> {
       .insert(users)
       .values({ clerkUserId, email: safeEmail, name, avatarUrl })
       .returning();
+    if(created)recordSignup(created,signupMethod);
 
     return created;
   } catch (error) {
@@ -102,6 +113,7 @@ async function upsertAppUser(clerkUserId: string): Promise<AppUser> {
         .limit(1);
 
       if (withoutEmail) {
+        recordSignup(withoutEmail,signupMethod);
         return withoutEmail;
       }
     }

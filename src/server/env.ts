@@ -44,6 +44,16 @@ const serverEnvSchema = z.object({
   BACHS_ORGANIZATION_ID:z.string().optional(),
   BACHS_MONTHLY_PRODUCT_ID:z.string().optional(),
   BACHS_YEARLY_PRODUCT_ID:z.string().optional(),
+  ANALYTICS_ENABLED:z.enum(["true","false"]).default("false"),
+  NEXT_PUBLIC_ANALYTICS_ENABLED:z.enum(["true","false"]).default("false"),
+  NEXT_PUBLIC_POSTHOG_KEY:z.string().optional(),
+  NEXT_PUBLIC_POSTHOG_HOST:z.url().optional(),
+  POSTHOG_SERVER_KEY:z.string().optional(),
+  POSTHOG_SERVER_HOST:z.url().optional(),
+  ANALYTICS_VISITOR_SALT:z.string().min(16).optional(),
+  INTERNAL_HOSTS:z.string().optional(),
+  INTERNAL_EMAILS:z.string().optional(),
+  NEXT_PUBLIC_INTERNAL_EMAILS:z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

@@ -23,13 +23,14 @@ import {linkAttachments} from '@/server/attachment-links';
 import {publishActivity} from '@/server/activity';
 import {consumeRateLimit} from '@/server/rate-limit';
 import {runService,ServiceError} from '@/server/result';
+import { trackServerAnalytics } from '@/lib/analytics/server';
 
 const uuid=z.string().uuid();
 const images=z.array(uuid).max(3,'Attach up to 3 images.').optional();
 const command=z.discriminatedUnion('type',[
- z.object({type:z.literal('create'),conversation:z.object({id:z.uuid(),messageId:z.uuid().optional(),token:z.string().regex(/^[a-f0-9]{64}$/).optional()}).optional(),requestId:uuid.optional(),category:z.enum(['feedback','bug','feature_request']).default('feedback'),title:z.string().trim().min(4).max(160),description:z.string().trim().min(1).max(3000),anonymous:z.boolean().optional(),channel:z.enum(['board','widget']).optional(),name:z.string().trim().max(80).optional(),email:z.string().trim().toLowerCase().max(254).refine(value=>!value||z.email().safeParse(value).success,'Enter a valid email address.').optional(),images}),
- z.object({type:z.literal('comment'),requestId:uuid.optional(),id:uuid,body:z.string().trim().max(3000),parentCommentId:uuid.optional(),images}),
- z.object({type:z.literal('vote'),id:uuid,active:z.boolean()}),
+ z.object({type:z.literal('create'),conversation:z.object({id:z.uuid(),messageId:z.uuid().optional(),token:z.string().regex(/^[a-f0-9]{64}$/).optional()}).optional(),requestId:uuid.optional(),category:z.enum(['feedback','bug','feature_request']).default('feedback'),title:z.string().trim().min(4).max(160),description:z.string().trim().min(1).max(3000),anonymous:z.boolean().optional(),channel:z.enum(['board','widget']).optional(),source:z.enum(['widget','board','roadmap']).optional(),name:z.string().trim().max(80).optional(),email:z.string().trim().toLowerCase().max(254).refine(value=>!value||z.email().safeParse(value).success,'Enter a valid email address.').optional(),images}),
+ z.object({type:z.literal('comment'),requestId:uuid.optional(),id:uuid,body:z.string().trim().max(3000),parentCommentId:uuid.optional(),source:z.enum(['widget','board','roadmap']).optional(),images}),
+ z.object({type:z.literal('vote'),id:uuid,active:z.boolean(),source:z.enum(['widget','board','roadmap']).optional()}),
  z.object({type:z.literal('reaction'),id:uuid,commentId:uuid,active:z.boolean()}),
  z.object({type:z.literal('status'),id:uuid,status:z.enum(['open','planned','in-progress','shipped'])}),
  z.object({type:z.literal('category'),id:uuid,category:z.enum(['feedback','bug','feature_request'])}),
@@ -98,8 +99,14 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
  if(value.type==='follow'&&!who.user)throw new ServiceError('unauthenticated','Sign in to follow posts across your devices.');
  if(value.type==='comment'&&!value.body&&!value.images?.length)throw new ServiceError('validation','Write a comment or attach an image.');
  await consumeRateLimit('feedback:'+wid+':'+(who.user?.id??who.guestId),60,60);
- let createdId:string|undefined;
- await getDb().transaction(async tx=>{
+  let createdId:string|undefined;
+  let statusFrom:'open'|'planned'|'in-progress'|'shipped'|undefined;
+  let statusTo:'open'|'planned'|'in-progress'|'shipped'|undefined;
+  let commented=false;
+  let commentSource:'widget'|'board'|'roadmap'=value.type==='comment'?value.source??'board':'board';
+  let voted=false;
+  let voteSource:'widget'|'board'|'roadmap'=value.type==='vote'?value.source??'board':'board';
+  await getDb().transaction(async tx=>{
   if(value.type==='status')await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${wid+':roadmap'},0))`);
   if(value.type==='create'){
    if(value.conversation){await requireChat(wid,tx);if(value.conversation.token)await authenticateConversation(tx,wid,value.conversation.id,value.conversation.token,true);else{if(!who.user)throw new ServiceError('unauthenticated','Reconnect to chat.');await requireWorkspaceRole(tx,{workspaceId:wid,userId:who.user.id,minimumRole:'member'});const [conv]=await tx.select().from(conversations).where(and(eq(conversations.workspaceId,wid),eq(conversations.id,value.conversation.id))).for('update');if(!conv)throw new ServiceError('not_found','Conversation not found.');}}
@@ -121,7 +128,7 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
    await publishActivity(tx,{type:'new_feedback',workspaceId:wid,feedbackId:created.id,actorId:who.user?.id,eventId:created.id});
    if(who.user)await tx.insert(follows).values({workspaceId:wid,feedbackId:created.id,userId:who.user.id}).onConflictDoNothing();
    if(value.conversation){await completeSuggestion(tx,wid,value.conversation.id,created.id,value.conversation.messageId);await tx.insert(conversationFeedback).values({workspaceId:wid,conversationId:value.conversation.id,feedbackId:created.id}).onConflictDoNothing();}
-   createdId=created.id;await linkAttachments(tx,wid,who,value.images,{feedbackId:created.id},newRecord);await tx.insert(votes).values({workspaceId:wid,feedbackId:created.id,userId:who.user?.id??null,guestActorId:who.guestId}).onConflictDoNothing();return;
+    createdId=created.id;await linkAttachments(tx,wid,who,value.images,{feedbackId:created.id},newRecord);await tx.insert(votes).values({workspaceId:wid,feedbackId:created.id,userId:who.user?.id??null,guestActorId:who.guestId}).onConflictDoNothing();commentSource=value.source??(value.channel==='widget'?'widget':'board');return;
   }
   // Lock the post so deletes/status changes and concurrent activity cannot interleave.
   const [post]=await tx.select().from(feedback).where(and(eq(feedback.id,value.id),eq(feedback.workspaceId,wid),eq(feedback.boardId,bid),isNull(feedback.deletedAt))).for('update');
@@ -138,21 +145,21 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
    const inserted=await tx.insert(comments).values({id:recordId,workspaceId:wid,feedbackId:post.id,authorUserId:who.user?.id??null,guestName:who.user?null:'Anonymous',parentCommentId:value.parentCommentId??null,body:value.body||'Image attachment'}).onConflictDoNothing().returning({id:comments.id});
    if(!inserted.length&&recordId){const [previous]=await tx.select().from(comments).where(and(eq(comments.id,recordId),eq(comments.feedbackId,post.id),eq(comments.workspaceId,wid),isNull(comments.deletedAt))).limit(1);if(!previous||previous.body!==(value.body||'Image attachment')||previous.parentCommentId!==(value.parentCommentId??null))throw new ServiceError('conflict','This comment changed. Edit the draft and try again.');}
    const commentId=inserted[0]?.id??recordId;if(commentId)await linkAttachments(tx,wid,who,value.images,{commentId},inserted.length>0);
-   if(inserted.length&&commentId)await publishActivity(tx,{type:'feedback_comment',workspaceId:wid,feedbackId:post.id,actorId:who.user?.id,eventId:commentId,commentId,parentCommentId:value.parentCommentId});
+    if(inserted.length&&commentId){commented=true;commentSource=value.source??'board';await publishActivity(tx,{type:'feedback_comment',workspaceId:wid,feedbackId:post.id,actorId:who.user?.id,eventId:commentId,commentId,parentCommentId:value.parentCommentId});}
   }
   if(value.type==='follow'&&who.user){
    if(value.active)await tx.insert(follows).values({workspaceId:wid,feedbackId:post.id,userId:who.user.id}).onConflictDoNothing();else await tx.delete(follows).where(and(eq(follows.feedbackId,post.id),eq(follows.userId,who.user.id)));
   }
   if(value.type==='vote'){
    const match=and(eq(votes.feedbackId,post.id),who.user?eq(votes.userId,who.user.id):eq(votes.guestActorId,who.guestId!));
-   if(value.active){const inserted=await tx.insert(votes).values({workspaceId:wid,feedbackId:post.id,userId:who.user?.id??null,guestActorId:who.guestId}).onConflictDoNothing().returning({id:votes.id});if(inserted.length)await publishActivity(tx,{type:'feedback_reaction',workspaceId:wid,feedbackId:post.id,actorId:who.user?.id,eventId:inserted[0].id});}else await tx.delete(votes).where(match);
+    if(value.active){const inserted=await tx.insert(votes).values({workspaceId:wid,feedbackId:post.id,userId:who.user?.id??null,guestActorId:who.guestId}).onConflictDoNothing().returning({id:votes.id});if(inserted.length){voted=true;voteSource=value.source??'board';await publishActivity(tx,{type:'feedback_reaction',workspaceId:wid,feedbackId:post.id,actorId:who.user?.id,eventId:inserted[0].id});}}else await tx.delete(votes).where(match);
   }
   if(value.type==='reaction'){
    const [comment]=await tx.select({id:comments.id}).from(comments).where(and(eq(comments.id,value.commentId),eq(comments.feedbackId,post.id),eq(comments.workspaceId,wid),isNull(comments.deletedAt))).limit(1);
    if(!comment)throw new ServiceError('not_found','This comment is no longer available. Refresh the board.');
    if(value.active){const inserted=await tx.insert(reactions).values({workspaceId:wid,commentId:comment.id,userId:who.user?.id??null,guestActorId:who.guestId}).onConflictDoNothing().returning({id:reactions.id});if(inserted.length)await publishActivity(tx,{type:'comment_reaction',workspaceId:wid,feedbackId:post.id,actorId:who.user?.id,eventId:inserted[0].id,commentId:comment.id});}else await tx.delete(reactions).where(and(eq(reactions.commentId,comment.id),who.user?eq(reactions.userId,who.user.id):eq(reactions.guestActorId,who.guestId!)));
   }
-  if(value.type==='status'&&post.status!==value.status){await tx.update(feedback).set({status:value.status,updatedAt:new Date()}).where(eq(feedback.id,post.id));await tx.insert(statusHistory).values({workspaceId:wid,feedbackId:post.id,actorUserId:who.user!.id,previousStatus:post.status,newStatus:value.status});await publishActivity(tx,{type:'status_changed',workspaceId:wid,feedbackId:post.id,actorId:who.user?.id,eventId:randomUUID()});}
+   if(value.type==='status'&&post.status!==value.status){statusFrom=post.status;statusTo=value.status;await tx.update(feedback).set({status:value.status,updatedAt:new Date()}).where(eq(feedback.id,post.id));await tx.insert(statusHistory).values({workspaceId:wid,feedbackId:post.id,actorUserId:who.user!.id,previousStatus:post.status,newStatus:value.status});await publishActivity(tx,{type:'status_changed',workspaceId:wid,feedbackId:post.id,actorId:who.user?.id,eventId:randomUUID()});}
   if(value.type==='classification'){
    const found=value.tagIds.length?await tx.select({id:tags.id}).from(tags).where(and(eq(tags.workspaceId,wid),inArray(tags.id,value.tagIds))):[];
    if(found.length!==value.tagIds.length)throw new ServiceError('validation','Choose tags from this workspace.');
@@ -164,7 +171,18 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
   if(value.type==='delete')await tx.update(feedback).set({deletedAt:new Date(),updatedAt:new Date()}).where(eq(feedback.id,post.id));
  });
  const feedbackId=createdId??('id' in value?value.id:undefined);
- if(feedbackId)after(async()=>{if(value.type==='create'&&!who.user&&value.email)await requestGuestVerification({kind:'feedback',workspaceId:wid,subjectId:feedbackId,email:value.email},who.guestId!).catch(()=>{});if(value.type==='create'&&value.conversation)await processChatJobs(2,{workspaceId:wid,conversationId:value.conversation.id});await Promise.allSettled([processNotificationJobs(3,{workspaceId:wid,feedbackId}),processChatJobs(2,{workspaceId:wid,feedbackId})]);});
+  if(feedbackId){
+   const context={boardId:bid,user:who.user?{id:who.user.id}:undefined,visitorId:who.guestId??undefined};
+   after(async()=>{
+    if(value.type==='create'&&!who.user&&value.email)await requestGuestVerification({kind:'feedback',workspaceId:wid,subjectId:feedbackId,email:value.email},who.guestId!).catch(()=>{});
+    if(value.type==='create'&&value.conversation)await processChatJobs(2,{workspaceId:wid,conversationId:value.conversation.id});
+    await Promise.allSettled([processNotificationJobs(3,{workspaceId:wid,feedbackId}),processChatJobs(2,{workspaceId:wid,feedbackId})]);
+    if(value.type==='create')trackServerAnalytics('feedback_submitted',{source:value.source??(value.channel==='widget'?'widget':'board'),feedback_type:value.category,has_screenshot:Boolean(value.images?.length)},context);
+    if(commented)trackServerAnalytics('comment_added',{source:commentSource,is_reply:Boolean(value.type==='comment'&&value.parentCommentId),has_screenshot:Boolean(value.type==='comment'&&value.images?.length)},context);
+    if(voted)trackServerAnalytics('vote_cast',{source:voteSource,active:true},context);
+    if(statusFrom&&statusTo){trackServerAnalytics('status_changed',{from:statusFrom,to:statusTo},context);if(statusTo==='shipped')trackServerAnalytics('item_shipped',{},context);}
+   });
+  }
  const changed=feedbackId&&value.type!=='delete'?(await readBoard(wid,bid,who,false,{id:feedbackId})).items:[];
  return {items:changed,createdId,deletedId:value.type==='delete'?value.id:undefined};
 });}

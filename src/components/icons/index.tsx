@@ -12,6 +12,8 @@ export function ArrowUpIcon(props:IconProps){return <HugeiconsIcon icon={ArrowUp
 import ArrowUpRightData from "@hugeicons/core-free-icons/ArrowUpRight01Icon";
 export function ArrowUpRightIcon(props:IconProps){return <HugeiconsIcon icon={ArrowUpRightData} size={16} strokeWidth={2.25} aria-hidden="true" data-icon-library="hugeicons" {...props}/>;}
 export function BellIcon(props:IconProps){return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}><path d="M15.5 18C15.5 19.933 13.933 21.5 12 21.5C10.067 21.5 8.5 19.933 8.5 18"/><path d="M19.2311 18H4.76887C3.79195 18 3 17.208 3 16.2311C3 15.762 3.18636 15.3121 3.51809 14.9803L4.12132 14.3771C4.68393 13.8145 5 13.0514 5 12.2558V9.5C5 5.63401 8.13401 2.5 12 2.5C15.866 2.5 19 5.634 19 9.5V12.2558C19 13.0514 19.3161 13.8145 19.8787 14.3771L20.4819 14.9803C20.8136 15.3121 21 15.762 21 16.2311C21 17.208 20.208 18 19.2311 18Z"/></svg>;}
+import BookOpenData from "@hugeicons/core-free-icons/BookOpen01Icon";
+export function DocsIcon(props:IconProps){return <HugeiconsIcon icon={BookOpenData} size={16} strokeWidth={2.25} aria-hidden="true" data-icon-library="hugeicons" {...props}/>;}
 import CameraData from "@hugeicons/core-free-icons/Camera01Icon";
 export function CameraIcon(props:IconProps){return <HugeiconsIcon icon={CameraData} size={16} strokeWidth={2.25} aria-hidden="true" data-icon-library="hugeicons" {...props}/>;}
 import CaretDoubleDownData from "@hugeicons/core-free-icons/ArrowDownDoubleIcon";
@@ -108,6 +110,8 @@ import SquaresFourData from "@hugeicons/core-free-icons/GridViewIcon";
 export function SquaresFourIcon(props:IconProps){return <HugeiconsIcon icon={SquaresFourData} size={16} strokeWidth={2.25} aria-hidden="true" data-icon-library="hugeicons" {...props}/>;}
 import SunData from "@hugeicons/core-free-icons/Sun03Icon";
 export function SunIcon(props:IconProps){return <HugeiconsIcon icon={SunData} size={16} strokeWidth={2.25} aria-hidden="true" data-icon-library="hugeicons" {...props}/>;}
+import CompassData from "@hugeicons/core-free-icons/CompassIcon";
+export function TourIcon(props:IconProps){return <HugeiconsIcon icon={CompassData} size={16} strokeWidth={2.25} aria-hidden="true" data-icon-library="hugeicons" {...props}/>;}
 import TrayData from "@hugeicons/core-free-icons/InboxIcon";
 export function TrayIcon(props:IconProps){return <HugeiconsIcon icon={TrayData} size={16} strokeWidth={2.25} aria-hidden="true" data-icon-library="hugeicons" {...props}/>;}
 import UserCircleData from "@hugeicons/core-free-icons/UserCircleIcon";

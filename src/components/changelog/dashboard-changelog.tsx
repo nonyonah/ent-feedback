@@ -150,7 +150,7 @@ export function DashboardChangelog(){
       <span className="md:hidden"><SidebarTrigger/></span>
       <h1 className="text-[13px] font-medium tracking-[-0.135px]">Changelog</h1>
       {entries&&<span aria-label={entries.length+' entries'} className="text-[13px] tabular-nums text-muted-foreground">{entries.length}</span>}
-      {editable&&<div className="ms-auto flex flex-wrap items-center gap-2"><GithubChangelogSetup workspaceId={project.id}/><Button size="sm" className="text-[13px]" onClick={create}><PlusIcon className="size-3.5"/>New entry</Button></div>}
+      {editable&&<div className="ms-auto flex flex-wrap items-center gap-2"><GithubChangelogSetup workspaceId={project.id} onImported={reload}/><Button size="sm" className="text-[13px]" onClick={create}><PlusIcon className="size-3.5"/>New entry</Button></div>}
     </header>
     <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 pb-3">
       <Select items={[{value:'all',label:'All statuses'},{value:'published',label:'Published'},{value:'scheduled',label:'Scheduled'},{value:'draft',label:'Drafts'}]} value={filter} onValueChange={value=>value&&setFilter(value as Filter)}>

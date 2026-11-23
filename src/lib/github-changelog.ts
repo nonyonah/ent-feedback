@@ -15,3 +15,11 @@ export function githubChangelogDraft(payload:unknown,repository:string){
  const body=pr.body?.trim().slice(0,19000)||'Describe the change for your users before publishing.';
  return {id:String(pr.id),title,body,category,slug:slugifyChangelogTitle(title),number:pr.number};
 }
+
+/** GitHub's list endpoint supplies merged_at rather than the webhook's merged flag. */
+export function githubHistoricalChangelogDraft(pullRequest:unknown,repository:string){
+ const merged=z.object({merged_at:z.string().datetime().nullable()}).passthrough().safeParse(pullRequest);
+ if(!merged.success||!merged.data.merged_at)return null;
+ const draft=githubChangelogDraft({action:'closed',repository:{full_name:repository},pull_request:{...merged.data,merged:true}},repository);
+ return draft?{...draft,mergedAt:merged.data.merged_at}:null;
+}

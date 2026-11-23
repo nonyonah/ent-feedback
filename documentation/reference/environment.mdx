@@ -21,13 +21,4 @@ node scripts/materialize-env.mjs
 
 The script takes its key names from `.env.example` so the two cannot drift. It prefers a value from the process environment, keeps an existing `.env.local` value when the environment has none, and otherwise uses the value in `.env.example`. It preserves the comments in `.env.example`, writes the file with `0600` permissions, and prints only the names of the keys it filled from the environment, never the values.
 
-## Founder preview variables
-
-Founder previews need two server-only variables:
-
-| Variable | Purpose |
-| --- | --- |
-| `FOUNDER_EMAILS` | Comma-separated verified primary emails allowed to open [founder previews](/founder/previews) |
-| `DEMO_APP_USER_ID` | App user ID that owns each preview workspace until the prospect claims it |
-
 Proxy, rewrite and hosting notes for a deployment are recorded in the repository’s `docs/deployment/` folder.

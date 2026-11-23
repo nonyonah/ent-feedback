@@ -14,6 +14,9 @@ export async function run(){
   const [demo,founder,prospect]=await db.insert(users).values(['Demo','Founder','Prospect'].map(name=>({name,clerkUserId:randomUUID()}))).returning();
   global.chatEnv.DEMO_APP_USER_ID=demo.id;
   global.chatEnv.FOUNDER_EMAILS='founder@example.com';
+  const disabled=await createPreview({product:'Example',prospect:'',template:'saas'}).then(()=>false,()=>true);
+  assert.equal(disabled,true,'previews stay off until PREVIEWS_ENABLED is true');
+  global.chatEnv.PREVIEWS_ENABLED='true';
   global.chatUser=founder;
   global.previewClerkUser={id:founder.clerkUserId,primaryEmailAddress:{emailAddress:'outside@example.com',verification:{status:'verified'}}};
   await assert.rejects(requireFounder,/Not found/);

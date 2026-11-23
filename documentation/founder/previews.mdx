@@ -1,0 +1,31 @@
+---
+title: "Founder previews"
+description: "Hand a prospect a working board to claim before they sign up."
+---
+
+Founder previews create a board a prospect can explore and then claim. Ent keeps each preview in its own workspace owned by a demo account, so previews never touch an existing customer workspace.
+
+## Create a preview
+
+Sign in with a verified email listed in `FOUNDER_EMAILS`, then open `/founder/previews`. Enter the product name, an optional prospect name and a template, then choose **Create preview**.
+
+The claim link appears once on that page. Copy it before leaving; it is not shown again.
+
+## The claim link
+
+The link puts the token in a URL fragment (`/claim/open#…`), so the browser sends it to the page without it reaching server or access logs. Ent stores only a SHA-256 hash of the token, accepts it once, and expires it after 14 days.
+
+The visitor sees the public board before deciding. Choosing **Claim this board** transfers the preview workspace’s single owner to the signed-in account and rotates the workspace handle to a new random address. The board then appears in that account’s dashboard. A used or expired link reports that it has expired or already been used.
+
+## Manage previews
+
+The page lists each preview as **Unclaimed**, **Claimed** or **Expired**. Extend an unclaimed preview by seven days or delete it. Deleting removes the preview workspace and its board.
+
+## Configuration
+
+| Variable | Purpose |
+| --- | --- |
+| `FOUNDER_EMAILS` | Comma-separated verified primary emails allowed to open founder previews |
+| `DEMO_APP_USER_ID` | App user ID that owns each preview workspace until it is claimed |
+
+Set both in `.env.local` and in the hosting environment, then restart the app. Without `DEMO_APP_USER_ID`, creating a preview fails with a configuration message. [Environment setup](/reference/environment) covers the rest of the local configuration.

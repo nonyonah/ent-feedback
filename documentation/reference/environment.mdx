@@ -1,0 +1,33 @@
+---
+title: "Environment setup"
+description: "Create a local .env.local and keep its keys matching the app."
+---
+
+Ent reads configuration from `.env.local` in development and from the hosting provider’s environment variables in deployment. `.env.example` lists every key; copy it to start:
+
+```sh
+cp .env.example .env.local
+```
+
+`DATABASE_URL` is the only variable the server refuses to start without. Clerk keys are required for sign-in and the dashboard, R2 keys for attachments, Bachs keys for billing and SendByte keys for email. Everything else degrades quietly when unset. Never commit `.env.local`.
+
+## Write .env.local from the machine environment
+
+A machine that already exposes the variables in its process, such as a remote or managed workspace, can write them to a file, since Next.js reads `.env` files rather than the process environment:
+
+```sh
+node scripts/materialize-env.mjs
+```
+
+The script takes its key names from `.env.example` so the two cannot drift. It prefers a value from the process environment, keeps an existing `.env.local` value when the environment has none, and otherwise uses the value in `.env.example`. It preserves the comments in `.env.example`, writes the file with `0600` permissions, and prints only the names of the keys it filled from the environment, never the values.
+
+## Founder preview variables
+
+Founder previews need two server-only variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `FOUNDER_EMAILS` | Comma-separated verified primary emails allowed to open [founder previews](/founder/previews) |
+| `DEMO_APP_USER_ID` | App user ID that owns each preview workspace until the prospect claims it |
+
+Proxy, rewrite and hosting notes for a deployment are recorded in the repository’s `docs/deployment/` folder.

@@ -4,6 +4,7 @@ import { z } from "zod";
 import {applicationOrigin} from '@/lib/application-origin';
 
 const serverEnvSchema = z.object({
+  PREVIEWS_ENABLED: z.enum(["true","false"]).default("false"),
   FOUNDER_EMAILS: z.string().optional(),
   DEMO_APP_USER_ID: z.uuid().optional(),
   CHAT_ENABLED: z.enum(["true", "false"]).default("false"),

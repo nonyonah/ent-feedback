@@ -16,10 +16,14 @@ export const claimCookie = 'ent-preview-claim';
 export const tokenPattern = /^[A-Za-z0-9_-]{43}$/;
 const digest = (token:string)=>createHash('sha256').update(token).digest('hex');
 const suffix = ()=>randomBytes(8).toString('hex');
+export function previewsEnabled(){
+  return getServerEnv().PREVIEWS_ENABLED === 'true';
+}
 export function founderAllowed(email:string|null,list:string|undefined){
   return Boolean(email && list?.split(',').some(value=>value.trim().toLowerCase()===email.toLowerCase()));
 }
 export async function requireFounder(){
+  if(!previewsEnabled())throw new ServiceError('forbidden','Not found.');
   const user=await requireAppUser();
   const clerk=await currentUser();
   const primary=clerk?.primaryEmailAddress;
@@ -32,6 +36,7 @@ function demoId(){
   return id;
 }
 export async function createPreview(input:{product:string;prospect:string;template:string}){
+  if(!previewsEnabled())throw new ServiceError('forbidden','Previews are disabled.');
   const product=z.string().trim().min(1).max(80).parse(input.product);
   const prospect=z.string().trim().max(80).parse(input.prospect);
   const token=randomBytes(32).toString('base64url');
@@ -51,7 +56,7 @@ export function listPreviews(){
   return getDb().select({id:previewClaims.workspaceId,name:boards.name,prospect:previewClaims.prospectName,status:sql<string>`case when ${previewClaims.claimedAt} is not null then 'Claimed' when ${previewClaims.expiresAt}<=now() then 'Expired' else 'Unclaimed' end`}).from(previewClaims).innerJoin(boards,eq(boards.id,previewClaims.boardId)).orderBy(desc(previewClaims.expiresAt));
 }
 export async function lookupPreview(token:string){
-  if(!tokenPattern.test(token))return null;
+  if(!previewsEnabled()||!tokenPattern.test(token))return null;
   const [row]=await getDb().select({product:boards.name,boardId:boards.id,handle:workspaces.handle,board:boards.handle}).from(previewClaims).innerJoin(workspaces,eq(workspaces.id,previewClaims.workspaceId)).innerJoin(boards,eq(boards.id,previewClaims.boardId)).where(and(eq(previewClaims.tokenHash,digest(token)),isNull(previewClaims.claimedAt),gt(previewClaims.expiresAt,sql`now()`)));
   return row??null;
 }
@@ -63,7 +68,7 @@ async function isolatedOwner(tx:Transaction,id:string,boardId:string){
   return members[0].id;
 }
 export async function claimPreview(token:string,userId:string){
-  if(!tokenPattern.test(token)||userId===demoId())throw new ServiceError('conflict',unavailable);
+  if(!previewsEnabled()||!tokenPattern.test(token)||userId===demoId())throw new ServiceError('conflict',unavailable);
   return getDb().transaction(async tx=>{
     const [row]=await tx.update(previewClaims).set({claimedAt:sql`now()`}).where(and(eq(previewClaims.tokenHash,digest(token)),isNull(previewClaims.claimedAt),gt(previewClaims.expiresAt,sql`now()`))).returning();
     if(!row)throw new ServiceError('conflict',unavailable);
@@ -74,6 +79,7 @@ export async function claimPreview(token:string,userId:string){
   });
 }
 export async function managePreview(id:string,action:'extend'|'delete'){
+  if(!previewsEnabled())throw new ServiceError('forbidden','Previews are disabled.');
   return getDb().transaction(async tx=>{
     const pending=and(eq(previewClaims.workspaceId,z.uuid().parse(id)),isNull(previewClaims.claimedAt));
     if(action==='extend'){

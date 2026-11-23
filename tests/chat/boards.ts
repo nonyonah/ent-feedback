@@ -34,7 +34,8 @@ export async function run(){
  assert.equal((await clearSampleContentAction(workspace.id,first.id)).ok,false);
  global.chatUser=owner;
  data(await editSampleContentAction(workspace.id,first.id,planned.id,edit));
- assert.equal(data(await clearSampleContentAction(workspace.id,first.id)),9);
+ const cleared=data(await clearSampleContentAction(workspace.id,first.id));
+ assert.equal(cleared.length,9);assert.ok(!cleared.includes(planned.id),'edited sample is kept');
  const remaining=data(await loadFeedbackAction(workspace.id,first.id)).items;
  assert.equal(remaining.length,1);assert.equal(remaining[0].isSample,false);assert.equal(remaining[0].votes,1);assert.equal(remaining[0].comments.length,1);
  assert.equal(data(await loadFeedbackAction(workspace.id,second.id)).items.length,10);

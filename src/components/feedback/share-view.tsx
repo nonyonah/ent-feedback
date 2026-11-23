@@ -5,7 +5,6 @@ import { LinkIcon, CopyIcon, ArrowUpRightIcon } from "@/components/icons";
 import * as React from "react";
 import {Button} from "@/components/ui/button";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { captureAnalytics } from "@/lib/analytics";
 import { widgetSnippet } from "@/lib/widget-snippet";
 import {toastManager} from "@/components/ui/toast";
@@ -252,7 +251,7 @@ export function ShareView() {
             <Tabs defaultValue="manual" className="mt-5">
               <TabsList aria-label="Widget installation method">
                 <TabsTab value="manual">Manual snippet</TabsTab>
-                <TabsTab value="prompt">Prompt for AI tools</TabsTab>
+                <TabsTab value="prompt">Setup prompt</TabsTab>
               </TabsList>
               <TabsPanel value="manual">
               <div>
@@ -352,8 +351,13 @@ export function ShareView() {
               </TabsPanel>
               <TabsPanel value="prompt" className="space-y-3">
                 <p className="text-sm text-muted-foreground">Paste this into Cursor, Claude Code, or any AI coding tool in your project.</p>
-                <Textarea aria-label="Widget setup prompt" readOnly rows={10} value={setup?.prompt ?? (failed === endpoint ? "Could not load the prompt. Retrying…" : "Loading prompt…")} />
-                <Button size="sm" disabled={!setup} onClick={() => setup && void copy(setup.prompt, "Prompt copied", () => captureAnalytics("setup_prompt_copied"))}>Copy prompt</Button>
+                <div className="rounded-xl border border-border/60 bg-muted">
+                  <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
+                    <span className="font-mono text-xs text-muted-foreground">setup-prompt.md</span>
+                    <Button size="sm" variant="secondary" disabled={!setup} onClick={() => setup && void copy(setup.prompt, "Prompt copied", () => captureAnalytics("setup_prompt_copied"))}>Copy prompt</Button>
+                  </div>
+                  <pre aria-label="Widget setup prompt" tabIndex={0} className="max-h-[420px] overflow-auto p-4 font-mono text-[13px] leading-6 whitespace-pre-wrap break-words text-foreground/80 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">{setup?.prompt ?? (failed === endpoint ? "Could not load the prompt. Retrying…" : "Loading prompt…")}</pre>
+                </div>
               </TabsPanel>
             </Tabs>
             {setup && <p role="status" className="mt-3 text-xs text-muted-foreground">{setup.domain ? "Installed on " + setup.domain : setup.installed ? "Installed" : "Waiting for the first load..."}</p>}

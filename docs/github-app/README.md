@@ -22,7 +22,7 @@ Apply the database migrations as part of the normal deployment. Configure app UR
 ## Test
 
 1. Open Changelog in Ent as a workspace owner or admin. Select the GitHub icon, enter the repository as `owner/repository`, and install the app for that repository.
-2. Authorize the GitHub account when prompted. Choose the repository from the returned list and confirm the connection.
+2. Authorize the GitHub account when prompted. Choose the repository from the returned list and keep the dialog open until previous merged pull requests have been imported as drafts. Reconnect to retry a stopped import.
 3. Merge a test pull request with a title and description. Refresh the Changelog dashboard and confirm exactly one private draft appears. It contains the pull request title and description; review it before publication.
 4. Redeliver the same webhook in the GitHub App's delivery history and verify no second draft is created. Merge a PR labeled `skip-changelog` and verify no draft appears.
 5. Remove the repository from the installation or uninstall the app. Verify new PRs no longer create drafts. Ent's Disconnect button also stops drafts but does not uninstall the app in GitHub.

@@ -63,6 +63,8 @@ Workspace owners and admins can write, schedule, publish, unpublish and delete e
 
 Workspace owners and admins can select the GitHub icon in Changelog and install the Ent GitHub App with access to their repositories. After authorizing GitHub, choose a repository from the list. Ent checks that the GitHub user can access the installation and repository before linking them to the workspace.
 
-A merged pull request creates a private draft containing its title and description. Review it before publishing; repository descriptions can contain internal details. GitHub automation is only for changelog drafts—it does not create or synchronize issues. Label a pull request `skip-changelog`, `internal`, or `chore` to skip the draft. Feature, bug, documentation, and performance labels set the draft category.
+After you connect, Ent imports previous merged pull requests as private drafts. New merged pull requests also create private drafts containing their titles and descriptions. Review it before publishing; repository descriptions can contain internal details. GitHub automation is only for changelog drafts—it does not create or synchronize issues. Label a pull request `skip-changelog`, `internal`, or `chore` to skip the draft. Feature, bug, documentation, and performance labels set the draft category.
+
+[Read the GitHub integration guide](/integrations/github) for setup, import, and troubleshooting.
 
 Disconnecting stops new drafts in Ent. To revoke GitHub access, uninstall the app in GitHub as well. GitHub does not automatically redeliver failed webhook deliveries; use the app’s delivery history to investigate and redeliver failures.

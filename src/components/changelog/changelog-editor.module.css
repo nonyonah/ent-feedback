@@ -28,8 +28,7 @@
   transition: transform 120ms var(--ease-out), background-color 125ms ease, color 125ms ease;
 }
 .editor button:active:not(:disabled) { transform: scale(0.98); }
-.editor :is(button, input, [data-slot="input-control"], [data-slot="select-trigger"], [data-slot="select-button"]),
-:global([data-changelog-control]) :is(button, input, [data-slot="input-control"]) {
+.editor :is(button, input, [data-slot="input-control"], [data-slot="select-trigger"], [data-slot="select-button"]) {
   border-color: transparent !important;
   outline: none !important;
   box-shadow: none !important;
@@ -37,20 +36,15 @@
 .editor :is([data-slot="input-control"], [data-slot="select-trigger"], [data-slot="select-button"]) {
   background: var(--control-quiet);
 }
-.editor :is(button, input):focus-visible,
-:global([data-changelog-control]) :is(button, input):focus-visible {
+.editor :is(button, input):focus-visible {
   text-decoration: underline;
   text-underline-offset: 4px;
 }
-.editor button[aria-label]:focus-visible,
-:global([data-changelog-control]) button[aria-label]:focus-visible {
+.editor button[aria-label]:focus-visible {
   background: var(--control-hover);
   color: var(--foreground);
 }
-:global([data-changelog-control]) { border-color: transparent !important; }
-:global([data-changelog-control])::before { box-shadow: none !important; }
-.editor :is(button, [data-slot="input-control"], [data-slot="select-trigger"], [data-slot="select-button"])::before,
-:global([data-changelog-control]) :is(button, [data-slot="input-control"])::before { box-shadow: none !important; }
+.editor :is(button, [data-slot="input-control"], [data-slot="select-trigger"], [data-slot="select-button"])::before { box-shadow: none !important; }
 .writing {
   position: relative;
   min-height: 50svh;

@@ -32,7 +32,7 @@ export function SampleBoardsProvider({children}: {children: React.ReactNode}) {
 
 export function SampleControls({board, item, banner = false}: {board: FeedbackBoard; item?: FeedbackItemData; banner?: boolean}) {
   const {project} = useProject();
-  const {retry} = useFeedback();
+  const {removeItems, updateItem} = useFeedback();
   const {ids, refresh} = useContext(Samples);
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -55,11 +55,16 @@ export function SampleControls({board, item, banner = false}: {board: FeedbackBo
           start(async () => {
             setError("");
             try {
-              const result = item ? await editSampleContentAction(project.id, board.id, item.id, {title, description})
-                : await clearSampleContentAction(project.id, board.id);
-              if (!result.ok) throw Error(result.error.message);
+              if (item) {
+                const result = await editSampleContentAction(project.id, board.id, item.id, {title, description});
+                if (!result.ok) throw Error(result.error.message);
+                updateItem(result.data.id, {title: result.data.title, description: result.data.description, isSample: false, votes: result.data.votes});
+              } else {
+                const result = await clearSampleContentAction(project.id, board.id);
+                if (!result.ok) throw Error(result.error.message);
+                removeItems(result.data);
+              }
               setOpen(false);
-              retry();
               refresh();
               toastManager.add({type: "success", title: item ? "Sample saved as regular feedback" : "Sample content cleared"});
             } catch (cause) {setError(cause instanceof Error ? cause.message : "Please try again.");}

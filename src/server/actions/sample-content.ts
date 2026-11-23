@@ -1,11 +1,11 @@
 "use server";
 
-import {and, eq, isNull, ne, or} from "drizzle-orm";
+import {and, count, eq, isNull, ne, or} from "drizzle-orm";
 import {z} from "zod";
 import {trackServerAnalytics} from "@/lib/analytics/server";
 import {requireAppUser} from "@/server/auth";
 import {getDb} from "@/server/db/client";
-import {feedback} from "@/server/db/schema";
+import {feedback, votes} from "@/server/db/schema";
 import {runService, ServiceError} from "@/server/result";
 import {requireWorkspaceRole} from "@/server/services/access";
 
@@ -39,7 +39,7 @@ export async function clearSampleContentAction(workspaceId: string, boardId: str
     const removed = await db.update(feedback).set({deletedAt: now, updatedAt: now})
       .where(scope).returning({id: feedback.id});
     if (removed.length) trackServerAnalytics("sample_content_cleared", {}, {boardId, user});
-    return removed.length;
+    return removed.map(row => row.id);
   });
 }
 
@@ -53,6 +53,8 @@ export async function editSampleContentAction(workspaceId: string, boardId: stri
       .where(and(scope, eq(feedback.id, z.uuid().parse(id)), or(ne(feedback.title, title), ne(feedback.body, description))))
       .returning({id: feedback.id});
     if (!updated) throw new ServiceError("conflict", "This sample has changed or there are no changes to save.");
-    return updated.id;
+    const [tally] = await db.select({value: count()}).from(votes)
+      .where(and(eq(votes.workspaceId, workspaceId), eq(votes.feedbackId, updated.id)));
+    return {id: updated.id, title, description, votes: tally.value};
   });
 }

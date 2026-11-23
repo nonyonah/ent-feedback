@@ -25,6 +25,8 @@ type FeedbackContextValue={
  toggleCommentLike:(id:string,commentId:string)=>void;
  updateStatus:(id:string,status:FeedbackStatus)=>void;
  deleteItem:(id:string)=>void;
+ removeItems:(ids:string[])=>void;
+ updateItem:(id:string,patch:Partial<FeedbackItemData>)=>void;
  updateCategory:(id:string,category:FeedbackCategory)=>Promise<void>;
  classify:(id:string,category:FeedbackCategory,tagIds:string[])=>Promise<void>;
 };
@@ -128,6 +130,8 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
    addFeedback,addComment:async(id,body,images,parentCommentId)=>{await mutate({type:'comment',id,body,images,parentCommentId,source:interactionSource});},
   toggleCommentLike:(id,commentId)=>{const comment=items.find(item=>item.id===id)?.comments.find(comment=>comment.id===commentId);if(comment)report(mutate({type:'reaction',id,commentId,active:!comment.liked}),'Reaction wasn’t saved');},
   updateStatus:(id,status)=>report(mutate({type:'status',id,status}),'Status wasn’t updated'),
+   removeItems:ids=>{const gone=new Set(ids);setSnapshot(previous=>({...previous,items:previous.items.filter(item=>!gone.has(item.id))}));},
+   updateItem:(id,patch)=>setSnapshot(previous=>({...previous,items:previous.items.map(item=>item.id===id?{...item,...patch}:item)})),
   updateCategory:async(id,category)=>{await mutate({type:'category',id,category});},
   classify:async(id,category,tagIds)=>{await mutate({type:'classification',id,category,tagIds});},
   deleteItem:id=>report(mutate({type:'delete',id}),'Feedback wasn’t deleted'),

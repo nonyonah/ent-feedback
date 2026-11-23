@@ -65,6 +65,13 @@
         ]
       },
       {
+        "group": "Founders and operators",
+        "pages": [
+          "founder/previews",
+          "reference/environment"
+        ]
+      },
+      {
         "group": "Help",
         "pages": [
           "troubleshooting",

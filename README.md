@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ent Feedback
 
-## Getting Started
+A feedback workspace for product teams: public boards, an embeddable widget, a roadmap, and threaded conversations with the people who use your product — all backed by one PostgreSQL database.
 
-First, run the development server:
+Visitors submit ideas and bugs, vote on what matters, and follow progress. Your team triages requests through statuses, plans them on a roadmap, and replies in the same thread the feedback arrived in.
 
-```bash
+## What's in here
+
+- **Public boards** per workspace, reachable at `/<handle>.feedback.example.com` when a workspace base domain is configured, or at `/p/<handle>/…` on the app origin.
+- **Embeddable widget** (`/embed`, `/widget-preview`) for collecting feedback and showing trending requests inside a customer's own site.
+- **Dashboard** (`/dashboard`) with requests, boards, roadmap, conversations, sharing/embedding, and settings.
+- **Conversations**: nested comment replies, likes, image attachments, and an optional AI-assisted chat surface enabled by `CHAT_ENABLED`.
+- **Request lifecycle**: statuses with a public timeline, follows, tags, soft delete, merge targets, and a cursor-paginated notification inbox.
+- **Accounts and billing**: Clerk sign-in, workspace roles, invitations, and subscription plans through Bachs.
+- **Transactional email** through SendByte, including verification, lifecycle, and unread-conversation notifications.
+
+## Stack
+
+Next.js 16 (App Router, `cacheComponents`) with React 19 and TypeScript, Tailwind CSS v4 with Base UI primitives, Drizzle ORM over PostgreSQL, Clerk for auth, Cloudflare R2 for uploads, Bachs for billing, SendByte for email, and optional PostHog analytics.
+
+## Running it locally
+
+Requires Node 22 or newer (Netlify builds on 22) and a PostgreSQL database.
+
+```sh
+npm install
+cp .env.example .env.local
+npm run db:migrate
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`DATABASE_URL` is the only variable the server refuses to start without. Clerk keys are required for sign-in and the dashboard; R2 keys for attachments; Bachs keys for billing; SendByte keys for email. Everything else degrades quietly when unset, which is why the app boots with `.env.example` values unfilled. Never commit `.env.local`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Set `NEXT_PUBLIC_APP_URL` to the origin you develop on. Public boards under `/p/<handle>` work without any wildcard DNS; workspace subdomains need `NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN` plus wildcard DNS and TLS.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Development server |
+| `npm run build` / `npm start` | Production build and serve |
+| `npm run lint` / `npm run typecheck` | ESLint and `tsc --noEmit` |
+| `npm run db:generate` / `db:migrate` / `db:check` / `db:studio` | Drizzle migrations and Studio |
+| `npm run jobs:run` / `jobs:check` | Chat, notification, lifecycle-email and trial-email jobs, plus attachment cleanup (`--check` is read-only) |
+| `npm run production:check` | Configuration and readiness checks for a deployment |
+| `npm run check:concurrency` | Concurrency behaviour checks |
+| `npm run widget:test` | Local harness for the embeddable widget |
+| `npm run docs:dev` / `docs:validate` / `docs:check` | Mintlify docs site in `documentation/` |
 
-To learn more about Next.js, take a look at the following resources:
+Tests live in `tests/` and run with the Node test runner, for example `node --conditions=react-server --import tsx --test tests/*.test.ts`. Database-backed scripts under `scripts/` (such as `check-feedback-db.mjs`) exercise real constraints against a live PostgreSQL instance and roll their fixtures back.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Layout
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/app          Routes: marketing, auth, onboarding, dashboard, public boards (/p)
+src/components   UI by area — marketing, feedback, boards, chat, messages, ui primitives
+src/server       Actions, services, Drizzle schema and client, auth, billing, email, analytics
+drizzle          SQL migrations and Drizzle metadata
+scripts          Maintenance jobs and integration checks
+tests            Node test-runner suites
+docs             Implementation notes, audits and verification records
+documentation    Mintlify docs site served at /docs
+```
 
-## Deploy on Vercel
+All database writes go through validated server actions in `src/server/actions/`, which resolve the workspace, apply role checks, and serialize conflicting writes with row locks inside a transaction.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Analytics
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+PostHog is optional and opt-in. It stays off until a visitor allows analytics, and it never loads on `/embed`, `/widget-preview`, or public board routes. Browser events go to `/ingest/*`, which `next.config.ts` rewrites to `NEXT_PUBLIC_POSTHOG_HOST`; set the host matching your project's region (`eu.i.posthog.com` for EU). Public variables are inlined at build time, so restart development or rebuild after changing them. See [docs/analytics](docs/analytics/README.md).
+
+## Deployment
+
+Netlify is the configured target (`netlify.toml`, `docs/deployment/netlify.md`); Vercel and Cloudflare notes are in `docs/deployment/`. Set the environment variables in the hosting dashboard rather than the repository, run migrations from a machine with direct database access, and protect the internal cron endpoints with `CRON_SECRET`.
+
+## Further reading
+
+- [Product flow](docs/product-flow.md) and [project direction](docs/project-direction.md)
+- [Feedback persistence](docs/feedback-persistence.md) and [backend readiness](docs/backend-readiness.md)
+- [Chat](docs/chat/README.md), [roadmap](docs/roadmap/README.md), [billing](docs/billing/), [integrations](docs/integrations/README.md)
+- [Production review](docs/production-review/README.md) and [release checks](docs/release-checks/)
+
+`AGENTS.md` records the working agreements for automated contributors.

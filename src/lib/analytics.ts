@@ -70,6 +70,7 @@ export async function applyAnalyticsConsent(allowed:boolean){
      disable_session_recording:true,
      session_recording:{maskAllInputs:true},
      disable_surveys:true,
+     disable_compression:true,
      capture_performance:false,capture_exceptions:false,
      advanced_disable_flags:true,disable_external_dependency_loading:true,
      opt_out_capturing_by_default:true,opt_out_persistence_by_default:true,

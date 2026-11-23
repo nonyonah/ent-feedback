@@ -40,6 +40,8 @@ export const workspaceRole = pgEnum("workspace_role", ["owner", "admin", "member
 export const membershipStatus = pgEnum("membership_status", ["active", "suspended"]);
 export const invitationState = pgEnum("invitation_state", ["pending", "accepted", "cancelled", "expired"]);
 export const feedbackStatus = pgEnum("feedback_status", ["open", "planned", "in-progress", "shipped"]);
+export const changelogCategory = pgEnum("changelog_category", ["new-feature", "improvement", "bug-fix", "performance", "documentation", "announcement"]);
+export const changelogStatus = pgEnum("changelog_status", ["draft", "scheduled", "published"]);
 export const attachmentStatus = pgEnum("attachment_status", ["pending", "attached", "expired"]);
 export const widgetDetailsMode = pgEnum("widget_details_mode", ["none", "optional", "required"]);
 export const widgetReplyTime = pgEnum("widget_reply_time", ["automatic", "day", "days", "week"]);
@@ -243,16 +245,37 @@ export const changelogEntries = pgTable(
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
+    slug: text("slug").notNull(),
+    summary: text("summary"),
+    coverImage: text("cover_image"),
     body: text("body").notNull(),
+    category: changelogCategory("category").notNull().default("new-feature"),
+    status: changelogStatus("status").notNull().default("draft"),
+    authorUserId: uuid("author_user_id").references(() => users.id, { onDelete: "set null" }),
     publishedAt: timestamp("published_at", { withTimezone: true }),
+    scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
     ...timestamps(),
   },
   (table) => [
+    unique("changelog_entries_id_workspace_id_unique").on(table.id, table.workspaceId),
+    unique("changelog_entries_workspace_slug_unique").on(table.workspaceId, table.slug),
     index("changelog_entries_workspace_published_idx").on(table.workspaceId, table.publishedAt.desc()),
+    index("changelog_entries_scheduled_idx").on(table.status, table.scheduledFor),
     check("changelog_entries_title_length", sql`length(${table.title}) between 1 and 120`),
-    check("changelog_entries_body_length", sql`length(${table.body}) between 1 and 5000`),
+    check("changelog_entries_body_length", sql`length(${table.body}) between 1 and 20000`),
+    check("changelog_entries_slug_format", sql`${table.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and length(${table.slug}) between 1 and 80`),
+    check("changelog_entries_summary_length", sql`${table.summary} is null or length(${table.summary}) <= 300`),
   ],
 );
+
+export const changelogUploads = pgTable("changelog_uploads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, {onDelete:"cascade"}),
+  storageKey: text("storage_key").notNull(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
+}, table => [index("changelog_uploads_workspace_idx").on(table.workspaceId)]);
 
 export const feedback = pgTable(
   "feedback",
@@ -304,6 +327,34 @@ export const feedback = pgTable(
     check("feedback_guest_email_normalized_check", sql`${table.guestEmail} is null or ${table.guestEmail} = lower(${table.guestEmail})`),
   ],
 ).enableRLS();
+
+/** A changelog entry can announce several feedback requests; the pair is unique per workspace. */
+export const changelogFeedback = pgTable(
+  "changelog_feedback",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    changelogId: uuid("changelog_id").notNull(),
+    feedbackId: uuid("feedback_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique("changelog_feedback_pair_unique").on(table.changelogId, table.feedbackId),
+    foreignKey({
+      name: "changelog_feedback_entry_workspace_fk",
+      columns: [table.changelogId, table.workspaceId],
+      foreignColumns: [changelogEntries.id, changelogEntries.workspaceId],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "changelog_feedback_item_workspace_fk",
+      columns: [table.feedbackId, table.workspaceId],
+      foreignColumns: [feedback.id, feedback.workspaceId],
+    }).onDelete("cascade"),
+    index("changelog_feedback_item_idx").on(table.feedbackId),
+  ],
+);
 
 export const comments = pgTable(
   "comments",
@@ -537,6 +588,7 @@ export const widgetSettings = pgTable(
     greeting: text("greeting").notNull().default(""),
     replyTime: widgetReplyTime("reply_time").notNull().default("automatic"),
     submitNotice: boolean("submit_notice").notNull().default(true),
+    showChangelog: boolean("show_changelog").notNull().default(true),
     ...timestamps(),
   },
   (table) => [

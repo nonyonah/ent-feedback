@@ -3,6 +3,7 @@ import {redirect} from "next/navigation";
 import {dashboardReturnPath} from "@/lib/auth-flow";
 import {getRegistrationState} from "@/server/onboarding";
 import {RegistrationWizard} from "@/components/feedback/registration-wizard";
+import {needsWorkspaceRegistration} from "@/lib/registration-state";
 
 export const instant=false;
 
@@ -18,8 +19,7 @@ export default async function Page({searchParams}:{searchParams:Promise<{next?:s
 
   const state=await getRegistrationState();
 
-  if(state.progress.complete)redirect(next);
-  if(state.workspaces.length>0&&!state.progress.workspaceId)redirect(next);
+  if(!needsWorkspaceRegistration({hasWorkspace:state.workspaces.length>0,complete:state.progress.complete,hasSetupWorkspace:Boolean(state.progress.workspaceId)}))redirect(next);
 
   return <RegistrationWizard initialStep={state.workspace?state.progress.step:Math.min(state.progress.step,1)} initialWorkspace={state.workspace?{id:state.workspace.id,name:state.workspace.name,handle:state.workspace.handle,website:state.workspace.website}:null} next={next}/>;
 }

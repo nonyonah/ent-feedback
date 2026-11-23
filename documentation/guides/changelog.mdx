@@ -3,34 +3,58 @@ title: Changelog
 description: Publish what shipped and keep a public history of updates.
 ---
 
-A changelog is a list of updates you write for the people who use your product. Each entry has a title, a date and a body, and every published entry appears on your workspace’s public Changelog page.
+A changelog is a list of updates you write for the people who use your product. Each entry has a title, category, date and body, and every published entry appears on your workspace’s public Changelog page as part of a timeline.
 
 ## Write an entry
 
-Open **Changelog** under **Product updates** in the dashboard sidebar and choose **New entry**. Give the entry a **Title** of up to 120 characters and **Details** of up to 5,000 characters.
+Open **Changelog** under **Product updates** in the dashboard sidebar and choose **New entry**.
 
-Details are plain text. Leave a blank line between paragraphs, and the public page splits the body there. Lines within one paragraph wrap together.
+- **Title** — up to 120 characters. The URL slug is generated from it, and you can edit the slug before saving.
+- **Summary** — one optional line of up to 300 characters. It sits under the title in the timeline and becomes the description when the entry is shared.
+- **Category** — New feature, Improvement, Bug fix, Performance, Documentation or Announcement. The category shows as a small badge next to the date.
+- **Details** — up to 20,000 characters of Markdown. Headings, bold and italic text, inline code, fenced code blocks, links, bullet and numbered lists, block quotes and images all render on the public page. Choose **Preview** in the editor to see the formatted result before publishing.
+- **Cover image** — an optional image above the body. It appears at the top of the public entry and in the widget's update view.
 
-Choose **Save draft** to keep working later, or **Publish** to send it live. The form keeps your copy private until you publish it.
+The editor writes the formatted page itself rather than Markdown syntax: headings, lists, quotes and code blocks look the way they will on the public page while you type. Press `/` on an empty line to insert a block, and use the toolbar's **Post settings** button for category, slug, publish date and linked requests.
 
-## Publish and unpublish
+Leaving the editor with unsaved changes asks before anything is discarded. The back button, not the browser, asks, so a mis-click never loses a draft silently.
 
-Every entry in the dashboard carries a **Published** badge with its date, or a **Draft** badge. Use the eye button on an entry to publish it, and the crossed-out eye button to move a published entry back to a draft.
+## Publish, schedule, or stay in draft
 
-Drafts never appear publicly. Unpublishing removes an entry from the public page and the header link until you publish something again. Re-publishing an entry keeps its original date, so an entry does not jump to the top of the list after an edit.
+Each entry is a **Draft**, **Scheduled**, or **Published**:
+
+- **Save draft** keeps the entry private. Drafts are never linked from the public page.
+- **Publish now** makes the entry live immediately, dated today.
+- **Schedule** takes a future date and time from the editor’s date field. The entry becomes public on the next maintenance run once that time passes, and it keeps the scheduled date in the timeline.
+
+The status filter above the list shows one group at a time, and the search box filters by title. Use the eye button on a row to publish an entry, and the crossed-out eye button to move it back to a draft. Unpublishing removes it from the public page and hides the header link if it was the only published entry. Re-publishing keeps an entry’s original date so edits never jump an entry to the top.
+
+## Link feedback requests
+
+Publishing an update is often the answer to a request. Search **Linked feedback requests** in the editor and pick up to twenty. Linked requests appear under the entry on the public page as **Requested by your users**, each linking back to the original post, and the dashboard row shows how many requests are attached.
+
+Linking a request does not change its status. Move a request to **Shipped** on the roadmap yourself when it belongs there.
 
 ## Read it on your public site
 
-Published entries appear newest first on your public page at `/p/<workspace>/changelog`, where `<workspace>` is your workspace handle. Workspaces with their own domain serve the same page at `/changelog`.
+Published entries appear newest first at `/p/<workspace>/changelog`, where `<workspace>` is your workspace handle. Workspaces with their own domain serve the same page at `/changelog`.
 
-Each entry shows its title, its publish date and its paragraphs. Until you publish the first entry, the page shows an empty changelog, and the **Changelog** link in your public header stays hidden. That link appears once at least one entry is published.
+Entries are grouped by month. On wide screens a date rail sits beside the entries and follows your reading position as you scroll: it shows the month and day of the entry you are looking at and highlights it in the list, so you can jump anywhere. On phones the same information sits in a compact bar under the header. Each entry also has its own page at `/changelog/<slug>` with its own title, description and share preview.
+
+Until you publish the first entry, the page shows an empty changelog and the **Changelog** link in your public header stays hidden.
+
+## Show updates in the widget
+
+Your embedded widget can carry the changelog too. Open **Settings → Widget → Pages** and turn **Changelog** on: a **Changelog** tab appears between Feedback and Roadmap, listing your published entries with their dates and summaries, and each opens to the full update inside the widget. Turn it off to hide the tab; nothing is deleted, and the public changelog page keeps working either way.
+
+The tab appears even before your first entry, with a short empty state, so visitors never meet a missing page.
 
 ## Edit and delete
 
-Select the pencil button on an entry to edit its title or details, then choose **Save changes**. Edits reach the public page immediately.
+Select the pencil button on an entry to edit any field, then **Save changes**. Edits reach the public page immediately.
 
-Select the trash button to delete an entry. Deleting is permanent and also removes any published copy from your public changelog, so the confirmation dialog asks before it goes.
+Select the trash button to delete an entry. Deleting is permanent and also removes any published copy, so the confirmation dialog asks before it goes.
 
 ## Who can write entries
 
-Workspace owners and admins can write, publish, unpublish and delete entries. Other workspace members can read the list in the dashboard but do not see the entry controls.
+Workspace owners and admins can write, schedule, publish, unpublish and delete entries. Other workspace members can read the list in the dashboard but do not see the entry controls.

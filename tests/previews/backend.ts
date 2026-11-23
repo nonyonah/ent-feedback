@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict';
+import {randomUUID,createHash} from 'node:crypto';
+import {eq} from 'drizzle-orm';
+import {getDb} from '@/server/db/client';
+import {users,previewClaims,workspaceMembers,workspaces,boards} from '@/server/db/schema';
+import {claimPreview,createPreview,lookupPreview,managePreview,requireFounder,unavailable} from '@/server/preview-claims';
+
+declare const global:typeof globalThis&{
+  chatEnv:Record<string,string>;chatUser:typeof users.$inferSelect;
+  previewClerkUser:{id:string;primaryEmailAddress:{emailAddress:string;verification:{status:string}}};
+};
+export async function run(){
+  const db=getDb();
+  const [demo,founder,prospect]=await db.insert(users).values(['Demo','Founder','Prospect'].map(name=>({name,clerkUserId:randomUUID()}))).returning();
+  global.chatEnv.DEMO_APP_USER_ID=demo.id;
+  global.chatEnv.FOUNDER_EMAILS='founder@example.com';
+  global.chatUser=founder;
+  global.previewClerkUser={id:founder.clerkUserId,primaryEmailAddress:{emailAddress:'outside@example.com',verification:{status:'verified'}}};
+  await assert.rejects(requireFounder,/Not found/);
+  global.previewClerkUser.primaryEmailAddress={emailAddress:'Founder@example.com',verification:{status:'unverified'}};
+  await assert.rejects(requireFounder,/Not found/);
+  global.previewClerkUser.primaryEmailAddress.verification.status='verified';
+  assert.equal((await requireFounder()).id,founder.id);
+  const create=()=>createPreview({product:'Example',prospect:'',template:'saas'});
+  const first=await create(),second=await create();
+  const preview=await lookupPreview(first.token);
+  assert.ok(preview);
+  const [row]=await db.select().from(previewClaims).where(eq(previewClaims.boardId,first.boardId));
+  assert.equal(row.tokenHash,createHash('sha256').update(first.token).digest('hex'));
+  assert.ok(row.expiresAt.getTime()>Date.now()+13.99*86400000);
+  const claimed=await Promise.allSettled([claimPreview(first.token,prospect.id),claimPreview(first.token,founder.id)]);
+  assert.equal(claimed.filter(result=>result.status==='fulfilled').length,1);
+  await assert.rejects(()=>claimPreview(first.token,prospect.id),new RegExp(unavailable));
+  await assert.rejects(()=>managePreview(row.workspaceId,'delete'),new RegExp(unavailable));
+  await assert.rejects(()=>managePreview(row.workspaceId,'extend'),new RegExp(unavailable));
+  const [workspace]=await db.select().from(workspaces).where(eq(workspaces.id,row.workspaceId));
+  assert.notEqual(workspace.handle,preview.handle);
+  const [owner]=await db.select().from(workspaceMembers).where(eq(workspaceMembers.workspaceId,row.workspaceId));
+  assert.notEqual(owner.userId,demo.id);
+  assert.equal(await lookupPreview(first.token),null);
+  const [other]=await db.update(previewClaims).set({expiresAt:new Date(0)}).where(eq(previewClaims.boardId,second.boardId)).returning();
+  assert.equal(await lookupPreview(second.token),null);
+  await assert.rejects(()=>claimPreview(second.token,prospect.id),new RegExp(unavailable));
+  await managePreview(other.workspaceId,'extend');
+  assert.ok(await lookupPreview(second.token));
+  const [extra]=await db.insert(boards).values({name:'Unrelated',handle:'unrelated',workspaceId:other.workspaceId}).returning();
+  await assert.rejects(()=>claimPreview(second.token,prospect.id),/no longer isolated/);
+  await assert.rejects(()=>managePreview(other.workspaceId,'delete'),/no longer isolated/);
+  await db.delete(boards).where(eq(boards.id,extra.id));
+  const race=await Promise.allSettled([managePreview(other.workspaceId,'delete'),claimPreview(second.token,prospect.id)]);
+  assert.equal(race.filter(result=>result.status==='fulfilled').length,1);
+  assert.equal(await lookupPreview(second.token),null);
+  console.log('PASS: verified founder guard, hash-only expiry, isolated and single-use preview transfer, rotation and deletion races.');
+}

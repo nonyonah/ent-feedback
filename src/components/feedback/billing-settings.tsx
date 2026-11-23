@@ -111,7 +111,7 @@ function WorkspaceBillingSettings(){
    <SettingGroup title="Usage">
     <UsageRow title="Posts and voters" value="Unlimited"/>
     <div className="mx-4 h-px bg-border/60"/>
-    <UsageRow title="Feedback boards" value={`${boards.length} of ${summary.boardLimit}`} usage={{count:boards.length,limit:summary.boardLimit}}/>
+    <UsageRow title="Feedback boards" value={`${summary.boardCount} of ${summary.boardLimit}`} usage={{count:summary.boardCount,limit:summary.boardLimit}}/>
     <div className="mx-4 h-px bg-border/60"/>
     <UsageRow title="Powered by badge" value={summary.hideAttribution?'Hidden':'Included'}/>
     <div className="mx-4 h-px bg-border/60"/>

@@ -4,6 +4,8 @@ import { z } from "zod";
 import {applicationOrigin} from '@/lib/application-origin';
 
 const serverEnvSchema = z.object({
+  FOUNDER_EMAILS: z.string().optional(),
+  DEMO_APP_USER_ID: z.uuid().optional(),
   CHAT_ENABLED: z.enum(["true", "false"]).default("false"),
   CHAT_AI_BASE_URL: z.url().optional(),
   CHAT_AI_API_KEY: z.string().optional(),

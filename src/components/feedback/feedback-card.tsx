@@ -1,5 +1,6 @@
 "use client";
 
+import {SampleBadge} from "@/components/feedback/sample-badge";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { StatusTag } from "@/components/feedback/status-tag";
@@ -34,7 +35,7 @@ export function FeedbackCard({
             href={`/items/${item.id}`}
           >
             {item.pinned && <span className="sr-only">Pinned: </span>}
-            {item.title}
+            {item.isSample && <SampleBadge/>}{item.title}
           </Link>
           <StatusTag className="shrink-0" status={item.status} />
         </div>

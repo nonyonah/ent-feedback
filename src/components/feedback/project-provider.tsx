@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import {duplicateBoardAction} from "@/server/actions/duplicate-board";
+import type { BoardTemplateId } from "@/lib/board-templates";
 import {features} from "@/lib/features";
 import {createBoardAction,renameBoardAction,reorderBoardsAction,deleteBoardAction} from "@/server/actions/boards";
 import {useUser} from "@clerk/nextjs";
@@ -31,6 +33,8 @@ export type FeedbackBoard = {
   color: string;
   emoji?: string;
 };
+
+type CreateBoardInput = Pick<FeedbackBoard, "name" | "color" | "emoji"> & { template: BoardTemplateId };
 
 export function projectTheme(accent: string): React.CSSProperties {
   if (["#212529", "#7443e9"].includes(accent.toLowerCase())) {
@@ -147,10 +151,11 @@ type ProjectContextValue = {
   hydrateWidgetSettings: (workspaceId:string,settings:WidgetSettings)=>void;
   createProject: (project: Project) => Project;
   createBoard: (
-    input: Pick<FeedbackBoard, "name" | "color" | "emoji">,
+    input: CreateBoardInput,
   ) => Promise<FeedbackBoard>;
   selectBoard: (id: string) => void;
   renameBoard: (id: string, name: string) => Promise<void>;
+  duplicateBoard: (id: string, options: {name: string; copyItems: boolean; copyEngagement: boolean}) => Promise<FeedbackBoard>;
   deleteBoard: (id:string)=>Promise<void>;
   boardsPending: boolean;
   widgetSettings: WidgetSettings;
@@ -346,6 +351,16 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       setBoards(current=>current.map(board=>board.id===id&&board.projectId===workspaceId?result.data:board));
     });
   }
+  async function duplicateBoard(id: string, options: {name: string; copyItems: boolean; copyEngagement: boolean}) {
+    const workspaceId = project.id;
+    return mutateBoard(async () => {
+      const result = await duplicateBoardAction(workspaceId, id, options);
+      if (!result.ok) throw new Error(result.error.fieldErrors?.name?.[0] ?? result.error.message);
+      setBoards(current => [...current, result.data]);
+      if (activeWorkspaceRef.current === workspaceId) selectBoard(result.data.id);
+      return result.data;
+    });
+  }
   async function deleteBoard(id:string){
     const workspaceId=project.id;
     await mutateBoard(async()=>{
@@ -433,7 +448,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       }catch(error){replace(previous);throw error;}
     });
   }
-  async function createBoard(input: Pick<FeedbackBoard,"name"|"color"|"emoji">):Promise<FeedbackBoard> {
+  async function createBoard(input: CreateBoardInput):Promise<FeedbackBoard> {
     const workspaceId=project.id;
     return mutateBoard(async()=>{
       const result=await createBoardAction(workspaceId,input);
@@ -457,6 +472,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         boards,
         activeBoard,
         renameBoard,
+        duplicateBoard,
         deleteBoard,
         widgetSettings,
         updateWidgetSettings,

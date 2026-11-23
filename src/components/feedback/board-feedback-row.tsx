@@ -1,4 +1,5 @@
 "use client";
+import {SampleBadge} from "@/components/feedback/sample-badge";
 import {TrendingBadge} from "./trending-badge";
 import {FeedbackTypeLabel} from "./feedback-type-label";
 
@@ -39,7 +40,7 @@ export function BoardFeedbackRow({ item }: { item: FeedbackItemData }): React.Re
       <div className="min-w-0 flex-1">
         <Link className="break-words text-pretty text-sm font-semibold leading-5 tracking-tight outline-none hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring" href={href}>
           {item.pinned && <PinIcon aria-label="Pinned" className="me-1 inline size-3.5 text-muted-foreground" />}
-          {item.title}
+          {item.isSample && <SampleBadge/>}{item.title}
         </Link><TrendingBadge id={item.id} className="ms-2 align-middle"/>
         <p className="mt-2 line-clamp-2 break-words text-base leading-[1.5] text-muted-foreground">{item.description}</p>
       </div>

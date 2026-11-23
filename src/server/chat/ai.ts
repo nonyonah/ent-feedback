@@ -1,7 +1,8 @@
 import 'server-only';
+import { displayedVotes } from "@/server/services/displayed-votes";
 import {and,eq,isNull,desc,sql} from 'drizzle-orm';
 import {getDb} from '@/server/db/client';
-import {feedback,comments,chatFaqs,chatWebsites,workspaceMembers,votes} from '@/server/db/schema';
+import {feedback,comments,chatFaqs,chatWebsites,workspaceMembers} from '@/server/db/schema';
 import {getServerEnv} from '@/server/env';
 import {CHAT_AI_REPLIES_ENABLED,rankSources,safeAssistant,scrubSource,HANDOFF,friendlyReply} from '@/lib/chat/contracts';
 export async function approvedSources(workspaceId:string,query:string){
@@ -11,7 +12,7 @@ export async function approvedSources(workspaceId:string,query:string){
  // posts/comments are public. New visibility models MUST extend these predicates.
  const terms=[...new Set(query.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu)??[])].slice(0,12);
  const relevance=(column:ReturnType<typeof sql>)=>terms.length?sql`(${sql.join(terms.map(term=>sql`case when position(${term} in lower(${column}))>0 then 1 else 0 end`),sql` + `)})`:sql`0`;
- const posts=await db.select({id:feedback.id,title:feedback.title,body:feedback.body,status:feedback.status,created:feedback.createdAt,score:sql<number>`(select count(*) from ${votes} where ${votes.feedbackId}=${feedback.id})`}).from(feedback).where(and(eq(feedback.workspaceId,workspaceId),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId))).orderBy(desc(relevance(sql`${feedback.title} || ' ' || ${feedback.body}`)),desc(sql`(select count(*) from ${votes} where ${votes.feedbackId}=${feedback.id})`),desc(feedback.createdAt)).limit(40);
+ const posts=await db.select({id:feedback.id,title:feedback.title,body:feedback.body,status:feedback.status,created:feedback.createdAt,score:displayedVotes}).from(feedback).where(and(eq(feedback.workspaceId,workspaceId),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId))).orderBy(desc(relevance(sql`${feedback.title} || ' ' || ${feedback.body}`)),desc(displayedVotes),desc(feedback.createdAt)).limit(40);
  const replies=await db.select({id:comments.id,body:comments.body,official:sql<boolean>`exists(select 1 from ${workspaceMembers} where ${workspaceMembers.workspaceId}=${comments.workspaceId} and ${workspaceMembers.userId}=${comments.authorUserId} and ${workspaceMembers.status}='active' and ${workspaceMembers.role} in ('owner','admin'))`}).from(comments).innerJoin(feedback,and(eq(feedback.id,comments.feedbackId),eq(feedback.workspaceId,comments.workspaceId))).where(and(eq(comments.workspaceId,workspaceId),isNull(comments.deletedAt),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId))).orderBy(desc(relevance(sql`${comments.body}`)),desc(comments.createdAt)).limit(40);
  const faqs=await db.select().from(chatFaqs).where(eq(chatFaqs.workspaceId,workspaceId)).limit(30);
  const [website]=await db.select().from(chatWebsites).where(eq(chatWebsites.workspaceId,workspaceId)).limit(1);

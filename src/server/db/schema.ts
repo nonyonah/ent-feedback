@@ -120,6 +120,7 @@ export const workspaces = pgTable(
     theme: workspaceTheme("theme").notNull().default("dynamic"),
     hideAttribution: boolean("hide_attribution").notNull().default(false),
     widgetFirstLoadedAt: timestamp("widget_first_loaded_at", { withTimezone: true }),
+    widgetInstalledDomain: text("widget_installed_domain"),
     ...timestamps(),
   },
   (table) => [
@@ -225,6 +226,15 @@ export const boards = pgTable(
   ],
 );
 
+export const previewClaims = pgTable("preview_claims", {
+  workspaceId: uuid("workspace_id").primaryKey().references(() => workspaces.id, {onDelete:"cascade"}),
+  boardId: uuid("board_id").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  prospectName: text("prospect_name"),
+  expiresAt: timestamp("expires_at", {withTimezone:true}).notNull(),
+  claimedAt: timestamp("claimed_at", {withTimezone:true}),
+}, table => [foreignKey({columns:[table.boardId,table.workspaceId],foreignColumns:[boards.id,boards.workspaceId]}).onDelete("cascade")]).enableRLS();
+
 export const feedback = pgTable(
   "feedback",
   {
@@ -237,6 +247,8 @@ export const feedback = pgTable(
     guestName: text("guest_name"),
     guestEmail: text("guest_email"),
     title: text("title").notNull(),
+    isSample: boolean("is_sample").notNull().default(false),
+    startingVotes: integer("starting_votes").notNull().default(0),
     body: text("body").notNull().default(""),
     category: text("category").$type<"feedback" | "bug" | "feature_request">().notNull().default("feedback"),
     status: feedbackStatus("status").notNull().default("open"),
@@ -256,6 +268,7 @@ export const feedback = pgTable(
       foreignColumns: [boards.id, boards.workspaceId],
     }).onDelete("cascade"),
     unique("feedback_id_workspace_id_unique").on(table.id, table.workspaceId),
+    check("feedback_starting_votes_nonnegative", sql`${table.startingVotes} >= 0`),
     foreignKey({name:'feedback_merged_target_fk',columns:[table.mergedIntoId,table.workspaceId],foreignColumns:[table.id,table.workspaceId]}),
     check('feedback_merge_not_self_check',sql`${table.mergedIntoId} is null or ${table.mergedIntoId} <> ${table.id}`),
     index("feedback_roadmap_idx").on(table.workspaceId,table.status,table.roadmapOrder),

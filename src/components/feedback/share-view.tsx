@@ -4,6 +4,10 @@ import {XMark as XLogoIcon,LinkedInMark as LinkedinLogoIcon,FacebookMark as Face
 import { LinkIcon, CopyIcon, ArrowUpRightIcon } from "@/components/icons";
 import * as React from "react";
 import {Button} from "@/components/ui/button";
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { captureAnalytics } from "@/lib/analytics";
+import { widgetSnippet } from "@/lib/widget-snippet";
 import {toastManager} from "@/components/ui/toast";
 import { useProject } from "@/components/feedback/project-provider";
 import { NoBoard } from "@/components/feedback/board-context";
@@ -21,7 +25,33 @@ export function ShareView() {
   const url = domainReady?workspaceDomainAddress(project.slug,"/boards/"+encodeURIComponent(activeBoard?.slug??"")):origin+path;
   const text = "We’re building " + project.name + " with you. Share an idea, vote on requests, and help shape what comes next: " + url;
   const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  const snippet = '<script src="' + origin + '/widget.js" data-project="' + escape(project.slug) + '" data-board="' + escape(activeBoard?.slug ?? '') + '" defer></script>';
+  const snippet = widgetSnippet(origin, project.slug, activeBoard?.slug ?? "");
+  const endpoint = activeBoard ? `/api/workspaces/${project.id}/install?board=${activeBoard.id}` : null;
+  const [install, setInstall] = React.useState<{endpoint:string; prompt:string; installed:boolean; domain:string|null} | null>(null);
+  const [failed, setFailed] = React.useState<string|null>(null);
+  const setup = install?.endpoint === endpoint ? install : null;
+  React.useEffect(() => {
+    if (!endpoint) return;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    async function refresh() {
+      try {
+        const response = await fetch(endpoint!, {signal: controller.signal, cache: "no-store"});
+        if (!response.ok) throw new Error();
+        const {data} = await response.json();
+        if (controller.signal.aborted) return;
+        setInstall({...data, endpoint});
+        setFailed(null);
+        if (data.domain) return;
+      } catch {
+        if (controller.signal.aborted) return;
+        setFailed(endpoint);
+      }
+      timer = setTimeout(refresh, 10000);
+    }
+    void refresh();
+    return () => {controller.abort(); clearTimeout(timer);};
+  }, [endpoint]);
   const direct = '<a href="' + escape(url + '/submit') + '">Share feedback</a>';
   const visitorCode = 'Visitor details are configured in Widget settings.\n' + origin + '/dashboard/settings/widget';
   const social = {
@@ -31,9 +61,10 @@ export function ShareView() {
     Reddit: 'https://www.reddit.com/submit?url=' + encodeURIComponent(url) + '&title=' + encodeURIComponent('Share feedback for ' + project.name)
   };
   const mail = (subject: string, body: string) => 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-  async function copy(value: string, label: string) {
+  async function copy(value: string, label: string, onCopied?: () => void) {
     try {
       await navigator.clipboard.writeText(value);
+      onCopied?.();
       toastManager.add({type:"success",title:label});
     } catch {
       toastManager.add({type:'error',title:'Couldn’t copy',description:'Select the text and copy it manually.'});
@@ -218,7 +249,12 @@ export function ShareView() {
             <div className="text-[13px] mt-1 leading-[150%] wrap-normal font-sans font-medium text-muted-foreground">
               One snippet to collect feedback right inside your app.
             </div>
-            <div className="flex flex-col mt-5 gap-2">
+            <Tabs defaultValue="manual" className="mt-5">
+              <TabsList aria-label="Widget installation method">
+                <TabsTab value="manual">Manual snippet</TabsTab>
+                <TabsTab value="prompt">Prompt for AI tools</TabsTab>
+              </TabsList>
+              <TabsPanel value="manual">
               <div>
                 <div className="flex flex-col gap-3">
                   <div>
@@ -313,7 +349,14 @@ export function ShareView() {
                   </a>
                 </div>
               </div>
-            </div>
+              </TabsPanel>
+              <TabsPanel value="prompt" className="space-y-3">
+                <p className="text-sm text-muted-foreground">Paste this into Cursor, Claude Code, or any AI coding tool in your project.</p>
+                <Textarea aria-label="Widget setup prompt" readOnly rows={10} value={setup?.prompt ?? (failed === endpoint ? "Could not load the prompt. Retrying…" : "Loading prompt…")} />
+                <Button size="sm" disabled={!setup} onClick={() => setup && void copy(setup.prompt, "Prompt copied", () => captureAnalytics("setup_prompt_copied"))}>Copy prompt</Button>
+              </TabsPanel>
+            </Tabs>
+            {setup && <p role="status" className="mt-3 text-xs text-muted-foreground">{setup.domain ? "Installed on " + setup.domain : setup.installed ? "Installed" : "Waiting for the first load..."}</p>}
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@ export default async function Page({searchParams}:{searchParams:Promise<{intent?
  const next=intent==='public'?publicReturnPath(params.next):safeRedirectPath(params.next,'/dashboard/boards');
  const {userId}=await auth();
  if(!userId)redirect('/auth?'+new URLSearchParams({intent,next}).toString());
+ if(next==='/claim')redirect('/claim');
  // Board participation never starts or resumes workspace onboarding.
  if(intent==='public')redirect(next);
  const {progress,workspaces}=await getRegistrationState();

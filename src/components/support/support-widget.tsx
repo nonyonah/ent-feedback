@@ -14,7 +14,7 @@ function isApplicationHost(){
 
 export function SupportWidget(){
  const pathname=usePathname();
- const workspace=process.env.NEXT_PUBLIC_SUPPORT_WORKSPACE_SLUG||'elf-workspace';
+ const workspace=process.env.NEXT_PUBLIC_SUPPORT_WORKSPACE_SLUG||'rift-labs';
  const board=process.env.NEXT_PUBLIC_SUPPORT_BOARD_SLUG||'product';
  const applicationHost=useSyncExternalStore(subscribe,isApplicationHost,()=>false);
  const visible=Boolean(applicationHost&&workspace&&board&&(pathname==='/'||pathname==='/pricing'||pathname==='/dashboard'||pathname?.startsWith('/dashboard/')));

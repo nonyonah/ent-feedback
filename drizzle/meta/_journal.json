@@ -246,6 +246,20 @@
       "when": 1795460000000,
       "tag": "0034_widget_changelog",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1795471085179,
+      "tag": "0035_lumpy_ultimates",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1795472350170,
+      "tag": "0036_pretty_nightshade",
+      "breakpoints": true
     }
   ]
 }

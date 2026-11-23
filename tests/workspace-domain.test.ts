@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {workspaceDomainAddress,validNewWorkspaceDomain,normalizeWorkspaceName,validWorkspaceHandle,workspaceHandleFromHost,workspacePublicUrl} from '../src/lib/workspace-domain';
+import {workspaceDomainAddress,validNewWorkspaceDomain,normalizeWorkspaceName,validWorkspaceHandle,workspaceHandleFromHost,workspacePublicUrl,shortWorkspacePath} from '../src/lib/workspace-domain';
 test('workspace names normalize whitespace without changing their display case',()=>{assert.equal(normalizeWorkspaceName('  Acme\t  Feedback \n'),'Acme Feedback');assert.equal(normalizeWorkspaceName('Acme Feedback').toLowerCase(),normalizeWorkspaceName('ACME   FEEDBACK').toLowerCase());});
 test('subdomains are DNS labels and exclude infrastructure names',()=>{for(const handle of ['acme','acme-feedback','dobby','a1'])assert.ok(validWorkspaceHandle(handle));for(const handle of ['a','www','api','auth','support','-acme','acme-','acme.team','Acme','a'.repeat(41)])assert.equal(validWorkspaceHandle(handle),false,handle);});
 test('tenant resolution accepts exactly one label beneath the configured product domain',()=>{assert.equal(workspaceHandleFromHost('Acme.Feedback.Riftlabs.xyz:3000','feedback.riftlabs.xyz'),'acme');for(const host of ['dobby.riftlabs.xyz','feedback.riftlabs.xyz','acme.feedback.riftlabs.xyz.evil.test','evilacmefeedback.riftlabs.xyz','a.b.feedback.riftlabs.xyz','api.feedback.riftlabs.xyz'])assert.equal(workspaceHandleFromHost(host,'feedback.riftlabs.xyz'),null,host);});
@@ -16,10 +16,12 @@ test('feedback links open the workspace detail route without a legacy redirect',
  const previous=process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN;
  try {
   delete process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN;
-  assert.equal(feedbackHref({slug:'acme'},'post/one'),'/p/acme/items/post%2Fone');
+  assert.equal(feedbackHref({slug:'acme'},'post/one'),'/acme/items/post%2Fone');
   process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN='feedback.riftlabs.xyz';
-  assert.equal(feedbackHref({slug:'acme'},'post-1'),'https://acme.feedback.riftlabs.xyz/items/post-1');
+  assert.equal(feedbackHref({slug:'acme'},'post-1'),'/acme/items/post-1');
  } finally {
   if(previous===undefined)delete process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN;else process.env.NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN=previous;
  }
 });
+
+test('short public routes resolve workspaces and never shadow dashboard paths',()=>{for(const path of ['/acme/boards','/acme/boards/product/submit','/acme/items/123','/acme/roadmap','/acme/changelog/hello'])assert.equal(shortWorkspacePath(path)?.handle,'acme');for(const path of ['/dashboard/boards','/auth/boards','/api/boards','/acme/unknown','/p/acme/boards'])assert.equal(shortWorkspacePath(path),null);});

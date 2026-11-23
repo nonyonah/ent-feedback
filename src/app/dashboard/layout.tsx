@@ -2,6 +2,7 @@ import {SampleBoardsProvider} from "@/components/feedback/sample-controls";
 import {OperatorPresence} from '@/components/chat/operator-presence';
 import {BillingCacheProvider} from "@/components/feedback/billing-cache";
 import {readBillingSummary} from "@/server/billing/summary";
+import {DashboardView} from "@/components/feedback/dashboard-view";
 import {DashboardLoading} from "@/components/feedback/dashboard-loading";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
@@ -29,7 +30,7 @@ async function DashboardShell({ children }: { children: React.ReactNode }) {
     <>
       <WorkspaceSync redirectWhenEmpty initialWorkspaces={workspaces}/>
       <OperatorPresence/>
-      <BillingCacheProvider initial={billing}><WorkspaceGate><SampleBoardsProvider>{children}</SampleBoardsProvider></WorkspaceGate></BillingCacheProvider>
+      <BillingCacheProvider initial={billing}><WorkspaceGate><SampleBoardsProvider><DashboardView>{children}</DashboardView></SampleBoardsProvider></WorkspaceGate></BillingCacheProvider>
     </>
   );
 }

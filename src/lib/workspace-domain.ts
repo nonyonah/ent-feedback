@@ -9,3 +9,9 @@ export function validNewWorkspaceDomain(value:string){return value.length>=5&&va
 
 export const defaultWorkspaceBaseDomain='feedback.riftlabs.xyz';
 export function workspaceDomainAddress(handle:string,path='/'){return 'https://'+handle+'.'+(workspaceBaseDomain()??defaultWorkspaceBaseDomain)+path;}
+
+/** Resolve public paths without allowing application routes to be shadowed. */
+export function shortWorkspacePath(pathname:string){
+ const match=pathname.match(/^\/([a-z0-9]+(?:-[a-z0-9]+)*)\/(boards(?:\/[^/]+(?:\/submit)?)?|items\/[^/]+|following|submit|roadmap|changelog(?:\/[^/]+)?)\/?$/);
+ return match&&validWorkspaceHandle(match[1])?{handle:match[1],path:'/'+match[2]}:null;
+}

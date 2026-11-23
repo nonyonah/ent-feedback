@@ -323,9 +323,9 @@ Setup reference: [Slack interactivity](https://docs.slack.dev/interactivity/hand
 
 ### Ent’s own support widget
 
-`SupportWidget` is mounted once in the root app layout. It uses the standard `/widget.js` loader and sends feedback and chats to **elf-workspace → Product feedback (`product`)**, independently of the dashboard’s currently selected workspace. It appears on the landing page, pricing and all dashboard routes, for both signed-out visitors and signed-in customers. Auth, onboarding, public boards and embeds are excluded to avoid duplicate or nested widgets.
+`SupportWidget` is mounted once in the root app layout. It uses the standard `/widget.js` loader and sends feedback and chats to **rift-labs → Product feedback (`product`)**, independently of the dashboard’s currently selected workspace. It appears on the landing page, pricing and all dashboard routes, for both signed-out visitors and signed-in customers. Auth, onboarding, public boards and embeds are excluded to avoid duplicate or nested widgets.
 
-Optional build-time overrides: `NEXT_PUBLIC_SUPPORT_WORKSPACE_SLUG` and `NEXT_PUBLIC_SUPPORT_BOARD_SLUG`. Their defaults are elf-workspace/product, so the deployment works without adding environment variables. Public slugs only; never supply private tokens here. Enable chat in the support workspace’s settings if you want the Live chat destination.
+Optional build-time overrides: `NEXT_PUBLIC_SUPPORT_WORKSPACE_SLUG` and `NEXT_PUBLIC_SUPPORT_BOARD_SLUG`. Their defaults are rift-labs/product, so the deployment works without adding environment variables. Public slugs only; never supply private tokens here. Enable chat in the support workspace’s settings if you want the Live chat destination.
 
 The widget’s host-visibility event closes it without stealing focus when navigating to an excluded route. Returning to the dashboard reuses the existing iframe and conversation instead of creating another loader. The root integration is not conditioned on Clerk’s signed-in state. It does not automatically pass the host account’s name, email or authentication tokens into the anonymous chat session.
 

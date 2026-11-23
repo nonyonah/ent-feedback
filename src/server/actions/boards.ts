@@ -1,6 +1,7 @@
 "use server";
 
 import {getWorkspaceEntitlements} from "@/server/billing/access";
+import {billableBoardCount} from "@/server/billing/board-count";
 import { and, asc, eq, sql, or } from "drizzle-orm";
 import { z } from "zod";
 import { requireAppUser } from "@/server/auth";
@@ -9,11 +10,15 @@ import { boards, workspaces, feedback, comments, attachments } from "@/server/db
 import { requireWorkspaceRole } from "@/server/services/access";
 import { runService, ServiceError } from "@/server/result";
 import { trackServerAnalytics } from "@/lib/analytics/server";
+import { uniqueBoardHandle } from "@/lib/board-slug";
+import { boardTemplateIds } from "@/lib/board-templates";
+import { seedBoardSamples } from "@/server/services/sample-items";
 
 const uuid = z.string().uuid();
 const nameSchema = z.string().trim().min(1, "Enter a board name.").max(60);
 const markerSchema = z.object({
   name: nameSchema,
+  template: z.enum(boardTemplateIds).default("saas"),
   color: z.string().regex(/^#[0-9a-f]{6}$/i, "Choose a valid color."),
   emoji: z.string().trim().min(1).max(32).optional(),
 });
@@ -38,22 +43,18 @@ export async function createBoardAction(workspaceId: string, input: z.input<type
       const current = await tx.select({ handle: boards.handle, position: boards.position }).from(boards)
         .where(eq(boards.workspaceId, wid));
       const entitlement=await getWorkspaceEntitlements(wid,tx);
-      if(current.length>=entitlement.boardLimit)throw new ServiceError('forbidden',entitlement.plan==='free'?'Your Free plan includes 2 boards. Start an Essentials trial for up to 6 boards in Settings → Billing.':'Essentials includes up to 6 boards.');
-      let base = value.name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "board";
-      base = base.slice(0, 50).replace(/-$/, "");
-      if (base.length < 2) base += "-board";
-      const used = new Set(current.map(board => board.handle));
-      let handle = base;
-      for (let suffix = 2; used.has(handle); suffix++) handle = `${base}-${suffix}`;
+      if(await billableBoardCount(tx,wid)>=entitlement.boardLimit)throw new ServiceError('forbidden',entitlement.plan==='free'?'Your Free plan includes 2 boards. Start an Essentials trial for up to 6 boards in Settings → Billing.':'Essentials includes up to 6 boards.');
+      const handle = uniqueBoardHandle(value.name, current.map(board => board.handle));
       const [created] = await tx.insert(boards).values({
         workspaceId: wid, name: value.name, handle, color: value.color,
         emoji: value.emoji ?? null, description: "Help shape what we build next.",
         position: current.reduce((max, board) => Math.max(max, board.position), -1) + 1,
       }).returning(selection);
+      await seedBoardSamples(tx, wid, created.id, created.name, value.template);
       return { ...created, emoji: created.emoji ?? undefined };
     });
     trackServerAnalytics('board_created',{},{boardId:created.id,user:actor});
+    trackServerAnalytics('template_selected',{type:value.template},{boardId:created.id,user:actor});
     return created;
   });
 }

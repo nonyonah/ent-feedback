@@ -23,6 +23,7 @@ export type FeedbackItemData = {
   id: string;
   boardId?: string;
   category?: FeedbackCategory;
+  isSample?: boolean;
   canEditCategory?: boolean;
   tags?: FeedbackTag[];
   title: string;

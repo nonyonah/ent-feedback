@@ -1,4 +1,5 @@
 import "server-only";
+import {seedBoardSamples} from "@/server/services/sample-items";
 import {z} from "zod";
 import {buildBillingSummary,type BillingSummary} from "@/server/billing/summary";
 import {consumeRateLimit} from "@/server/rate-limit";
@@ -14,6 +15,7 @@ import { isUniqueViolation } from "@/server/db/errors";
 import {
   lifecycleEmailState,
   boards,
+  previewClaims,
   invitations,
   users,
   workspaceMembers,
@@ -145,9 +147,11 @@ export async function listWorkspacesForUser(userId: string): Promise<WorkspaceSu
       theme: workspaces.theme,
       hideAttribution: workspaces.hideAttribution,
       role: workspaceMembers.role,
+      claimedBoard: previewClaims.claimedAt,
     })
     .from(workspaceMembers)
     .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
+    .leftJoin(previewClaims,eq(previewClaims.workspaceId,workspaces.id))
     .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.status, "active")))
     .orderBy(asc(workspaces.createdAt), asc(workspaces.id));
 
@@ -158,9 +162,9 @@ export async function listWorkspacesForUser(userId: string): Promise<WorkspaceSu
     db.select().from(workspaceSubscriptions).where(inArray(workspaceSubscriptions.workspaceId,ids)),
   ]);
   const subscriptionMap=new Map(subscriptions.map(row=>[row.workspaceId,row]));
-  return rows.map(row=>{
+  return rows.map(({claimedBoard,...row})=>{
     const workspaceBoards=boardMap.get(row.id)??[];
-    const billing=buildBillingSummary(subscriptionMap.get(row.id),workspaceBoards.length,row.role==='owner');
+    const billing=buildBillingSummary(subscriptionMap.get(row.id),workspaceBoards.length-(claimedBoard?1:0),row.role==='owner',workspaceBoards.length);
     return {...row,hideAttribution:billing.hideAttribution,boards:workspaceBoards,billing};
   });
 }
@@ -188,6 +192,7 @@ async function insertWorkspace(tx:Queryable,input:{userId:string;name:string;han
   color:"#737373",
   position:0,
  }).returning();
+ await seedBoardSamples(tx, workspace.id, board.id, board.name, "saas");
  return {
   id:workspace.id,
   name:workspace.name,

@@ -1,4 +1,5 @@
 import 'server-only';
+import { displayedVotes } from "@/server/services/displayed-votes";
 import {randomUUID} from 'node:crypto';
 import {and,eq,sql,isNull,desc,asc,inArray,gte,lt} from 'drizzle-orm';
 import {z} from 'zod';
@@ -18,7 +19,7 @@ export async function roadmapWorkspace(key:string){
  const [workspace]=await getDb().select({id:workspaces.id,handle:workspaces.handle}).from(workspaces).where(eq(workspaces.handle,handle)).limit(1);
  if(!workspace)throw new ServiceError('not_found','Workspace not found.');return workspace;
 }
-const fields={voters:sql<RoadmapVoter[]>`coalesce((select jsonb_agg(jsonb_build_object('name',recent.name,'avatar_url',recent.avatar_url)) from (select coalesce(nullif(trim(ru.name),''),'Voter') as name, ru.avatar_url from ${votes} rv left join ${users} ru on ru.id=rv.user_id where rv.feedback_id=${feedback}.id and rv.workspace_id=${feedback}.workspace_id order by rv.created_at desc,rv.id desc limit 3) recent),'[]'::jsonb)`,id:feedback.id,board_id:feedback.boardId,title:feedback.title,category:feedback.category,status:feedback.status,public_note:feedback.publicNote,shipped_at:sql<string|null>`${feedback.shippedAt}::text`,roadmap_order:feedback.roadmapOrder,vote_count:sql<number>`(select count(*)::int from ${votes} rv where rv.feedback_id=${feedback}.id and rv.workspace_id=${feedback}.workspace_id)`,comment_count:sql<number>`(select count(*)::int from ${comments} rc where rc.feedback_id=${feedback}.id and rc.workspace_id=${feedback}.workspace_id and rc.deleted_at is null)`};
+const fields={voters:sql<RoadmapVoter[]>`coalesce((select jsonb_agg(jsonb_build_object('name',recent.name,'avatar_url',recent.avatar_url)) from (select coalesce(nullif(trim(ru.name),''),'Voter') as name, ru.avatar_url from ${votes} rv left join ${users} ru on ru.id=rv.user_id where rv.feedback_id=${feedback}.id and rv.workspace_id=${feedback}.workspace_id order by rv.created_at desc,rv.id desc limit 3) recent),'[]'::jsonb)`,id:feedback.id,board_id:feedback.boardId,is_sample:feedback.isSample,title:feedback.title,category:feedback.category,status:feedback.status,public_note:feedback.publicNote,shipped_at:sql<string|null>`${feedback.shippedAt}::text`,roadmap_order:feedback.roadmapOrder,vote_count:displayedVotes,comment_count:sql<number>`(select count(*)::int from ${comments} rc where rc.feedback_id=${feedback}.id and rc.workspace_id=${feedback}.workspace_id and rc.deleted_at is null)`};
 export async function readRoadmap(workspaceId:string,{admin=false,allShipped=false,cursor=0}:{admin?:boolean;allShipped?:boolean;cursor?:number}={}){
  const wid=z.uuid().parse(workspaceId);if(admin){const user=await requireAppUser();await requireWorkspaceRole(getDb(),{workspaceId:wid,userId:user.id,minimumRole:'owner'});await consumeRateLimit('roadmap:read:'+user.id,120,60);}
  const offset=z.number().int().min(0).max(100000).parse(cursor);const data:RoadmapData={planned:[],in_progress:[],shipped:[],next_cursor:null};const db=getDb();

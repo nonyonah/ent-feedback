@@ -9,6 +9,7 @@ import {after} from 'next/server';
 import {analyticsHostFromHeaders,isInternalAnalyticsHost,markWidgetFirstLoaded,trackServerAnalytics} from '@/lib/analytics/server';
 
 export const instant = false;
+export const metadata={robots:{index:false,follow:false}};
 
 export default async function Page({ searchParams }: {
   searchParams: Promise<{ project?: string | string[]; board?: string | string[] }>;

@@ -104,10 +104,14 @@ export async function resolveAnalyticsBoard(workspaceId:string,boardId?:string|n
   return board?.id;
 }
 export async function markWidgetFirstLoaded(input:BoardAnalyticsInput){
-  if(!analyticsConfigured()||!isDomain(input.originDomain)||!input.isExternal)return;
+  if(!isDomain(input.originDomain)||!input.isExternal)return;
   const db=getDb();
-  const [changed]=await db.update(workspaces).set({widgetFirstLoadedAt:new Date()}).where(and(eq(workspaces.id,input.workspaceId),isNull(workspaces.widgetFirstLoadedAt))).returning({id:workspaces.id,name:workspaces.name,createdAt:workspaces.createdAt});
-  if(!changed)return;
+  const [changed]=await db.update(workspaces).set({widgetFirstLoadedAt:new Date(),widgetInstalledDomain:input.originDomain}).where(and(eq(workspaces.id,input.workspaceId),isNull(workspaces.widgetFirstLoadedAt))).returning({id:workspaces.id,name:workspaces.name,createdAt:workspaces.createdAt});
+  if(!changed){
+    await db.update(workspaces).set({widgetInstalledDomain:input.originDomain}).where(and(eq(workspaces.id,input.workspaceId),isNull(workspaces.widgetInstalledDomain)));
+    return;
+  }
+  if(!analyticsConfigured())return;
   const [owner]=await db.select({email:users.email}).from(workspaceMembers).innerJoin(users,eq(users.id,workspaceMembers.userId)).where(and(eq(workspaceMembers.workspaceId,input.workspaceId),eq(workspaceMembers.role,'owner'))).limit(1);
   const entitlements=await getWorkspaceEntitlements(input.workspaceId);
   identifyAnalyticsBoard({boardId:input.boardId,name:changed.name,ownerEmail:owner?.email,createdAt:changed.createdAt,plan:entitlements.plan,widgetInstalled:true,installedDomain:input.originDomain});

@@ -1,0 +1,1 @@
+ALTER TABLE "preview_claims" ENABLE ROW LEVEL SECURITY;

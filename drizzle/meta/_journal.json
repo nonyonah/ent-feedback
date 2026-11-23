@@ -197,6 +197,20 @@
       "when": 1795276690863,
       "tag": "0027_military_logan",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1795429655188,
+      "tag": "0028_board_setup",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1795430373728,
+      "tag": "0029_preview_claims_rls",
+      "breakpoints": true
     }
   ]
 }

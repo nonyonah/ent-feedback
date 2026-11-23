@@ -8,3 +8,5 @@ export function feedbackHref(project: Pick<Project,"slug">, id: string) {
 }
 
 export function roadmapHref(project:Pick<Project,"slug">){return workspaceBaseDomain()?workspacePublicUrl(project.slug,"/roadmap"):"/p/"+encodeURIComponent(project.slug)+"/roadmap";}
+
+export function changelogHref(project:Pick<Project,"slug">){return workspaceBaseDomain()?workspacePublicUrl(project.slug,"/changelog"):"/p/"+encodeURIComponent(project.slug)+"/changelog";}

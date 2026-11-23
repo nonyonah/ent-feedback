@@ -1,0 +1,51 @@
+.navigation {
+  --date-height: 44px;
+  --date-step: 48px;
+}
+
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 180ms var(--ease-out), opacity 150ms var(--ease-out);
+}
+
+.panel[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.chevron {
+  transition: transform 180ms var(--ease-out);
+}
+
+.highlight {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: var(--date-height);
+  border-radius: 6px;
+  background: var(--color-control-quiet);
+  pointer-events: none;
+  transition: transform 180ms var(--ease-out), opacity 150ms ease;
+}
+
+.row {
+  height: var(--date-height);
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+@media (min-width: 768px) {
+  .navigation {
+    --date-height: 36px;
+    --date-step: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel, .highlight, .chevron, .row { transition: none; }
+}
+
+:global([data-input-modality="keyboard"]) .panel,
+:global([data-input-modality="keyboard"]) .highlight,
+:global([data-input-modality="keyboard"]) .chevron { transition: none; }

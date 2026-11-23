@@ -473,3 +473,31 @@ html[data-input-modality="keyboard"] [data-board-id] {
 @media (prefers-reduced-motion: reduce) {
   [data-board-id] { transition: none !important; }
 }
+
+html, body, * {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+[data-slot="scroll-area-scrollbar"], [data-slot="scroll-area-corner"] {
+  display: none !important;
+}
+
+/* Portaled dropdowns in the changelog editor match its unboxed controls. */
+[data-changelog-control],
+[data-changelog-control] :is(button, input, [data-slot="input-control"]),
+[data-changelog-control] :is(button, input, [data-slot="input-control"])::before {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+[data-changelog-control] :is(button, input):focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+[data-changelog-control] button[aria-label]:focus-visible {
+  background: var(--control-hover);
+  color: var(--foreground);
+}

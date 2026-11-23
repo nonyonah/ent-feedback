@@ -21,6 +21,7 @@ export type Project = {
   theme?: "dynamic" | "light" | "dark";
   hideAttribution?: boolean;
   chatEnabled?: boolean;
+  hasChangelog?: boolean;
   website?: string;
   role?: WorkspaceRole;
 };
@@ -101,6 +102,7 @@ export type WidgetSettings = {
   greeting: string;
   replyTime: "automatic" | "day" | "days" | "week";
   submitNotice: boolean;
+  showChangelog: boolean;
 };
 export const defaultWidgetSettings: WidgetSettings = {
   enabled: true,
@@ -110,6 +112,7 @@ export const defaultWidgetSettings: WidgetSettings = {
   greeting: "",
   replyTime: "automatic",
   submitNotice: true,
+  showChangelog: true,
 };
 export type TeamInvite = {
   id: string;

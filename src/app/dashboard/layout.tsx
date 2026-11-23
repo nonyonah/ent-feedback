@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { WorkspaceGate, WorkspaceSync } from "@/components/feedback/workspace-sync";
 import {getRegistrationState} from "@/server/onboarding";
 import { getOptionalAppUser } from "@/server/auth";
+import {needsWorkspaceRegistration} from "@/lib/registration-state";
 
 export const instant = false;
 
@@ -20,7 +21,7 @@ async function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   const {progress,workspaces}=await getRegistrationState();
-  if(!workspaces.length||(!progress.complete&&progress.workspaceId))redirect("/registration");
+  if(needsWorkspaceRegistration({hasWorkspace:workspaces.length>0,complete:progress.complete,hasSetupWorkspace:Boolean(progress.workspaceId)}))redirect("/registration");
 
   const billing=Object.fromEntries(await Promise.all(workspaces.map(async workspace=>[workspace.id,workspace.billing??await readBillingSummary(workspace.id,workspace.role==='owner')])));
 

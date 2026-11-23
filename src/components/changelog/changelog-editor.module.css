@@ -1,0 +1,84 @@
+.settings {
+  transform: translateX(100%);
+  opacity: 0;
+  visibility: hidden;
+  transition: transform 200ms var(--ease-out), opacity 150ms ease, visibility 200ms;
+}
+.settings[data-open="true"] {
+  transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
+}
+.blocks {
+  transform-origin: top left;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: transform 150ms var(--ease-out), opacity 125ms var(--ease-out);
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+.preview {
+  opacity: 1;
+  transition: opacity 125ms ease;
+  @starting-style { opacity: 0; }
+}
+.editor button {
+  transition: transform 120ms var(--ease-out), background-color 125ms ease, color 125ms ease;
+}
+.editor button:active:not(:disabled) { transform: scale(0.98); }
+.editor :is(button, input, [data-slot="input-control"], [data-slot="select-trigger"], [data-slot="select-button"]) {
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.editor :is([data-slot="input-control"], [data-slot="select-trigger"], [data-slot="select-button"]) {
+  background: var(--control-quiet);
+}
+.editor :is(button, input):focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.editor button[aria-label]:focus-visible {
+  background: var(--control-hover);
+  color: var(--foreground);
+}
+.editor :is(button, [data-slot="input-control"], [data-slot="select-trigger"], [data-slot="select-button"])::before { box-shadow: none !important; }
+.writing {
+  position: relative;
+  min-height: 50svh;
+  padding-block: 16px;
+  font-size: 16px;
+  line-height: 1.8;
+  outline: none;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.writing[data-empty="true"]::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  pointer-events: none;
+  color: var(--muted-foreground);
+  opacity: 0.65;
+}
+.writing > * { margin-block: 0 16px; }
+.writing h2 { font-size: 24px; font-weight: 600; line-height: 1.35; letter-spacing: -0.4px; }
+.writing h3 { font-size: 20px; font-weight: 600; line-height: 1.5; letter-spacing: -0.2px; }
+.writing ul { list-style: disc; padding-inline-start: 24px; }
+.writing ol { list-style: decimal; padding-inline-start: 24px; }
+.writing blockquote { border-inline-start: 2px solid var(--border); padding-inline-start: 16px; color: var(--muted-foreground); }
+.writing pre { border-radius: 10px; background: var(--control-quiet); padding: 16px; font-size: 13px; line-height: 1.8; white-space: pre-wrap; }
+.writing code { font-family: monospace; }
+.writing hr { border: 0; border-top: 1px solid var(--border); margin-block: 24px; }
+.writing img { display: block; max-width: 100%; width: 100%; height: auto; border-radius: 10px; }
+.writing a { text-decoration: underline; text-underline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .settings, .blocks, .preview, .editor button { transition: none; }
+  .editor button:active:not(:disabled) { transform: none; }
+}
+:global(html[data-input-modality="keyboard"]) .settings,
+:global(html[data-input-modality="keyboard"]) .blocks,
+:global(html[data-input-modality="keyboard"]) .preview,
+:global(html[data-input-modality="keyboard"]) .editor button { transition: none; }
+:global(html[data-input-modality="keyboard"]) .editor button:active { transform: none; }

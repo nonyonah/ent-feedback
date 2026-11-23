@@ -211,6 +211,41 @@
       "when": 1795430373728,
       "tag": "0029_preview_claims_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1795441236809,
+      "tag": "0030_changelog",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795444167032,
+      "tag": "0031_changelog_meta",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795447294604,
+      "tag": "0032_changelog_workflow",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1795454099881,
+      "tag": "0033_changelog_media",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1795460000000,
+      "tag": "0034_widget_changelog",
+      "breakpoints": true
     }
   ]
 }

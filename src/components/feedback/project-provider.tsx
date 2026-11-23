@@ -21,6 +21,7 @@ export type Project = {
   theme?: "dynamic" | "light" | "dark";
   hideAttribution?: boolean;
   chatEnabled?: boolean;
+  hasChangelog?: boolean;
   website?: string;
   role?: WorkspaceRole;
 };

@@ -235,6 +235,25 @@ export const previewClaims = pgTable("preview_claims", {
   claimedAt: timestamp("claimed_at", {withTimezone:true}),
 }, table => [foreignKey({columns:[table.boardId,table.workspaceId],foreignColumns:[boards.id,boards.workspaceId]}).onDelete("cascade")]).enableRLS();
 
+export const changelogEntries = pgTable(
+  "changelog_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    ...timestamps(),
+  },
+  (table) => [
+    index("changelog_entries_workspace_published_idx").on(table.workspaceId, table.publishedAt.desc()),
+    check("changelog_entries_title_length", sql`length(${table.title}) between 1 and 120`),
+    check("changelog_entries_body_length", sql`length(${table.body}) between 1 and 5000`),
+  ],
+);
+
 export const feedback = pgTable(
   "feedback",
   {

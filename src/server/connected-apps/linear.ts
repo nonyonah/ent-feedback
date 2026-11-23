@@ -36,7 +36,7 @@ export async function createOrLinkIssue(input:{connectionId:string;workspaceId:s
  // Stable provider ID makes retries safe even when a successful response was lost.
  const id=externalRequestId(connection.id+':'+post.id);const found=await linearGraph<{issues:{nodes:unknown[]}}>(token,`query($id:ID!){issues(filter:{id:{eq:$id}},first:1){nodes{${issueFields}}}}`,{id});
  if(found.issues.nodes[0])issue=linearIssueSchema.parse(found.issues.nodes[0]);else{
- const [workspace]=await tx.select({handle:workspaces.handle}).from(workspaces).where(eq(workspaces.id,input.workspaceId));const url=new URL(`/p/${workspace.handle}/items/${post.id}`,getServerEnv().NEXT_PUBLIC_APP_URL).href;
+ const [workspace]=await tx.select({handle:workspaces.handle}).from(workspaces).where(eq(workspaces.id,input.workspaceId));const url=new URL(`/${workspace.handle}/items/${post.id}`,getServerEnv().NEXT_PUBLIC_APP_URL).href;
  const result=await linearGraph<{issueCreate:{success:boolean;issue:unknown}}>(token,`mutation($input:IssueCreateInput!){issueCreate(input:$input){success issue{${issueFields}}}}`,{input:{id,teamId:settings.teamId,stateId:settings.states[post.status],title:post.title,description:post.body+'\n\nEnt feedback: '+url}});if(!result.issueCreate.success)throw new ServiceError('retryable','Linear did not create the issue.');issue=linearIssueSchema.parse(result.issueCreate.issue);
  }}
  if(issue.team.id!==settings.teamId)throw new ServiceError('validation','Choose an issue from the connected Linear team.');

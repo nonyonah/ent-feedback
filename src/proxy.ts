@@ -1,5 +1,5 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
-import {workspaceBaseDomain,workspaceHandleFromHost} from "@/lib/workspace-domain";
+import {workspaceBaseDomain,workspaceHandleFromHost,shortWorkspacePath} from "@/lib/workspace-domain";
 import { NextResponse, type NextRequest, type NextFetchEvent } from "next/server";
 import {documentationPath,documentationOrigin,documentationDestination,documentationRequestHeaders} from "@/lib/documentation-proxy";
 
@@ -22,12 +22,20 @@ const applicationProxy=clerkMiddleware(async (auth, request) => {
       else if(next==="/")destination.searchParams.set("next","/p/"+tenant+"/boards");
       return NextResponse.redirect(destination);
     }
-    if(pathname==="/"||pathname==="/boards"||pathname.startsWith("/boards/")||pathname.startsWith("/items/")||pathname==="/submit"||pathname==="/following"||pathname==="/roadmap"){
+    if(pathname==="/"||pathname==="/boards"||pathname.startsWith("/boards/")||pathname.startsWith("/items/")||pathname==="/submit"||pathname==="/following"||pathname==="/roadmap"||pathname==="/changelog"||pathname.startsWith("/changelog/")){
       const rewritten=request.nextUrl.clone();
       rewritten.pathname="/p/"+tenant+(pathname==="/"?"/boards":pathname);
       return NextResponse.rewrite(rewritten);
     }
     if(pathname.startsWith("/p/"))return new NextResponse("Not found",{status:404});
+  }
+
+  const shortPath=shortWorkspacePath(pathname);
+  if(shortPath){
+    if(tenant&&tenant!==shortPath.handle)return new NextResponse("Not found",{status:404});
+    const rewritten=request.nextUrl.clone();
+    rewritten.pathname='/p/'+shortPath.handle+shortPath.path;
+    return NextResponse.rewrite(rewritten);
   }
 
   if (protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {

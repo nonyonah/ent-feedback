@@ -13,6 +13,8 @@ import {Dialog,DialogPopup,DialogTitle,DialogDescription,DialogFooter} from '@/c
 import {toastManager} from '@/components/ui/toast';
 import {EmptyState} from '@/components/feedback/empty-state';
 import {ChangelogBody} from '@/components/changelog/changelog-body';
+import {GithubChangelogSetup} from '@/components/changelog/github-changelog-setup';
+import {changelogPlainText} from '@/lib/changelog-markdown';
 import {ChangelogComposer,ChangelogCover} from '@/components/changelog/changelog-composer';
 import {PublishDatePicker} from '@/components/changelog/publish-date-picker';
 import {InboxSearchTrigger} from '@/components/feedback/inbox-search-trigger';
@@ -148,7 +150,7 @@ export function DashboardChangelog(){
       <span className="md:hidden"><SidebarTrigger/></span>
       <h1 className="text-[13px] font-medium tracking-[-0.135px]">Changelog</h1>
       {entries&&<span aria-label={entries.length+' entries'} className="text-[13px] tabular-nums text-muted-foreground">{entries.length}</span>}
-      {editable&&<Button size="sm" className="ms-auto text-[13px]" onClick={create}><PlusIcon className="size-3.5"/>New entry</Button>}
+      {editable&&<div className="ms-auto flex flex-wrap items-center gap-2"><GithubChangelogSetup workspaceId={project.id}/><Button size="sm" className="text-[13px]" onClick={create}><PlusIcon className="size-3.5"/>New entry</Button></div>}
     </header>
     <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 pb-3">
       <Select items={[{value:'all',label:'All statuses'},{value:'published',label:'Published'},{value:'scheduled',label:'Scheduled'},{value:'draft',label:'Drafts'}]} value={filter} onValueChange={value=>value&&setFilter(value as Filter)}>
@@ -161,16 +163,16 @@ export function DashboardChangelog(){
       {loadError?<ErrorNotice className="mt-3">{loadError} <Button variant="link" size="sm" className="h-auto p-0 text-[13px]" onClick={reload}>Try again</Button></ErrorNotice>
         :!visible?<div aria-busy="true" aria-label="Loading changelog" className="mt-3 space-y-2">{[1,2,3].map(id=><div key={id} className="space-y-3 rounded-[13px] bg-card p-3.5"><Skeleton className="h-4 w-2/5"/><Skeleton className="h-3 w-4/5"/></div>)}</div>
         :!visible.length?<EmptyState className="py-16" title={entries?.length?'No entries match':'No changelog yet'} description={editable?(entries?.length?'Try a different status or search.':'Publish an update to tell people what shipped.'):'Published updates will appear here.'}/>
-        :<ul className="mt-1 space-y-2">{visible.map(entry=><li key={entry.id} className="rounded-[13px] bg-card p-3.5">
+        :<ul aria-label="Changelog entries" className="mt-1 overflow-hidden rounded-xl border border-border/60 bg-card">{visible.map(entry=><li key={entry.id} className="border-b border-border/60 p-4 last:border-b-0">
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <h2 className="min-w-0 truncate text-[13px] font-medium leading-5">{entry.title}</h2>
+                <h2 className="min-w-0 break-words text-[14px] font-semibold leading-5">{entry.title}</h2>
                 <StatusBadge status={entry.status} label={changelogStatusLabels[entry.status]+(entry.status==='published'&&entry.publishedAt?' · '+formatChangelogDate(entry.publishedAt):entry.status==='scheduled'&&entry.scheduledFor?' · '+formatChangelogDate(entry.scheduledFor):'')}/>
                 <Badge variant="outline" size="sm" className="border-0 bg-control-quiet text-muted-foreground">{changelogCategoryLabels[entry.category]}</Badge>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-muted-foreground">
-                {entry.summary?<span className="line-clamp-2 min-w-0">{entry.summary}</span>:<span className="line-clamp-2 min-w-0">{entry.body.slice(0,140)}</span>}
+                {entry.summary?<span className="line-clamp-2 min-w-0">{entry.summary}</span>:<span className="line-clamp-2 min-w-0">{changelogPlainText(entry.body)}</span>}
                 {entry.feedback.length>0&&<span>· {entry.feedback.length} linked {entry.feedback.length===1?'request':'requests'}</span>}
                 {entry.author&&<span>· {entry.author.name}</span>}
               </div>
@@ -205,7 +207,18 @@ export function DashboardChangelog(){
           </div>
         </header>
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
-          <fieldset disabled={Boolean(saving)} className={"min-w-0 flex-1 overflow-y-auto"+(settingsOpen?" md:pr-[360px]":"")}>
+          {preview ? <div className="min-w-0 flex-1 overflow-y-auto bg-background px-4 pb-20 pt-9 sm:px-8">
+            <div className="mx-auto w-full max-w-[720px]">
+              <p className="text-[13px] text-muted-foreground">Changelog <span aria-hidden="true">/</span> {draft.title||'Untitled update'}</p>
+              <article className="mt-6">
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5"><span className="text-[11px] font-medium uppercase leading-4 tracking-[0.07em] text-muted-foreground">Preview</span><span className="inline-flex items-center rounded-full bg-control-quiet px-2 py-0.5 text-[11px] font-medium leading-4 text-muted-foreground">{changelogCategoryLabels[draft.category]}</span></div>
+                <h1 className="mt-2.5 break-words text-[26px] font-semibold leading-9 tracking-[-0.4px] sm:text-[30px] sm:leading-10">{draft.title||'Untitled update'}</h1>
+                {draft.summary&&<p className="mt-2.5 text-[15px] leading-7 text-muted-foreground sm:text-[16px]">{draft.summary}</p>}
+                <div className="mt-5">{draft.coverImage&&<img src={draft.coverImage} alt="" className="mb-6 aspect-[2/1] w-full rounded-lg object-cover"/>}{draft.body.trim()?<ChangelogBody markdown={draft.body}/>:<p className="text-[13px] text-muted-foreground">Your update will appear here.</p>}</div>
+                {draft.feedback.length>0&&<div className="mt-7 rounded-[10px] bg-control-quiet px-4 py-3"><p className="text-[11px] font-medium uppercase leading-4 tracking-[0.07em] text-muted-foreground">Requested by your users</p><ul className="mt-1.5 space-y-1">{draft.feedback.map(item=><li key={item.id} className="text-[13px] leading-5 text-foreground/80 underline decoration-border underline-offset-2">{item.title}</li>)}</ul></div>}
+              </article>
+            </div>
+          </div> : <fieldset disabled={Boolean(saving)} className={"min-w-0 flex-1 overflow-y-auto"+(settingsOpen?" md:pr-[360px]":"")}>
             <div className="mx-auto w-full max-w-[760px] px-6 py-10 md:px-12 md:py-16">
               <ChangelogCover onBusyChange={busy=>setUploads(current=>({...current,cover:busy}))} workspaceId={project.id} value={draft.coverImage} onChange={coverImage=>setDraft(current=>current?{...current,coverImage}:current)} onError={setFormError}/>
               <div className="grid gap-1.5">
@@ -213,13 +226,11 @@ export function DashboardChangelog(){
                 <textarea rows={2} id={uid+'-title'} autoFocus required maxLength={changelogTitleMaxLength} placeholder="Untitled update" value={draft?.title??''} onChange={event=>setDraft(current=>current?{...current,title:event.target.value,slug:current.slugEdited?current.slug:slugifyChangelogTitle(event.target.value)}:current)} className="field-sizing-content min-h-[1.5em] w-full resize-none border-0 bg-transparent px-0 py-2 text-[32px] font-semibold leading-tight tracking-tight outline-none placeholder:text-muted-foreground/60 sm:text-[40px]"/>
               </div>
               <label htmlFor={uid+'-body'} className="sr-only">Content</label>
-              {preview
-                ?<div className={editorStyles.preview+" min-h-[50svh] py-3"}><p className="mb-2 text-[11px] font-medium uppercase tracking-[0.07em] text-muted-foreground">Preview</p>{draft?.body.trim()?<ChangelogBody markdown={draft.body}/>:<p className="text-[13px] text-muted-foreground">Nothing to preview yet.</p>}</div>
-                :<ChangelogComposer onBusyChange={busy=>setUploads(current=>({...current,content:busy}))} id={uid+'-body'} value={draft.body} workspaceId={project.id} onChange={body=>setDraft(current=>current?{...current,body}:current)} onError={setFormError}/>}
+              <ChangelogComposer onBusyChange={busy=>setUploads(current=>({...current,content:busy}))} id={uid+'-body'} value={draft.body} workspaceId={project.id} onChange={body=>setDraft(current=>current?{...current,body}:current)} onError={setFormError}/>
 
               {formError&&<ErrorNotice className="mt-4 text-xs">{formError}</ErrorNotice>}
             </div>
-          </fieldset>
+          </fieldset>}
             <aside id={uid+'-settings'} data-open={settingsOpen} inert={!settingsOpen} aria-hidden={!settingsOpen} aria-label="Post settings" className={editorStyles.settings+" absolute inset-y-0 right-0 z-10 w-full max-w-[360px] overflow-y-auto border-s border-border/60 bg-background p-4"}>
               <div className="mb-6 flex items-center justify-between px-4"><h2 className="text-[14px] font-medium">Post settings</h2><Button type="button" variant="ghost" size="icon-sm" aria-label="Close post settings" onClick={()=>{setSettingsOpen(false);document.querySelector<HTMLButtonElement>('button[aria-label="Post settings"]')?.focus();}}><XIcon/></Button></div>
               <fieldset disabled={Boolean(saving)} className="space-y-8">

@@ -10,7 +10,7 @@ import {EmptyIllustration} from "./empty-illustration";
 
 import * as React from "react";
 import {BillingNotice} from "./billing-notice";
-import {useSearchParams} from "next/navigation";
+import {usePathname,useSearchParams} from "next/navigation";
 import Link from "next/link";
 import {FilterIcon} from "@/components/icons";
 import {Menu,MenuTrigger,MenuPopup,MenuGroup,MenuGroupLabel,MenuRadioGroup,MenuRadioItem,MenuItem,MenuSeparator} from "@/components/ui/menu";
@@ -30,7 +30,7 @@ import { DashboardSidebar } from "@/components/feedback/dashboard-sidebar";
 import { ProductTour } from "@/components/feedback/product-tour";
 import { DashboardRequestDetail } from "@/components/feedback/dashboard-request-detail";
 import {FeedbackTypeLabel} from "./feedback-type-label";
-import { FEEDBACK_CATEGORIES, STATUS_LABELS, type FeedbackCategory, type FeedbackStatus } from "@/lib/feedback-data";
+import { FEEDBACK_CATEGORIES, STATUS_LABELS, STATUS_ORDER, type FeedbackCategory, type FeedbackStatus } from "@/lib/feedback-data";
 import { FEEDBACK_SORT_OPTIONS, compareFeedback } from "@/lib/feedback-sort";
 import { boardHref } from "@/lib/project-links";
 import { cn } from "@/lib/utils";
@@ -39,15 +39,30 @@ import { ShareView } from "@/components/feedback/share-view";
 import { DashboardBoards } from "@/components/feedback/dashboard-boards";
 import { DashboardSettings, SettingsSidebar, type SettingsSection } from "@/components/feedback/dashboard-settings";
 import { DashboardChangelog } from "@/components/changelog/dashboard-changelog";
+import {useSettingsHref} from "./use-settings-href";
 
-export function DashboardView({view="requests",settingsSection="branding",initialFilter="all"}:{initialFilter?:"all"|FeedbackStatus;view?:"requests"|"boards"|"settings"|"share"|"conversations"|"roadmap"|"changelog";settingsSection?:SettingsSection}): React.ReactElement {
+export function DashboardView({children}:{children:React.ReactNode}): React.ReactElement {
+  const pathname=usePathname();
+  const searchParams=useSearchParams();
+  const settingsHref=useSettingsHref();
+  const route=pathname.split('/').filter(Boolean);
+  const segment=route[1];
+  const settingsSections:SettingsSection[]=['branding','account','widget','team','integrations','billing','chat'];
+  const requestedSection=route[2]??settingsHref.split('/').at(-1);
+  const settingsSection:SettingsSection=settingsSections.includes(requestedSection as SettingsSection)?requestedSection as SettingsSection:'branding';
+  const known=route[0]==='dashboard'&&(route.length===1||(route.length===2&&['boards','settings','share','conversations','roadmap','changelog'].includes(segment))||(route.length===3&&segment==='settings'&&settingsSections.includes(route[2] as SettingsSection)));
+  const view: 'requests'|'boards'|'settings'|'share'|'conversations'|'roadmap'|'changelog'=segment==='boards'||segment==='settings'||segment==='share'||segment==='conversations'||segment==='roadmap'||segment==='changelog'?segment:'requests';
+  const status=searchParams.get('status');
+  const initialFilter: 'all'|FeedbackStatus=STATUS_ORDER.includes(status as FeedbackStatus)?status as FeedbackStatus:'all';
   const { project, activeBoard, boards } = useProject();
   const { items,loading,error,retry } = useFeedback();
   const boardFilter=useSearchParams().get("board");
   const [categoryFilter,setCategoryFilter]=React.useState("all");
   const [tagFilter,setTagFilter]=React.useState("all");
   const availableTags=Array.from(new Map(items.flatMap(item=>item.tags??[]).map(tag=>[tag.id,tag])).values());
-  const [filter, setFilter] = React.useState<"all" | FeedbackStatus>(initialFilter);
+  const [filterState, setFilterState] = React.useState<{source:string|null;value:"all"|FeedbackStatus}>({source:status,value:initialFilter});
+  const filter=filterState.source===status?filterState.value:initialFilter;
+  const setFilter=(value:"all"|FeedbackStatus)=>setFilterState({source:status,value});
   const [sort, setSort] = React.useState("trending");
   const [copied, setCopied] = React.useState(false);
   React.useEffect(()=>{if(!copied)return;const timer=setTimeout(()=>setCopied(false),2000);return()=>clearTimeout(timer);},[copied]);
@@ -72,7 +87,7 @@ export function DashboardView({view="requests",settingsSection="branding",initia
     <SidebarInset data-tour="workspace-content" className="h-dvh min-w-0 overflow-hidden bg-[var(--dashboard-body)]" id="feedback-inbox">
       {!(view==="settings"&&settingsSection==="billing")&&<BillingNotice/>}
       {view === "requests" && filteredBoard && <SampleControls board={filteredBoard} banner/>}
-      {view === "roadmap" ? <Roadmap key={project.id} admin/> : view === "changelog" ? <DashboardChangelog key={project.id}/> : view === "conversations" ? <ConversationsInbox/> : view === "share" ? <div className="min-h-0 flex-1 overflow-y-auto"><div className="px-4 pt-3 md:hidden"><SidebarTrigger/></div><ShareView/></div> : view === "settings" ? <div className="min-h-0 flex-1 overflow-y-auto"><div className="px-4 pt-3 md:hidden"><SidebarTrigger/></div><DashboardSettings key={project.id} section={settingsSection}/></div> : view === "boards" ? <DashboardBoards/> : !activeBoard ? <div className="mx-auto w-full max-w-xl p-6"><div className="mb-5 md:hidden"><SidebarTrigger/></div><NoBoard/></div> : <div className="flex h-full min-h-0">
+      {!known ? children : view === "roadmap" ? <Roadmap key={project.id} admin/> : view === "changelog" ? <DashboardChangelog key={project.id}/> : view === "conversations" ? <ConversationsInbox/> : view === "share" ? <div className="min-h-0 flex-1 overflow-y-auto"><div className="px-4 pt-3 md:hidden"><SidebarTrigger/></div><ShareView/></div> : view === "settings" ? <div className="min-h-0 flex-1 overflow-y-auto"><div className="px-4 pt-3 md:hidden"><SidebarTrigger/></div><DashboardSettings key={project.id} section={settingsSection}/></div> : view === "boards" ? <DashboardBoards/> : !activeBoard ? <div className="mx-auto w-full max-w-xl p-6"><div className="mb-5 md:hidden"><SidebarTrigger/></div><NoBoard/></div> : <div className="flex h-full min-h-0">
         <section aria-label="Request inbox" className={cn("flex min-h-0 w-full shrink-0 flex-col border-r border-border/60 lg:w-[300px] xl:w-[320px]",detailOpen&&"hidden lg:flex")}>
           <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2"><SidebarTrigger className="md:hidden"/><h1 className="text-[13px] font-medium tracking-[-0.135px]">Requests</h1><span aria-label={visibleItems.length+" requests in this view"} className="text-[13px] tabular-nums text-muted-foreground">{visibleItems.length}</span><div className="ms-auto flex shrink-0 items-center gap-2"><Menu><MenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Filter and sort requests" title={"Sort: "+FEEDBACK_SORT_OPTIONS.find(option=>option.value===sort)?.label} className="size-8 rounded-lg text-muted-foreground"/>}><FilterIcon className="size-4"/></MenuTrigger><MenuPopup align="end"><MenuGroup><MenuGroupLabel>Sort by</MenuGroupLabel><MenuRadioGroup value={sort} onValueChange={value=>setSort(value)}>{FEEDBACK_SORT_OPTIONS.map(option=><MenuRadioItem key={option.value} value={option.value}>{option.label}</MenuRadioItem>)}</MenuRadioGroup></MenuGroup>{boardFilter&&<><MenuSeparator/><MenuItem render={<Link href="/dashboard"/>}>Show workspace requests</MenuItem></>}</MenuPopup></Menu><Select value={categoryFilter} onValueChange={value=>{if(value){setCategoryFilter(value);resetSelection();}}} items={[{value:"all",label:"All types"},...Object.entries(FEEDBACK_CATEGORIES).map(([value,label])=>({value,label}))]}><SelectTrigger aria-label="Filter request type" className="h-8 w-[118px] min-w-0 rounded-lg px-2 text-[13px]"><SelectValue>{value=>value==="all"?"All types":<FeedbackTypeLabel category={value as FeedbackCategory}/>}</SelectValue></SelectTrigger><SelectPopup><SelectItem value="all">All types</SelectItem>{Object.keys(FEEDBACK_CATEGORIES).map(value=><SelectItem key={value} value={value}><FeedbackTypeLabel category={value as keyof typeof FEEDBACK_CATEGORIES}/></SelectItem>)}</SelectPopup></Select></div></header>
           <div className="px-4 pb-4"><RequestSearch dashboard items={visibleItems} loading={loading} error={error} onSelect={id=>{setSelectedId(id);setDetailOpen(true);}}/></div>

@@ -37,7 +37,7 @@ Linking a request does not change its status. Move a request to **Shipped** on t
 
 ## Read it on your public site
 
-Published entries appear newest first at `/p/<workspace>/changelog`, where `<workspace>` is your workspace handle. Workspaces with their own domain serve the same page at `/changelog`.
+Published entries appear newest first at `/<workspace>/changelog`, where `<workspace>` is your workspace handle. Older `/p/<workspace>/changelog` links continue to work.
 
 Entries are grouped by month. On wide screens a date rail sits beside the entries and follows your reading position as you scroll: it shows the month and day of the entry you are looking at and highlights it in the list, so you can jump anywhere. On phones the same information sits in a compact bar under the header. Each entry also has its own page at `/changelog/<slug>` with its own title, description and share preview.
 
@@ -58,3 +58,11 @@ Select the trash button to delete an entry. Deleting is permanent and also remov
 ## Who can write entries
 
 Workspace owners and admins can write, schedule, publish, unpublish and delete entries. Other workspace members can read the list in the dashboard but do not see the entry controls.
+
+## Create drafts from GitHub
+
+Workspace owners and admins can select the GitHub icon in Changelog and install the Ent GitHub App with access to their repositories. After authorizing GitHub, choose a repository from the list. Ent checks that the GitHub user can access the installation and repository before linking them to the workspace.
+
+A merged pull request creates a private draft containing its title and description. Review it before publishing; repository descriptions can contain internal details. GitHub automation is only for changelog drafts—it does not create or synchronize issues. Label a pull request `skip-changelog`, `internal`, or `chore` to skip the draft. Feature, bug, documentation, and performance labels set the draft category.
+
+Disconnecting stops new drafts in Ent. To revoke GitHub access, uninstall the app in GitHub as well. GitHub does not automatically redeliver failed webhook deliveries; use the app’s delivery history to investigate and redeliver failures.

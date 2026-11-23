@@ -11,7 +11,7 @@ import {toastManager} from "@/components/ui/toast";
 import { useProject } from "@/components/feedback/project-provider";
 import { NoBoard } from "@/components/feedback/board-context";
 import { boardHref } from "@/lib/project-links";
-import {workspaceDomainAddress,workspaceBaseDomain} from "@/lib/workspace-domain";
+
 const subscribe = () => () => {};
 export function ShareView() {
   const {
@@ -20,8 +20,7 @@ export function ShareView() {
   } = useProject();
   const origin = React.useSyncExternalStore(subscribe, () => window.location.origin, () => "");
   const path = activeBoard ? boardHref(project, activeBoard) : "/dashboard/boards";
-  const domainReady=Boolean(workspaceBaseDomain());
-  const url = domainReady?workspaceDomainAddress(project.slug,"/boards/"+encodeURIComponent(activeBoard?.slug??"")):origin+path;
+  const url = origin+path;
   const text = "We’re building " + project.name + " with you. Share an idea, vote on requests, and help shape what comes next: " + url;
   const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const snippet = widgetSnippet(origin, project.slug, activeBoard?.slug ?? "");
@@ -97,10 +96,10 @@ export function ShareView() {
           </div>
           <div className="mt-2 flex w-full min-w-0 items-center relative">
             <div className="h-fit w-full min-w-0">
-              <a dir="ltr" className="block max-w-full break-all font-sans font-medium text-primary-text text-sm leading-5 [unicode-bidi:isolate]" href={path} aria-label={domainReady?"Open workspace domain":"Preview board while domain setup is pending"}>{url}</a>
+              <a dir="ltr" className="block max-w-full break-all font-sans font-medium text-primary-text text-sm leading-5 [unicode-bidi:isolate]" href={path} aria-label="Open workspace board">{url}</a>
             </div>
           </div>
-          {!domainReady&&<p className="mt-2 text-xs leading-5 text-muted-foreground">Share this link to open your feedback board.</p>}
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">Share this link to open your feedback board.</p>
           <div className="relative mt-4 flex min-w-0 flex-wrap items-start gap-2">
             <Button size="sm" className="flex min-h-7 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-2xl border border-primary bg-primary px-2.25 py-1 text-center text-primary-foreground shadow-sm" type={"button"} onClick={() => void copy(url, "Board link copied")}>
               <CopyIcon style={{
@@ -118,7 +117,7 @@ export function ShareView() {
             </Button>
             <a className="relative inline-flex min-h-7 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md px-2 py-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring" href={path}>
               <div className="inline-block text-[13px] leading-[142.857%] w-max wrap-normal relative font-sans font-medium text-foreground">
-                {domainReady?"Visit":"Preview"}
+                Visit
               </div>
               <ArrowUpRightIcon style={{
                 height: '16px',

@@ -2,6 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {analyticsEvents,analyticsPage,safeAnalyticsProperties} from '../src/lib/analytics-events';
 test('analytics groups paths without sending tenant, post IDs, or queries',()=>{
+ assert.equal(analyticsPage('/private-workspace/items/secret-post'),null);
+ assert.equal(analyticsPage('/private-workspace/changelog/update'),null);
  assert.equal(analyticsPage('/p/private-workspace/items/secret-post'),null);
   assert.equal(analyticsPage('/p/private-workspace/boards/private-board'),null);
   assert.equal(analyticsPage('/boards'),null);

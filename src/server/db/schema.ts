@@ -911,3 +911,22 @@ export const discordDeliveries=pgTable('discord_deliveries',{
  id:uuid('id').primaryKey().defaultRandom(),workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),connectionId:uuid('connection_id').notNull().references(()=>connectedApps.id,{onDelete:'cascade'}),
  eventKey:text('event_key').notNull(),messageId:text('message_id').notNull(),channelId:text('channel_id').notNull(),conversationId:uuid('conversation_id'),feedbackId:uuid('feedback_id'),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
 },t=>[unique('discord_delivery_event_unique').on(t.connectionId,t.eventKey),unique('discord_delivery_message_unique').on(t.connectionId,t.messageId),foreignKey({columns:[t.feedbackId,t.workspaceId],foreignColumns:[feedback.id,feedback.workspaceId]}).onDelete('cascade'),foreignKey({columns:[t.conversationId,t.workspaceId],foreignColumns:[conversations.id,conversations.workspaceId]}).onDelete('cascade'),check('discord_delivery_target_check',sql`num_nonnulls(${t.feedbackId},${t.conversationId})=1`)]).enableRLS();
+
+/** One manually configured GitHub repository webhook per workspace. */
+export const githubChangelogConnections=pgTable('github_changelog_connections',{
+ id:uuid('id').primaryKey().defaultRandom(),workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ repository:text('repository').notNull(),encryptedSecret:text('encrypted_secret').notNull(),createdByUserId:uuid('created_by_user_id').references(()=>users.id,{onDelete:'set null'}),...timestamps(),
+},t=>[unique('github_changelog_workspace_unique').on(t.workspaceId)]).enableRLS();
+export const githubChangelogReceipts=pgTable('github_changelog_receipts',{
+ connectionId:uuid('connection_id').notNull().references(()=>githubChangelogConnections.id,{onDelete:'cascade'}),pullRequestId:text('pull_request_id').notNull(),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[primaryKey({columns:[t.connectionId,t.pullRequestId]})]).enableRLS();
+
+/** GitHub App installations are bound to one workspace and one selected repository. */
+export const githubAppChangelogConnections=pgTable('github_app_changelog_connections',{
+ id:uuid('id').primaryKey().defaultRandom(),workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ installationId:text('installation_id').notNull(),repositoryId:text('repository_id').notNull(),repository:text('repository').notNull(),
+ createdByUserId:uuid('created_by_user_id').references(()=>users.id,{onDelete:'set null'}),...timestamps(),
+},t=>[unique('github_app_changelog_workspace_unique').on(t.workspaceId),unique('github_app_changelog_installation_unique').on(t.installationId)]).enableRLS();
+export const githubAppChangelogReceipts=pgTable('github_app_changelog_receipts',{
+ connectionId:uuid('connection_id').notNull().references(()=>githubAppChangelogConnections.id,{onDelete:'cascade'}),pullRequestId:text('pull_request_id').notNull(),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[primaryKey({columns:[t.connectionId,t.pullRequestId]})]).enableRLS();

@@ -10,8 +10,24 @@ import {runService,ServiceError} from "@/server/result";
 import {trackServerAnalytics} from "@/lib/analytics/server";
 import {changelogInputSchema,changelogSlugPattern,slugifyChangelogTitle} from "@/lib/changelog";
 import {changelogSlugTaken,listChangelogEntries,readChangelogEntry} from "@/server/changelog/service";
+import {aiProviderConfigured,readWorkspaceAiSettings} from '@/server/ai/settings';
+import {generateFeedbackChangelog} from '@/server/ai/changelog-draft';
+import {consumeRateLimit} from '@/server/rate-limit';
 
 const uuid=z.string().uuid();
+
+/** Returns an unsaved draft for review; it never publishes or notifies voters. */
+export async function suggestChangelogFromFeedbackAction(workspaceId:string,feedbackIds:unknown){
+ return runService(async()=>{
+  const actor=await requireAppUser(),wid=uuid.parse(workspaceId),ids=z.array(uuid).min(1).max(10).transform(values=>[...new Set(values)]).parse(feedbackIds),db=getDb();
+  await requireWorkspaceRole(db,{workspaceId:wid,userId:actor.id,minimumRole:'admin'});
+  if(!aiProviderConfigured()||!(await readWorkspaceAiSettings(wid)).feedbackEnabled)throw new ServiceError('conflict','Enable AI for feedback in workspace integrations first.');
+  await consumeRateLimit('ai:changelog:'+wid+':'+actor.id,20,3600);
+  const rows=await db.select({id:feedback.id,title:feedback.title,body:feedback.body}).from(feedback).where(and(eq(feedback.workspaceId,wid),inArray(feedback.id,ids),eq(feedback.status,'shipped'),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId)));
+  if(rows.length!==ids.length)throw new ServiceError('validation','Choose shipped requests from this workspace.');
+  try{return await generateFeedbackChangelog(rows);}catch{throw new ServiceError('conflict','The AI draft could not be generated. Try again.');}
+ });
+}
 
 export async function searchChangelogRequestsAction(workspaceId:string,input:unknown){
   return runService(async()=>{

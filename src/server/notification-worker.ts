@@ -42,7 +42,7 @@ export async function processNotificationJobs(limit = 3, destination?:{workspace
     try {
       if('guestFeedbackId' in job.payload){
         const guest=z.object({guestFeedbackId:z.uuid(),event:z.enum(['feedback_comment','status_changed','type_changed']).default('feedback_comment'),commentId:z.uuid().optional(),workspaceId:z.uuid(),to:z.email(),subject:z.string(),title:z.string(),url:z.url()}).parse(job.payload);
-        const [target]=await db.select({email:feedback.guestEmail,author:feedback.authorUserId}).from(feedback).where(and(eq(feedback.id,guest.guestFeedbackId),eq(feedback.workspaceId,guest.workspaceId),isNull(feedback.deletedAt))).limit(1);
+        const [target]=await db.select({email:feedback.guestEmail,author:feedback.authorUserId}).from(feedback).where(and(eq(feedback.id,guest.guestFeedbackId),eq(feedback.workspaceId,guest.workspaceId),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId))).limit(1);
         let permitted=Boolean(target&&!target.author&&target.email===guest.to);
         if(permitted&&guest.event==='feedback_comment'){
           const [reply]=guest.commentId?await db.select({author:comments.authorUserId}).from(comments).where(and(eq(comments.id,guest.commentId),eq(comments.feedbackId,guest.guestFeedbackId),eq(comments.workspaceId,guest.workspaceId),isNull(comments.deletedAt))).limit(1):[];

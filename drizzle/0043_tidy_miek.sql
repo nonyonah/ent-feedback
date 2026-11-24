@@ -1,0 +1,1 @@
+ALTER TABLE "workspace_weekly_summaries" ADD COLUMN "source" text DEFAULT 'legacy' NOT NULL;

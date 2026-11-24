@@ -16,7 +16,21 @@ A workspace owner or admin must connect the repository. Ent verifies that the au
 
 ## Review drafts
 
-Ent creates a **private draft** for each eligible previous or newly merged pull request. The draft starts with the pull request's title and description; Ent does not rewrite it. Review the text and remove internal information before publishing. Existing drafts are never overwritten by a repeated import or webhook delivery.
+Ent creates a **private draft** for each eligible previous or newly merged pull request. If the description contains a `Changelog` or `User-facing changes` Markdown heading, Ent uses that section for the draft. Otherwise it uses the full description. Ent does not rewrite the text. Review it and remove internal information before publishing. Existing drafts are never overwritten by a repeated import or webhook delivery.
+
+To give an editor or coding agent clear source material, add a customer-facing section to the pull request:
+
+```markdown
+## Changelog
+
+Exports now include custom fields, so teams can use them in reports.
+
+## Testing
+
+Internal test details stay outside the changelog section.
+```
+
+An empty changelog section produces an editable placeholder, rather than copying the rest of the pull request. This works for new drafts and previous pull requests imported after the change; existing drafts stay as they are.
 
 A pull request labeled `skip-changelog`, `internal`, or `chore` is skipped. Labels such as `feature`, `bug`, `documentation`, and `performance` set the draft category; other pull requests use Improvement. Closed pull requests that were not merged are skipped.
 

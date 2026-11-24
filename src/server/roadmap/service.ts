@@ -12,6 +12,7 @@ import {ServiceError} from '@/server/result';
 import {after} from 'next/server';
 import {trackServerAnalytics} from '@/lib/analytics/server';
 import {publishActivity} from '@/server/activity';
+import {enqueueShippedChangelog} from '@/server/changelog/ai-jobs';
 import {roadmapStatuses,adminRoadmapStatuses,columnKey,fractionalOrder,type RoadmapData,type RoadmapVoter} from '@/lib/roadmap';
 
 export async function roadmapWorkspace(key:string){
@@ -66,7 +67,7 @@ export async function updateRoadmap(id:string,input:unknown){
   if(value.notify_voters&&(status!=='shipped'||!(value.roadmap_visible??post.roadmapVisible)))throw new ServiceError('validation','Only visible shipped items can notify voters.');
   await tx.update(feedback).set({...(value.status?{status:value.status}:{}),...(order!==undefined?{roadmapOrder:order}:{}),...(value.roadmap_visible!==undefined?{roadmapVisible:value.roadmap_visible}:{}),...(value.public_note!==undefined?{publicNote:value.public_note||null}:{}),updatedAt:new Date()}).where(eq(feedback.id,bid));
   if(order!==undefined)await tx.update(feedback).set({roadmapOrder:order}).where(eq(feedback.id,bid));
-   if(post.status!==status){statusFrom=post.status;statusTo=status;await tx.insert(statusHistory).values({workspaceId:wid,feedbackId:bid,actorUserId:user.id,previousStatus:post.status,newStatus:status});await publishActivity(tx,{type:'status_changed',workspaceId:wid,feedbackId:bid,actorId:user.id,eventId:randomUUID(),skipEmail:true});}
+   if(post.status!==status){statusFrom=post.status;statusTo=status;await tx.insert(statusHistory).values({workspaceId:wid,feedbackId:bid,actorUserId:user.id,previousStatus:post.status,newStatus:status});await publishActivity(tx,{type:'status_changed',workspaceId:wid,feedbackId:bid,actorId:user.id,eventId:randomUUID(),skipEmail:true});if(status==='shipped')await enqueueShippedChangelog(tx,wid,bid,user.id);}
   if(value.notify_voters&&!post.shippedNotifiedAt){
    const now=new Date();await tx.update(feedback).set({shippedNotifiedAt:now}).where(eq(feedback.id,bid));
    await tx.insert(jobs).values({type:'roadmap_fanout',dedupeKey:'roadmap:fanout:'+bid,payload:{workspaceId:wid,feedbackId:bid,cutoff:now.toISOString(),cursor:null}}).onConflictDoNothing();

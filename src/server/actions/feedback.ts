@@ -23,19 +23,23 @@ import {requireBoard,feedbackActor as actor} from '@/server/feedback-access';
 import {linkAttachments} from '@/server/attachment-links';
 import {publishActivity} from '@/server/activity';
 import {consumeRateLimit} from '@/server/rate-limit';
+import {readWorkspaceAiSettings,aiProviderConfigured} from '@/server/ai/settings';
+import {findSemanticDuplicates} from '@/server/ai/semantic-duplicates';
+import {enqueueShippedChangelog} from '@/server/changelog/ai-jobs';
+import {enqueueClassification} from '@/server/ai/classification-jobs';
 import {runService,ServiceError} from '@/server/result';
 import { trackServerAnalytics } from '@/lib/analytics/server';
 
 const uuid=z.string().uuid();
 const images=z.array(uuid).max(3,'Attach up to 3 images.').optional();
 const command=z.discriminatedUnion('type',[
- z.object({type:z.literal('create'),conversation:z.object({id:z.uuid(),messageId:z.uuid().optional(),token:z.string().regex(/^[a-f0-9]{64}$/).optional()}).optional(),requestId:uuid.optional(),category:z.enum(['feedback','bug','feature_request']).default('feedback'),title:z.string().trim().min(4).max(160),description:z.string().trim().min(1).max(3000),anonymous:z.boolean().optional(),channel:z.enum(['board','widget']).optional(),source:z.enum(['widget','board','roadmap']).optional(),name:z.string().trim().max(80).optional(),email:z.string().trim().toLowerCase().max(254).refine(value=>!value||z.email().safeParse(value).success,'Enter a valid email address.').optional(),images}),
+ z.object({type:z.literal('create'),conversation:z.object({id:z.uuid(),messageId:z.uuid().optional(),token:z.string().regex(/^[a-f0-9]{64}$/).optional()}).optional(),requestId:uuid.optional(),category:z.enum(['feedback','bug','feature_request','question']).default('feedback'),title:z.string().trim().min(4).max(160),description:z.string().trim().min(1).max(3000),anonymous:z.boolean().optional(),channel:z.enum(['board','widget']).optional(),source:z.enum(['widget','board','roadmap']).optional(),name:z.string().trim().max(80).optional(),email:z.string().trim().toLowerCase().max(254).refine(value=>!value||z.email().safeParse(value).success,'Enter a valid email address.').optional(),images}),
  z.object({type:z.literal('comment'),requestId:uuid.optional(),id:uuid,body:z.string().trim().max(3000),parentCommentId:uuid.optional(),source:z.enum(['widget','board','roadmap']).optional(),images}),
  z.object({type:z.literal('vote'),id:uuid,active:z.boolean(),source:z.enum(['widget','board','roadmap']).optional()}),
  z.object({type:z.literal('reaction'),id:uuid,commentId:uuid,active:z.boolean()}),
  z.object({type:z.literal('status'),id:uuid,status:z.enum(['open','planned','in-progress','shipped'])}),
- z.object({type:z.literal('category'),id:uuid,category:z.enum(['feedback','bug','feature_request'])}),
- z.object({type:z.literal('classification'),id:uuid,category:z.enum(['feedback','bug','feature_request']),tagIds:z.array(uuid).max(10).transform(ids=>[...new Set(ids)])}),
+ z.object({type:z.literal('category'),id:uuid,category:z.enum(['feedback','bug','feature_request','question'])}),
+ z.object({type:z.literal('classification'),id:uuid,category:z.enum(['feedback','bug','feature_request','question']),tagIds:z.array(uuid).max(10).transform(ids=>[...new Set(ids)])}),
  z.object({type:z.literal('follow'),id:uuid,active:z.boolean()}),
  z.object({type:z.literal('merge'),id:uuid,targetId:uuid}),
  z.object({type:z.literal('delete'),id:uuid}),
@@ -79,7 +83,11 @@ async function readBoard(workspaceId:string,boardId:string|undefined,who:Awaited
 }
 export async function searchExistingFeedbackAction(workspaceId:string,query:string){return runService(async()=>{
  await limitFeedbackReadRequest();const wid=uuid.parse(workspaceId);const text=z.string().trim().min(2).max(160).parse(query).toLowerCase();const terms=text.split(/\s+/).filter(Boolean).slice(0,8);
- return getDb().select({id:feedback.id,isSample:feedback.isSample,boardId:feedback.boardId,title:feedback.title,category:feedback.category,status:feedback.status,votes:displayedVotes}).from(feedback).where(and(eq(feedback.workspaceId,wid),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId),...terms.map(term=>sql`position(${term} in lower(${feedback.title} || ' ' || ${feedback.body})) > 0`))).orderBy(desc(sql`position(${text} in lower(${feedback.title})) > 0`),desc(feedback.createdAt),desc(feedback.id)).limit(8);
+ const db=getDb(),fields={id:feedback.id,isSample:feedback.isSample,boardId:feedback.boardId,title:feedback.title,category:feedback.category,status:feedback.status,votes:displayedVotes};
+ const eligible=and(eq(feedback.workspaceId,wid),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId));
+ const matches=await db.select(fields).from(feedback).where(and(eligible,...terms.map(term=>sql`position(${term} in lower(${feedback.title} || ' ' || ${feedback.body})) > 0`))).orderBy(desc(sql`position(${text} in lower(${feedback.title})) > 0`),desc(feedback.createdAt),desc(feedback.id)).limit(8);
+ // Similarity is optional and never prevents ordinary feedback search or submission.
+ try{if(!aiProviderConfigured()||!(await readWorkspaceAiSettings(wid)).feedbackEnabled)return matches;await consumeRateLimit('ai:duplicate-search:'+wid,120,3600);const candidates=await db.select({...fields,body:feedback.body}).from(feedback).where(eligible).orderBy(desc(feedback.createdAt),desc(feedback.id)).limit(120);const ids=await findSemanticDuplicates(text,candidates);const byId=new Map(candidates.map(candidate=>[candidate.id,{id:candidate.id,isSample:candidate.isSample,boardId:candidate.boardId,title:candidate.title,category:candidate.category,status:candidate.status,votes:candidate.votes}]));return [...new Map([...ids.flatMap(id=>{const candidate=byId.get(id);return candidate?[candidate]:[];}),...matches].map(candidate=>[candidate.id,candidate])).values()].slice(0,8);}catch{return matches;}
 });}
 
 // Public, bounded summaries for the widget Home hub. No visitor or contact data.
@@ -129,10 +137,10 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
    await publishActivity(tx,{type:'new_feedback',workspaceId:wid,feedbackId:created.id,actorId:who.user?.id,eventId:created.id});
    if(who.user)await tx.insert(follows).values({workspaceId:wid,feedbackId:created.id,userId:who.user.id}).onConflictDoNothing();
    if(value.conversation){await completeSuggestion(tx,wid,value.conversation.id,created.id,value.conversation.messageId);await tx.insert(conversationFeedback).values({workspaceId:wid,conversationId:value.conversation.id,feedbackId:created.id}).onConflictDoNothing();}
-    createdId=created.id;await linkAttachments(tx,wid,who,value.images,{feedbackId:created.id},newRecord);await tx.insert(votes).values({workspaceId:wid,feedbackId:created.id,userId:who.user?.id??null,guestActorId:who.guestId}).onConflictDoNothing();commentSource=value.source??(value.channel==='widget'?'widget':'board');return;
+    createdId=created.id;await linkAttachments(tx,wid,who,value.images,{feedbackId:created.id},newRecord);await tx.insert(votes).values({workspaceId:wid,feedbackId:created.id,userId:who.user?.id??null,guestActorId:who.guestId}).onConflictDoNothing();if(newRecord)await enqueueClassification(tx,wid,created.id);commentSource=value.source??(value.channel==='widget'?'widget':'board');return;
   }
   // Lock the post so deletes/status changes and concurrent activity cannot interleave.
-  const [post]=await tx.select().from(feedback).where(and(eq(feedback.id,value.id),eq(feedback.workspaceId,wid),eq(feedback.boardId,bid),isNull(feedback.deletedAt))).for('update');
+  const [post]=await tx.select().from(feedback).where(and(eq(feedback.id,value.id),eq(feedback.workspaceId,wid),eq(feedback.boardId,bid),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId))).for('update');
   if(!post)throw new ServiceError('not_found','This feedback is no longer available. Refresh the board.');
   if(value.type==='category'){
    if(!who.user)throw new ServiceError('unauthenticated','Sign in to change your feedback type.');
@@ -160,7 +168,7 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
    if(!comment)throw new ServiceError('not_found','This comment is no longer available. Refresh the board.');
    if(value.active){const inserted=await tx.insert(reactions).values({workspaceId:wid,commentId:comment.id,userId:who.user?.id??null,guestActorId:who.guestId}).onConflictDoNothing().returning({id:reactions.id});if(inserted.length)await publishActivity(tx,{type:'comment_reaction',workspaceId:wid,feedbackId:post.id,actorId:who.user?.id,eventId:inserted[0].id,commentId:comment.id});}else await tx.delete(reactions).where(and(eq(reactions.commentId,comment.id),who.user?eq(reactions.userId,who.user.id):eq(reactions.guestActorId,who.guestId!)));
   }
-   if(value.type==='status'&&post.status!==value.status){statusFrom=post.status;statusTo=value.status;await tx.update(feedback).set({status:value.status,updatedAt:new Date()}).where(eq(feedback.id,post.id));await tx.insert(statusHistory).values({workspaceId:wid,feedbackId:post.id,actorUserId:who.user!.id,previousStatus:post.status,newStatus:value.status});await publishActivity(tx,{type:'status_changed',workspaceId:wid,feedbackId:post.id,actorId:who.user?.id,eventId:randomUUID()});}
+   if(value.type==='status'&&post.status!==value.status){statusFrom=post.status;statusTo=value.status;await tx.update(feedback).set({status:value.status,updatedAt:new Date()}).where(eq(feedback.id,post.id));await tx.insert(statusHistory).values({workspaceId:wid,feedbackId:post.id,actorUserId:who.user!.id,previousStatus:post.status,newStatus:value.status});await publishActivity(tx,{type:'status_changed',workspaceId:wid,feedbackId:post.id,actorId:who.user?.id,eventId:randomUUID()});if(value.status==='shipped')await enqueueShippedChangelog(tx,wid,post.id,who.user!.id);}
   if(value.type==='classification'){
    const found=value.tagIds.length?await tx.select({id:tags.id}).from(tags).where(and(eq(tags.workspaceId,wid),inArray(tags.id,value.tagIds))):[];
    if(found.length!==value.tagIds.length)throw new ServiceError('validation','Choose tags from this workspace.');

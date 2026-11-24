@@ -292,7 +292,7 @@ export const feedback = pgTable(
     isSample: boolean("is_sample").notNull().default(false),
     startingVotes: integer("starting_votes").notNull().default(0),
     body: text("body").notNull().default(""),
-    category: text("category").$type<"feedback" | "bug" | "feature_request">().notNull().default("feedback"),
+    category: text("category").$type<"feedback" | "bug" | "feature_request" | "question">().notNull().default("feedback"),
     status: feedbackStatus("status").notNull().default("open"),
     roadmapVisible: boolean("roadmap_visible").notNull().default(true),
     roadmapOrder: doublePrecision("roadmap_order"),
@@ -322,7 +322,7 @@ export const feedback = pgTable(
       "gin",
       sql`to_tsvector('english', ${table.title} || ' ' || ${table.body})`,
     ),
-    check("feedback_category_check", sql`${table.category} in ('feedback', 'bug', 'feature_request')`),
+    check("feedback_category_check", sql`${table.category} in ('feedback', 'bug', 'feature_request', 'question')`),
     check("feedback_title_not_empty_check", sql`length(trim(${table.title})) between 1 and 200`),
     check("feedback_guest_email_normalized_check", sql`${table.guestEmail} is null or ${table.guestEmail} = lower(${table.guestEmail})`),
   ],
@@ -930,3 +930,39 @@ export const githubAppChangelogConnections=pgTable('github_app_changelog_connect
 export const githubAppChangelogReceipts=pgTable('github_app_changelog_receipts',{
  connectionId:uuid('connection_id').notNull().references(()=>githubAppChangelogConnections.id,{onDelete:'cascade'}),pullRequestId:text('pull_request_id').notNull(),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
 },t=>[primaryKey({columns:[t.connectionId,t.pullRequestId]})]).enableRLS();
+
+/** Explicit workspace consent for independently scoped AI processing. */
+export const workspaceAiSettings=pgTable('workspace_ai_settings',{
+ workspaceId:uuid('workspace_id').primaryKey().references(()=>workspaces.id,{onDelete:'cascade'}),
+ feedbackEnabled:boolean('feedback_enabled').notNull().default(false),
+ githubEnabled:boolean('github_enabled').notNull().default(false),
+ updatedByUserId:uuid('updated_by_user_id').references(()=>users.id,{onDelete:'set null'}),...timestamps(),
+}).enableRLS();
+
+export const workspaceWeeklySummaries=pgTable('workspace_weekly_summaries',{
+ workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ weekStart:timestamp('week_start',{withTimezone:true}).notNull(),
+ points:jsonb('points').$type<string[]>().notNull().default([]),
+ count:integer('count').notNull().default(0),truncated:boolean('truncated').notNull().default(false),
+ source:text('source').notNull().default('legacy'),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[primaryKey({columns:[t.workspaceId,t.weekStart]}),check('weekly_summary_count_check',sql`${t.count} >= 0`)]).enableRLS();
+
+export const feedbackAiSuggestions=pgTable('feedback_ai_suggestions',{
+ workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ feedbackId:uuid('feedback_id').notNull(),
+ category:text('category').$type<'feedback'|'bug'|'feature_request'|'question'>().notNull(),
+ tagIds:jsonb('tag_ids').$type<string[]>().notNull().default([]),
+ sourceUpdatedAt:timestamp('source_updated_at',{withTimezone:true}).notNull(),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[primaryKey({columns:[t.workspaceId,t.feedbackId]}),foreignKey({columns:[t.feedbackId,t.workspaceId],foreignColumns:[feedback.id,feedback.workspaceId]}).onDelete('cascade'),check('feedback_ai_suggestion_category_check',sql`${t.category} in ('feedback','bug','feature_request','question')`)]).enableRLS();
+
+export const mcpDraftProposals=pgTable('mcp_draft_proposals',{
+ id:uuid('id').primaryKey().defaultRandom(),
+ workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ authorUserId:uuid('author_user_id').references(()=>users.id,{onDelete:'set null'}),
+ title:text('title').notNull(),body:text('body').notNull(),feedbackIds:jsonb('feedback_ids').$type<string[]>().notNull().default([]),
+ status:text('status').$type<'pending'|'approved'|'rejected'>().notNull().default('pending'),
+ changelogId:uuid('changelog_id').references(()=>changelogEntries.id,{onDelete:'set null'}),
+ ...timestamps(),
+},t=>[index('mcp_draft_proposals_workspace_status_idx').on(t.workspaceId,t.status,t.createdAt),check('mcp_draft_proposal_status_check',sql`${t.status} in ('pending','approved','rejected')`),check('mcp_draft_proposal_title_check',sql`length(${t.title}) between 1 and 120`),check('mcp_draft_proposal_body_check',sql`length(${t.body}) between 1 and 5000`)]).enableRLS();

@@ -21,7 +21,7 @@ export async function processRoadmapJobs(limit=1){
  });
  for(const job of claimed){const lease=and(eq(jobs.id,job.id),eq(jobs.status,'running'),eq(jobs.attempts,job.attempts),eq(jobs.lockedAt,now));try{
   const p=payload.parse(job.payload);
-  const [post]=await db.select({title:feedback.title,note:feedback.publicNote,handle:workspaces.handle}).from(feedback).innerJoin(workspaces,eq(workspaces.id,feedback.workspaceId)).where(and(eq(feedback.id,p.feedbackId),eq(feedback.workspaceId,p.workspaceId),eq(feedback.status,'shipped'),eq(feedback.roadmapVisible,true),isNull(feedback.deletedAt))).limit(1);
+  const [post]=await db.select({title:feedback.title,note:feedback.publicNote,handle:workspaces.handle}).from(feedback).innerJoin(workspaces,eq(workspaces.id,feedback.workspaceId)).where(and(eq(feedback.id,p.feedbackId),eq(feedback.workspaceId,p.workspaceId),eq(feedback.status,'shipped'),eq(feedback.roadmapVisible,true),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId))).limit(1);
   if(!post){await db.update(jobs).set({status:'succeeded',lockedAt:null,updatedAt:new Date()}).where(lease);result.suppressed++;continue;}
   if(job.type==='roadmap_fanout'){
    const rows=await db.select({id:votes.id,userId:votes.userId,guestId:votes.guestActorId,email:users.email}).from(votes).leftJoin(users,eq(users.id,votes.userId)).where(and(eq(votes.workspaceId,p.workspaceId),eq(votes.feedbackId,p.feedbackId),lte(votes.createdAt,new Date(p.cutoff)),p.cursor?gt(votes.id,p.cursor):undefined)).orderBy(asc(votes.id)).limit(51);

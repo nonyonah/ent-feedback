@@ -260,6 +260,55 @@
       "when": 1795472350170,
       "tag": "0036_pretty_nightshade",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1795514592602,
+      "tag": "0037_first_magik",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1795519320981,
+      "tag": "0038_sticky_lorna_dane",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1795520516897,
+      "tag": "0039_supreme_nocturne",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1795521341394,
+      "tag": "0040_melodic_vin_gonzales",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1795544513630,
+      "tag": "0041_remarkable_cerise",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1795547964209,
+      "tag": "0042_tiny_scorpion",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1795548014962,
+      "tag": "0043_tidy_miek",
+      "breakpoints": true
     }
   ]
 }

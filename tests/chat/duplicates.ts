@@ -21,6 +21,10 @@ export async function run(){
  const winner=results.findIndex(result=>result.ok);if(winner===0){assert.equal((await create(workspace.id,first.id,'Export options','bug','a'.repeat(64),requestId)).ok,true);}
  assert.equal((await create(other.id,otherBoard.id,'Export options','feedback','d'.repeat(64))).ok,true);
  assert.equal((await create(workspace.id,first.id,'Export options to Excel','feature_request','e'.repeat(64))).ok,true);
+ const target=data(await searchExistingFeedbackAction(workspace.id,'Export options to Excel'))[0];
+ await db.update(feedback).set({mergedIntoId:target.id}).where(eq(feedback.id,matched[0].id));
+ const stale=await mutateFeedbackAction(workspace.id,matched[0].boardId,{type:'vote',id:matched[0].id,active:true},'a'.repeat(64));
+ assert.equal(stale.ok,false,'merged requests reject stale mutations');
  assert.equal((await searchExistingFeedbackAction(workspace.id,'%')).ok,false); // invalid queries never become unbounded wildcard searches
  console.log('PASS: concurrent cross-board/type duplicates blocked, title case/spacing normalized, workspace isolation, distinct requests allowed, and idempotent retries preserved.');
 }

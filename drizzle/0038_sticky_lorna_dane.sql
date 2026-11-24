@@ -1,0 +1,2 @@
+ALTER TABLE "feedback" DROP CONSTRAINT "feedback_category_check";--> statement-breakpoint
+ALTER TABLE "feedback" ADD CONSTRAINT "feedback_category_check" CHECK ("feedback"."category" in ('feedback', 'bug', 'feature_request', 'question'));

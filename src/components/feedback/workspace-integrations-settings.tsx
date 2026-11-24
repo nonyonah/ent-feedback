@@ -1,4 +1,6 @@
 'use client';
+import {AiSettings} from './ai-settings';
+import {features} from '@/lib/features';
 import {UpcomingIntegrations} from './upcoming-integrations';
 import {SlackMark} from './app-logos';
 import {LoadFailure} from '@/components/ui/load-failure';
@@ -41,7 +43,7 @@ function WorkspaceIntegrationsContent({workspaceId}:{workspaceId:string}){
    if(action==='save'&&draft){unwrap(await saveWorkspaceSlackSettingsAction(workspaceId,draft));setData(current=>current?{...current,settings:draft}:current);toastManager.add({type:'success',title:'Slack preferences saved'});}
   }catch(e){const message=e instanceof Error?e.message:'Slack settings could not be updated.';setActionError(message);toastManager.add({type:'error',title:message});}finally{if(!navigating)setPending(null);}
  }
- return <SettingsPage title="Integrations"><div className="flex flex-col gap-8">
+ return <SettingsPage title="Integrations">{features.feedbackAi&&<AiSettings workspaceId={workspaceId}/>}<div className="flex flex-col gap-8">
   <p className="px-4 text-sm leading-6 text-muted-foreground">Connect your workspace tools. One Slack connection serves all boards and live chat.</p>
   {!data&&!error&&<Skeleton className="h-48 w-full"/>}
   {error&&<LoadFailure resource="integrations" refresh={Boolean(data)} onRetry={()=>{setError('');setReload(value=>value+1);}}/>}

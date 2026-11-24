@@ -23,7 +23,7 @@ export function safeAnalyticsProperties(input:Record<string,unknown>){
     page:['landing','pricing','settings','dashboard','onboarding','auth','other'],
     surface:['dashboard','public_board','widget','board','roadmap','page'],
     source:['dashboard','public_board','widget','board','roadmap','page'],
-    feedback_type:['feedback','bug','feature_request'],
+    feedback_type:['feedback','bug','feature_request','question'],
     interval:['monthly','yearly'],
     method:['google','email'],
     type:['slack','discord','linear','github','saas','mobile','developer','blank'],

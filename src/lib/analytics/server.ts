@@ -2,6 +2,7 @@ import 'server-only';
 import {createHash} from 'node:crypto';
 import {after} from 'next/server';
 import {PostHog} from 'posthog-node';
+import {z} from 'zod';
 import {and,asc,eq,isNull} from 'drizzle-orm';
 import {getServerEnv} from '@/server/env';
 import {getDb} from '@/server/db/client';
@@ -98,10 +99,19 @@ export function identifyAnalyticsBoard(input:{boardId:string;name:string;ownerEm
    }catch{}
   });
 }
-export async function resolveAnalyticsBoard(workspaceId:string,boardId?:string|null){
+/** Resolve the board an event belongs to, by id or handle, falling back to the workspace's first board. */
+export async function resolveAnalyticsBoard(workspaceId:string,key?:string|null){
   if(!analyticsConfigured())return undefined;
-  const [board]=boardId?await getDb().select({id:boards.id}).from(boards).where(and(eq(boards.id,boardId),eq(boards.workspaceId,workspaceId))).limit(1):await getDb().select({id:boards.id}).from(boards).where(eq(boards.workspaceId,workspaceId)).orderBy(asc(boards.position)).limit(1);
-  return board?.id;
+  const wid=z.uuid().parse(workspaceId);
+  const lookup=key?.trim();
+  if(lookup){
+    const [board]=await getDb().select({id:boards.id}).from(boards)
+      .where(and(eq(boards.workspaceId,wid),/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lookup)?eq(boards.id,lookup):eq(boards.handle,lookup)))
+      .limit(1);
+    if(board)return board.id;
+  }
+  const [fallback]=await getDb().select({id:boards.id}).from(boards).where(eq(boards.workspaceId,wid)).orderBy(asc(boards.position)).limit(1);
+  return fallback?.id;
 }
 export async function markWidgetFirstLoaded(input:BoardAnalyticsInput){
   if(!isDomain(input.originDomain)||!input.isExternal)return;

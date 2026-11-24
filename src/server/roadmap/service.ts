@@ -12,6 +12,7 @@ import {ServiceError} from '@/server/result';
 import {after} from 'next/server';
 import {trackServerAnalytics} from '@/lib/analytics/server';
 import {publishActivity} from '@/server/activity';
+import {processIntegrationJobs} from '@/server/connected-apps/worker';
 import {enqueueShippedChangelog} from '@/server/changelog/ai-jobs';
 import {roadmapStatuses,adminRoadmapStatuses,columnKey,fractionalOrder,type RoadmapData,type RoadmapVoter} from '@/lib/roadmap';
 
@@ -75,6 +76,7 @@ export async function updateRoadmap(id:string,input:unknown){
    const [updated]=await tx.select({...fields,roadmap_visible:feedback.roadmapVisible,shipped_notified_at:sql<string|null>`${feedback.shippedNotifiedAt}::text`}).from(feedback).where(eq(feedback.id,bid));return updated;
   });
   after(async()=>{
+   if(statusFrom&&statusTo)await processIntegrationJobs(2);
    const context={boardId,user:{id:user.id}};
    if(statusFrom&&statusTo){trackServerAnalytics('status_changed',{from:statusFrom,to:statusTo},context);if(statusTo==='shipped')trackServerAnalytics('item_shipped',{},context);}
    if(editAction)trackServerAnalytics('roadmap_edited',{action:editAction},context);

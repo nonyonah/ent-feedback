@@ -4,7 +4,7 @@ import {z} from 'zod';
 import {getDb} from '@/server/db/client';
 import {jobs,connectedApps,linearIssueLinks} from '@/server/db/schema';
 import {appEnabled} from './config';
-import {linearToken,linearGraph,linearIssueSchema,syncLinearIssue} from './linear';
+import {linearToken,linearGraph,linearIssueSchema,syncLinearIssue,pushLinearStatus,createOrLinkIssue} from './linear';
 import {applyDiscordAction,deliverDiscord,discordInteraction} from './discord';
 import {getServerEnv} from '@/server/env';
 import {unseal} from '@/server/integration-crypto';
@@ -21,6 +21,8 @@ export async function deliverIntegrationJob(job:typeof jobs.$inferSelect){
  // Only a fixed Discord URL; interaction tokens remain encrypted in the job.
  const response=await fetch(`https://discord.com/api/v10/webhooks/${getServerEnv().DISCORD_CLIENT_ID}/${encodeURIComponent(p.token)}/messages/@original`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:'Updated in Ent.',allowed_mentions:{parse:[]}}),redirect:'error',signal:AbortSignal.timeout(5000)});if(!response.ok&&response.status!==404)throw Error('Confirmation unavailable');return;
  }
+ if(kind==='linear_create'){if(appEnabled('linear')){const connectionId=z.uuid().parse(job.payload.connectionId),workspaceId=z.uuid().parse(job.payload.workspaceId),feedbackId=z.uuid().parse(job.payload.feedbackId);const [connection]=await getDb().select().from(connectedApps).where(and(eq(connectedApps.id,connectionId),eq(connectedApps.workspaceId,workspaceId),eq(connectedApps.connected,true))).limit(1);if(connection&&connection.settings.autoCreate===true)await createOrLinkIssue({connectionId,workspaceId,feedbackId});}return;}
+ if(kind==='linear_status'){if(appEnabled('linear'))await pushLinearStatus(z.uuid().parse(job.payload.connectionId),z.uuid().parse(job.payload.workspaceId),z.uuid().parse(job.payload.feedbackId));return;}
  if(kind==='linear_event'){
  if(!appEnabled('linear'))return;const p=linearEvent.parse(job.payload.event),db=getDb();const connections=await db.select().from(connectedApps).where(and(eq(connectedApps.provider,'linear'),eq(connectedApps.externalId,p.organizationId),eq(connectedApps.connected,true)));
  for(const c of connections){

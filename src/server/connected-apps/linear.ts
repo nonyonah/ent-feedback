@@ -63,6 +63,24 @@ export async function createOrLinkIssue(input:{connectionId:string;workspaceId:s
  const [saved]=await tx.select().from(linearIssueLinks).where(and(eq(linearIssueLinks.connectionId,connection.id),eq(linearIssueLinks.feedbackId,post.id)));if(!saved)throw new ServiceError('conflict','That Linear issue is already linked to another feedback item.');return {identifier:saved.identifier,url:saved.url};
  });
 }
+/** Push only the current Ent status. Lock the request while sending so older jobs cannot overwrite newer changes. */
+export async function pushLinearStatus(connectionId:string,workspaceId:string,feedbackId:string){
+ const {connection,token}=await linearToken(connectionId);if(connection.workspaceId!==workspaceId)throw new ServiceError('forbidden','Connection not available.');
+ const settings=linearSettingsSchema.parse(connection.settings),db=getDb();
+ return db.transaction(async tx=>{
+  const [post]=await tx.select({status:feedback.status}).from(feedback).where(and(eq(feedback.workspaceId,workspaceId),eq(feedback.id,feedbackId),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId))).for('update');
+  if(!post)throw new ServiceError('not_found','This request is no longer available.');
+  const [link]=await tx.select().from(linearIssueLinks).where(and(eq(linearIssueLinks.connectionId,connectionId),eq(linearIssueLinks.workspaceId,workspaceId),eq(linearIssueLinks.feedbackId,feedbackId))).limit(1);
+  if(!link)throw new ServiceError('not_found','Link a Linear issue first.');
+  const [active]=await tx.select({updatedAt:connectedApps.updatedAt}).from(connectedApps).where(and(eq(connectedApps.id,connectionId),eq(connectedApps.connected,true))).limit(1);
+  if(!active||active.updatedAt.getTime()!==connection.updatedAt.getTime())throw new ServiceError('conflict','Linear settings changed. Please try again.');
+  const result=await linearGraph<{issueUpdate:{success:boolean;issue:unknown}}>(token,'mutation EntSyncStatus($id:String!,$input:IssueUpdateInput!){issueUpdate(id:$id,input:$input){success issue{id identifier url team{id} state{id} updatedAt}}}',{id:link.issueId,input:{stateId:settings.states[post.status]}});
+  if(!result.issueUpdate.success)throw new ServiceError('retryable','Linear could not update the issue.');
+  const issue=linearIssueSchema.parse(result.issueUpdate.issue);if(issue.id!==link.issueId||issue.team.id!==settings.teamId||issue.state.id!==settings.states[post.status])throw new ServiceError('retryable','Linear could not confirm the status update.');
+  await tx.update(linearIssueLinks).set({syncedAt:new Date(issue.updatedAt),updatedAt:new Date()}).where(eq(linearIssueLinks.id,link.id));
+  return {identifier:link.identifier,url:link.url};
+ });
+}
 export async function syncLinearIssue(tx:Transaction,connection:typeof connectedApps.$inferSelect,issue:z.infer<typeof linearIssueSchema>,eventId:string){
  const parsed=linearSettingsSchema.safeParse(connection.settings);if(!parsed.success||issue.team.id!==parsed.data.teamId)return;
  const status=(Object.keys(parsed.data.states) as (keyof typeof parsed.data.states)[]).find(key=>parsed.data.states[key]===issue.state.id);if(!status)return;

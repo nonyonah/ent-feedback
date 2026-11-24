@@ -33,7 +33,7 @@ const empty={planned:'Nothing planned yet. Vote on ideas on the board and check 
 const roadmapCollision:CollisionDetection=args=>{const hits=pointerWithin(args);return args.pointerCoordinates?(hits.filter(hit=>!String(hit.id).startsWith('column:')).length?hits.filter(hit=>!String(hit.id).startsWith('column:')):hits):closestCenter(args);};
 type PendingShip={item:RoadmapItem;changes:RoadmapChanges};
 export function Roadmap({admin:dashboard=false,compact=false,active=true,onOpen}:{admin?:boolean;compact?:boolean;active?:boolean;onOpen?:(item:RoadmapItem)=>void}){
- const {project}=useProject();const {items:feedbackItems}=useFeedback();const [snapshot,setSnapshot]=React.useState<{scope:string;data:RoadmapData}|null>(null),[allShipped,setAllShipped]=React.useState(false),[tab,setTab]=React.useState('planned');
+ const {project,activeBoard}=useProject();const {items:feedbackItems}=useFeedback();const [snapshot,setSnapshot]=React.useState<{scope:string;data:RoadmapData}|null>(null),[allShipped,setAllShipped]=React.useState(false),[tab,setTab]=React.useState('planned');
  const admin=dashboard&&project.role==='owner';
  const statuses=admin?adminRoadmapStatuses:roadmapStatuses;
  const [pending,setPending]=React.useState(false),[ship,setShip]=React.useState<PendingShip|null>(null),[note,setNote]=React.useState(''),[notify,setNotify]=React.useState(false),[voted,setVoted]=React.useState<Record<string,boolean>>({}),[voting,setVoting]=React.useState<string[]>([]);
@@ -41,7 +41,7 @@ export function Roadmap({admin:dashboard=false,compact=false,active=true,onOpen}
  const mutation=React.useRef(false),version=React.useRef(0),voteLock=React.useRef(new Set<string>());
  const scope=project.id+':'+admin+':'+allShipped;const data=snapshot?.scope===scope?snapshot.data:null;const latestScope=React.useRef(scope);React.useLayoutEffect(()=>{latestScope.current=scope;},[scope]);
 
- const poll=useChatPolling(async signal=>{if(mutation.current||draggingRef.current)return;const revision=version.current;const url=admin?'/api/admin/roadmap?projectId='+project.id:'/api/public/roadmap?projectKey='+encodeURIComponent(project.slug)+'&shipped='+(allShipped||compact?'all':'recent');const next=await loadRoadmap(url,signal);if(signal.aborted||mutation.current||draggingRef.current||revision!==version.current)return;setSnapshot({scope,data:next});
+ const poll=useChatPolling(async signal=>{if(mutation.current||draggingRef.current)return;const revision=version.current;const url=admin?'/api/admin/roadmap?projectId='+project.id:'/api/public/roadmap?projectKey='+encodeURIComponent(project.slug)+'&shipped='+(allShipped||compact?'all':'recent')+(activeBoard?'&board='+encodeURIComponent(activeBoard.slug):'');const next=await loadRoadmap(url,signal);if(signal.aborted||mutation.current||draggingRef.current||revision!==version.current)return;setSnapshot({scope,data:next});
   if(!admin){const ids=roadmapItems(next).map(item=>item.id);const own:Record<string,boolean>={};for(let offset=0;offset<ids.length;offset+=1000){const result=await roadmapVotesAction(project.id,ids.slice(offset,offset+1000),visitorToken(project.id));if(signal.aborted)return;if(!result.ok)throw Error(result.error.message);rememberVisitorToken(project.id,result.data.guestToken);for(const item of result.data.items)own[item.id]=item.voted;}if(!signal.aborted)setVoted(own);}
  },active&&(!admin||project.role==='owner'),30000,scope);
  const retryRoadmap=poll.retry;

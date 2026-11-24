@@ -77,11 +77,12 @@ export async function applyAnalyticsConsent(allowed:boolean){
      persistence:'localStorage',cross_subdomain_cookie:false,
      person_profiles:'identified_only',respect_dnt:true,
      before_send:event=>{
-      if(!event||!permitted||analyticsBlocked()||accountId===undefined||(!analyticsEvents.includes(event.event as AnalyticsEvent)&&event.event!=='$identify'&&event.event!=='$set'))return null;
+      if(!event||!permitted||analyticsBlocked()||accountId===undefined||(!analyticsEvents.includes(event.event as AnalyticsEvent)&&event.event!=='$identify'&&event.event!=='$set'&&event.event!=='$pageview'))return null;
       const safe=safeAnalyticsProperties(event.properties);
       for(const key of ['token','distinct_id','$device_id','$session_id','$window_id','$lib','$lib_version','$anon_distinct_id']){
        const value=event.properties[key];if(typeof value==='string')safe[key]=value;
       }
+      if(event.event==='$pageview')for(const key of ['$current_url','$pathname','$host','$referrer'])if(typeof event.properties[key]==='string')safe[key]=event.properties[key];
       const set=event.properties.$set;
       const internalOnly=set&&typeof set==='object'&&!Array.isArray(set)&&Object.keys(set).every(key=>key==='is_internal');
       event.properties={...safe,...(internalOnly?{$set:set}:{}),auth_state:accountId?'signed_in':'guest',$is_identified:Boolean(accountId),$process_person_profile:Boolean(accountId)};delete event.$set;delete event.$set_once;return event;
@@ -97,5 +98,10 @@ export function syncAnalyticsSession(){syncSessionRecording();}
 export function captureAnalytics(event:AnalyticsEvent,properties:AnalyticsProperties={}){
   if(!permitted||!client||accountId===undefined||analyticsBlocked()||analyticsPage(location.pathname)===null)return;
   try{client.capture(event,safeAnalyticsProperties({...properties,auth_state:accountId?'signed_in':'guest',environment:process.env.NODE_ENV==='production'?'production':'development'}));}catch{}
+}
+/** PostHog's own dashboards read $pageview, so every tracked page also reports one. */
+export function capturePageview(){
+  if(!permitted||!client||accountId===undefined||analyticsBlocked())return;
+  try{client.capture('$pageview',{page:analyticsPage(location.pathname)??'other'});}catch{}
 }
 export function openAnalyticsSettings(){window.dispatchEvent(new Event(ANALYTICS_SETTINGS));}

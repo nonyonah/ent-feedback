@@ -23,7 +23,7 @@
     visitorId = randomVisitorId();
   }
   function publicEvent(type) {
-    const payload = JSON.stringify({projectKey: project, visitorId: visitorId, type: type, surface: surface});
+    const payload = JSON.stringify({projectKey: project, visitorId: visitorId, type: type, surface: surface, board: script.dataset.board || undefined});
     if (navigator.sendBeacon) {
       navigator.sendBeacon(origin + "/api/public/events", new Blob([payload], {type: "application/json"}));
     } else {

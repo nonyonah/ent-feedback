@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {useUser} from '@clerk/nextjs';
 import {usePathname} from 'next/navigation';
 import {Button} from '@/components/ui/button';
-import {ANALYTICS_CHANGE,ANALYTICS_CONSENT_KEY,ANALYTICS_SETTINGS,ANALYTICS_PRIVACY_OVERRIDE_KEY,analyticsBlocked,analyticsConfigured,applyAnalyticsConsent,captureAnalytics,openAnalyticsSettings,readAnalyticsConsent,saveAnalyticsConsent,setAnalyticsIdentity,syncAnalyticsSession} from '@/lib/analytics';
+import {ANALYTICS_CHANGE,ANALYTICS_CONSENT_KEY,ANALYTICS_SETTINGS,ANALYTICS_PRIVACY_OVERRIDE_KEY,analyticsBlocked,analyticsConfigured,applyAnalyticsConsent,captureAnalytics,capturePageview,openAnalyticsSettings,readAnalyticsConsent,saveAnalyticsConsent,setAnalyticsIdentity,syncAnalyticsSession} from '@/lib/analytics';
 import {analyticsPage} from '@/lib/analytics-events';
 export function AnalyticsPreferencesButton({className}:{className?:string}){
  return <button type="button" className={className??'rounded-lg text-[13px] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring'} onClick={openAnalyticsSettings}>Analytics preferences</button>;
@@ -25,7 +25,7 @@ export function AnalyticsProvider(){
    const consent=readAnalyticsConsent(),restricted=analyticsBlocked();
    setBlocked(restricted);
    setVisible(analyticsConfigured()&&analyticsPage(path)!==null&&(consent===null||(consent==='granted'&&restricted)));
-    void setAnalyticsIdentity(userId,isInternal).then(()=>{if(cancelled)return;return applyAnalyticsConsent(consent==='granted');}).then(()=>{if(cancelled)return;syncAnalyticsSession();if(consent==='granted'&&analyticsPage(path))captureAnalytics('page_viewed',{page:analyticsPage(path)!});});
+    void setAnalyticsIdentity(userId,isInternal).then(()=>{if(cancelled)return;return applyAnalyticsConsent(consent==='granted');}).then(()=>{if(cancelled)return;syncAnalyticsSession();if(consent==='granted'&&analyticsPage(path)){captureAnalytics('page_viewed',{page:analyticsPage(path)!});capturePageview();}});
   };
   const open=()=>{setBlocked(analyticsBlocked());setVisible(analyticsPage(path)!==null);};
   sync();window.addEventListener('storage',sync);window.addEventListener(ANALYTICS_CHANGE,sync);window.addEventListener(ANALYTICS_SETTINGS,open);

@@ -1,5 +1,5 @@
 import 'server-only';
-import {enqueueDiscord} from '@/server/connected-apps/queue';
+import {enqueueDiscord,enqueueLinearStatus,enqueueLinearCreate} from '@/server/connected-apps/queue';
 import {guestEmailVerified} from '@/server/guest-email';
 import {enqueueSlack} from '@/server/chat/notifications';
 import {and,eq,inArray,isNull} from 'drizzle-orm';
@@ -19,6 +19,8 @@ export async function publishActivity(tx:Tx,input:{type:ActivityType;workspaceId
  const [workspace]=await tx.select({handle:workspaces.handle,name:workspaces.name}).from(workspaces).where(eq(workspaces.id,input.workspaceId)).limit(1);if(!workspace)return;
  if(!input.skipSlack&&(input.type==='new_feedback'||input.type==='status_changed'||input.type==='type_changed'||input.type==='feedback_comment'))await enqueueSlack(tx,{workspaceId:input.workspaceId,feedbackId:input.feedbackId,event:input.type,eventId:input.eventId});
  if(['new_feedback','feedback_comment','status_changed','type_changed'].includes(input.type))await enqueueDiscord(tx,{workspaceId:input.workspaceId,feedbackId:input.feedbackId,event:input.type,eventId:input.eventId});
+ if(input.type==='new_feedback')await enqueueLinearCreate(tx,{workspaceId:input.workspaceId,feedbackId:input.feedbackId});
+ if(input.type==='status_changed'&&!input.systemUpdate)await enqueueLinearStatus(tx,{workspaceId:input.workspaceId,feedbackId:input.feedbackId,eventId:input.eventId});
  const update=input.type==='status_changed'||input.type==='type_changed';
  const title=input.type==='status_changed'?`${post.title} — Status: ${{open:'Open',planned:'Planned','in-progress':'In progress',shipped:'Completed'}[post.status]}`:input.type==='type_changed'?`${post.title} — Type: ${{feedback:'Feedback',bug:'Bug',feature_request:'Feature request',question:'Question'}[post.category]}`:post.title;
  // Guest updates go only to the address supplied on this submission.

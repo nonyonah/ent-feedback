@@ -3,7 +3,7 @@ title: Linear
 description: Connect feedback to Linear issues and sync their progress.
 ---
 
-Connect Linear to create an issue from feedback or link an existing issue. Updates to the issue's mapped Linear state move the linked feedback to the corresponding Ent status. Linear does not automatically create changelog drafts; use the [GitHub integration](/integrations/github) for those.
+Connect Linear to create an issue from feedback or link an existing issue. Status changes sync both ways between a linked Linear issue and its Ent feedback request. Linear does not automatically create changelog drafts; use the [GitHub integration](/integrations/github) for those.
 
 ## Connect and configure
 
@@ -12,7 +12,7 @@ Connect Linear to create an issue from feedback or link an existing issue. Updat
 3. Map the Ent statuses **Open**, **Planned**, **In progress**, and **Shipped** to four distinct states in that team, then save.
 4. Open a feedback request and select **Send to Linear**. Create a new issue or enter an existing issue identifier from the configured team.
 
-For status synchronization, enable Issue webhooks on the Ent OAuth app. Issue changes flow from Linear to Ent; changing a status in Ent does not update the Linear issue.
+For status synchronization, enable Issue webhooks on the Ent OAuth app. Ent automatically sends status changes for linked requests to Linear and processes Linear issue updates through webhooks. You can also select **Sync to Linear** on a linked request to send its current Ent status again. The sync changes the issue status only; it does not overwrite its title, description, or comments. To create issues automatically for new requests, enable **Automatically create issues** in Linear settings and save. Existing requests can be sent with **Send to Linear**. Automatic delivery is retried by the maintenance scheduler when Linear is temporarily unavailable.
 
 ## Troubleshooting
 

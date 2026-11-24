@@ -1,5 +1,7 @@
 "use server";
 
+import {processIntegrationJobs} from "@/server/connected-apps/worker";
+
 import { displayedVotes } from "@/server/services/displayed-votes";
 import {requestGuestVerification,guestEmailHash} from '@/server/guest-email';
 import {guestEmailVerifications} from '@/server/db/schema';
@@ -185,7 +187,7 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
    after(async()=>{
     if(value.type==='create'&&!who.user&&value.email)await requestGuestVerification({kind:'feedback',workspaceId:wid,subjectId:feedbackId,email:value.email},who.guestId!).catch(()=>{});
     if(value.type==='create'&&value.conversation)await processChatJobs(2,{workspaceId:wid,conversationId:value.conversation.id});
-    await Promise.allSettled([processNotificationJobs(3,{workspaceId:wid,feedbackId}),processChatJobs(2,{workspaceId:wid,feedbackId})]);
+    await Promise.allSettled([processNotificationJobs(3,{workspaceId:wid,feedbackId}),processChatJobs(2,{workspaceId:wid,feedbackId}),processIntegrationJobs(2)]);
     if(value.type==='create')trackServerAnalytics('feedback_submitted',{source:value.source??(value.channel==='widget'?'widget':'board'),feedback_type:value.category,has_screenshot:Boolean(value.images?.length)},context);
     if(commented)trackServerAnalytics('comment_added',{source:commentSource,is_reply:Boolean(value.type==='comment'&&value.parentCommentId),has_screenshot:Boolean(value.type==='comment'&&value.images?.length)},context);
     if(voted)trackServerAnalytics('vote_cast',{source:voteSource,active:true},context);

@@ -4,9 +4,10 @@ import {eq,sql} from 'drizzle-orm';
 import {getDb} from '@/server/db/client';
 import {users,workspaces,workspaceMembers,boards,feedback,connectedApps,linearIssueLinks,jobs} from '@/server/db/schema';
 import {seal,unseal} from '@/server/integration-crypto';
-import {loadConnectedAppsAction,connectAppAction,loadLinearOptionsAction,linkFeedbackLinearAction,saveConnectedAppSettingsAction} from '@/server/actions/connected-apps';
+import {loadConnectedAppsAction,connectAppAction,loadLinearOptionsAction,linkFeedbackLinearAction,saveConnectedAppSettingsAction,syncFeedbackToLinearAction} from '@/server/actions/connected-apps';
 import {linearToken,createOrLinkIssue} from '@/server/connected-apps/linear';
 import {deliverIntegrationJob,processIntegrationJobs} from '@/server/connected-apps/worker';
+import {publishActivity} from '@/server/activity';
 import {POST as linearWebhook} from '@/app/api/integrations/linear/events/route';
 import {POST as discordWebhook} from '@/app/api/integrations/discord/interactions/route';
 import {appOAuthCallback} from '@/server/connected-apps/oauth';
@@ -22,7 +23,7 @@ export async function run(){
  Object.assign(global.chatEnv,{LINEAR_ENABLED:'true',LINEAR_CLIENT_ID:'linear-test',LINEAR_CLIENT_SECRET:'linear-secret',LINEAR_WEBHOOK_SECRET:'webhook-secret',DISCORD_ENABLED:'true',DISCORD_CLIENT_ID:'12345',DISCORD_CLIENT_SECRET:'discord-secret',DISCORD_BOT_TOKEN:'bot-test'});
  const states={open:randomUUID(),planned:randomUUID(),'in-progress':randomUUID(),shipped:randomUUID()},teamId=randomUUID(),externalId=randomUUID(),key=global.chatEnv.INTEGRATION_ENCRYPTION_KEY!;
  const [linear]=await db.insert(connectedApps).values({workspaceId:workspace.id,provider:'linear',externalId,label:'Linear',settings:{teamId,states},encryptedCredentials:seal({accessToken:'test-token',refreshToken:'test-refresh',expiresAt:Date.now()+3600000},key,workspace.id+':linear'),createdByUserId:owner.id}).returning();
- let refreshes=0;let created=0,currentState=states.planned,issueId='';
+ let refreshes=0;let created=0,updates=0,currentState=states.planned,issueId='';
  global.fetch=async(input,init)=>{
  const url=String(input);
  if(url==='https://api.linear.app/oauth/token'){refreshes++;return Response.json({access_token:'renewed-token',refresh_token:'renewed-refresh',expires_in:86400});}
@@ -32,6 +33,7 @@ export async function run(){
  if(body.query.includes('EntTeams'))return Response.json({data:{teams:{nodes:[{id:teamId,name:'Engineering',states:{nodes:Object.values(states).map((id,index)=>({id,name:'State '+index,type:'started'})),pageInfo:{hasNextPage:false,endCursor:null}}}],pageInfo:{hasNextPage:false,endCursor:null}}}});
  if(body.query.includes('organization'))return Response.json({data:{organization:{id:externalId,name:'Linear'}}});
  if(body.query.includes('issues(filter'))return Response.json({data:{issues:{nodes:[]}}});
+ if(body.query.includes('EntSyncStatus')){updates++;currentState=body.variables.input.stateId;return Response.json({data:{issueUpdate:{success:true,issue:{id:issueId,identifier:'ENT-1',url:'https://linear.app/test/issue/ENT-1',team:{id:teamId},state:{id:currentState},updatedAt:new Date().toISOString()}}}});}
  if(body.query.includes('issueCreate')){created++;issueId=body.variables.input.id;return Response.json({data:{issueCreate:{success:true,issue:{id:issueId,identifier:'ENT-1',url:'https://linear.app/test/issue/ENT-1',team:{id:teamId},state:{id:currentState},updatedAt:new Date().toISOString()}}}});}
  if(body.query.includes('issue(id:'))return Response.json({data:{issue:{id:issueId,identifier:'ENT-1',url:'https://linear.app/test/issue/ENT-1',team:{id:teamId},state:{id:currentState},updatedAt:new Date().toISOString()}}});
  throw Error('Unexpected Linear operation');
@@ -44,7 +46,10 @@ export async function run(){
  const refreshed=await Promise.all([linearToken(linear.id),linearToken(linear.id)]);assert.equal(refreshes,1);assert.ok(refreshed.every(r=>r.token==='renewed-token'));
  await assert.rejects(()=>createOrLinkIssue({connectionId:linear.id,workspaceId:randomUUID(),feedbackId:post.id}));
  const first=await createOrLinkIssue({connectionId:linear.id,workspaceId:workspace.id,feedbackId:post.id});assert.equal(first.identifier,'ENT-1');await createOrLinkIssue({connectionId:linear.id,workspaceId:workspace.id,feedbackId:post.id});assert.equal(created,1);
- global.chatUser=outsider;assert.equal((await linkFeedbackLinearAction({workspaceId:workspace.id,feedbackId:post.id})).ok,false);assert.equal((await saveConnectedAppSettingsAction({provider:'discord',workspaceId:workspace.id,settings:{feedback:false}})).ok,false);global.chatUser=owner;
+ await db.transaction(async tx=>{await tx.update(feedback).set({status:'shipped'}).where(eq(feedback.id,post.id));await publishActivity(tx,{type:'status_changed',workspaceId:workspace.id,feedbackId:post.id,actorId:owner.id,eventId:randomUUID()});});
+ const queued=await db.select().from(jobs).where(sql`${jobs.payload}->>'kind' = 'linear_status'`);assert.equal(queued.length,1);await deliverIntegrationJob(queued[0]);assert.equal(currentState,states.shipped);assert.equal(updates,1);
+ await db.update(jobs).set({status:'succeeded'}).where(eq(jobs.id,queued[0].id));
+ global.chatUser=outsider;assert.equal((await syncFeedbackToLinearAction({workspaceId:workspace.id,feedbackId:post.id})).ok,false);assert.equal((await linkFeedbackLinearAction({workspaceId:workspace.id,feedbackId:post.id})).ok,false);assert.equal((await saveConnectedAppSettingsAction({provider:'discord',workspaceId:workspace.id,settings:{feedback:false}})).ok,false);global.chatUser=owner;
  currentState=states['in-progress'];const body=JSON.stringify({type:'Issue',action:'update',organizationId:externalId,webhookTimestamp:Date.now(),data:{id:issueId,updatedAt:new Date().toISOString()}}),signature=createHmac('sha256',global.chatEnv.LINEAR_WEBHOOK_SECRET!).update(body).digest('hex');
  assert.equal((await linearWebhook(new Request('https://ent.test',{method:'POST',body,headers:{'linear-signature':'bad'}}))).status,401);
  for(let i=0;i<2;i++)assert.equal((await linearWebhook(new Request('https://ent.test',{method:'POST',body,headers:{'linear-signature':signature}}))).status,200);
@@ -54,9 +59,14 @@ export async function run(){
  assert.equal((await connectAppAction({workspaceId:workspace.id,provider:'discord'})).ok,false);
  const safe=await loadConnectedAppsAction(workspace.id);assert.ok(safe.ok);assert.equal(safe.data.enabled.discord,false);assert.equal(JSON.stringify(safe).includes('accessToken'),false);assert.equal(JSON.stringify(safe).includes('encryptedCredentials'),false);
  const rls=await db.execute(sql`select count(*)::int as n from pg_class where relrowsecurity and relname in ('connected_apps','linear_issue_links','discord_identities','discord_deliveries') and relnamespace=(select oid from pg_namespace where nspname=current_schema())`);assert.equal(rls.rows[0].n,4);
+ // Automatic issue creation is opt-in and processes each new request once.
+ await db.update(connectedApps).set({settings:{teamId,states,autoCreate:true}}).where(eq(connectedApps.id,linear.id));
+ const [autoPost]=await db.insert(feedback).values({workspaceId:workspace.id,boardId:board.id,title:'Automatic request',body:'Details',status:'open'}).returning();
+ await db.transaction(tx=>publishActivity(tx,{type:'new_feedback',workspaceId:workspace.id,feedbackId:autoPost.id,eventId:autoPost.id}));
+ const [createJob]=await db.select().from(jobs).where(sql`${jobs.payload}->>'kind' = 'linear_create'`);assert.ok(createJob);await deliverIntegrationJob(createJob);await deliverIntegrationJob(createJob);assert.equal(created,2);
  // Revocation disables only the matching organization.
  const revoke={...linearJob,payload:{kind:'linear_event',event:{organizationId:externalId,type:'OAuthApp',action:'revoked'}}};await deliverIntegrationJob(revoke);assert.equal((await db.select().from(connectedApps).where(eq(connectedApps.id,linear.id)))[0].connected,false);
  global.chatEnv.LINEAR_ENABLED='false';global.chatEnv.DISCORD_ENABLED='false';assert.equal((await processIntegrationJobs()).disabled,true);
- assert.equal((await db.select().from(linearIssueLinks)).length,1);assert.ok(unseal(linear.encryptedCredentials!,key,workspace.id+':linear'));
+ assert.equal((await db.select().from(linearIssueLinks)).length,2);assert.ok(unseal(linear.encryptedCredentials!,key,workspace.id+':linear'));
  console.log('PASS: launch gates, migration/RLS, Linear team loading, issue linking, webhook sync, scoped authorization, Discord shutdown, credential redaction and revocation.');
 }

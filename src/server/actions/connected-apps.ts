@@ -5,11 +5,12 @@ import {connectedProviderSchema,linearSettingsSchema,discordSettingsSchema} from
 import {getDb} from '@/server/db/client';
 import {connectedApps,linearIssueLinks} from '@/server/db/schema';
 import {requireAppUser} from '@/server/auth';
+import {consumeRateLimit} from '@/server/rate-limit';
 import {requireWorkspaceRole} from '@/server/services/access';
 import {runService,ServiceError} from '@/server/result';
 import {appEnabled,requireAppEnabled} from '@/server/connected-apps/config';
 import {startAppOAuth,disconnectApp} from '@/server/connected-apps/oauth';
-import {loadLinearTeams,linearToken,createOrLinkIssue} from '@/server/connected-apps/linear';
+import {loadLinearTeams,linearToken,createOrLinkIssue,pushLinearStatus} from '@/server/connected-apps/linear';
 export async function loadConnectedAppsAction(workspaceId:string){return runService(async()=>{
  z.uuid().parse(workspaceId);const user=await requireAppUser(),db=getDb();const membership=await requireWorkspaceRole(db,{workspaceId,userId:user.id,minimumRole:'member'});
  const enabled={linear:appEnabled('linear'),discord:appEnabled('discord')};
@@ -39,4 +40,10 @@ export async function linkFeedbackLinearAction(input:unknown){return runService(
  const p=z.object({workspaceId:z.uuid(),feedbackId:z.uuid(),existing:z.string().trim().regex(/^(?:[A-Z][A-Z0-9]*-\d+|[a-f0-9-]{36})$/).optional()}).parse(input);requireAppEnabled('linear');const db=getDb(),user=await requireAppUser();await requireWorkspaceRole(db,{workspaceId:p.workspaceId,userId:user.id,minimumRole:'member'});
  const [c]=await db.select().from(connectedApps).where(and(eq(connectedApps.workspaceId,p.workspaceId),eq(connectedApps.provider,'linear'),eq(connectedApps.connected,true)));if(!c)throw new ServiceError('not_found','Connect Linear first.');linearSettingsSchema.parse(c.settings);
  return createOrLinkIssue({connectionId:c.id,workspaceId:p.workspaceId,feedbackId:p.feedbackId,existing:p.existing});
+});}
+
+export async function syncFeedbackToLinearAction(input:unknown){return runService(async()=>{
+ const p=z.object({workspaceId:z.uuid(),feedbackId:z.uuid()}).strict().parse(input);requireAppEnabled('linear');const db=getDb(),user=await requireAppUser();await requireWorkspaceRole(db,{workspaceId:p.workspaceId,userId:user.id,minimumRole:'member'});await consumeRateLimit('linear:sync:'+p.workspaceId+':'+user.id,30,3600);
+ const [connection]=await db.select({id:connectedApps.id}).from(connectedApps).where(and(eq(connectedApps.workspaceId,p.workspaceId),eq(connectedApps.provider,'linear'),eq(connectedApps.connected,true))).limit(1);if(!connection)throw new ServiceError('not_found','Connect Linear first.');
+ return pushLinearStatus(connection.id,p.workspaceId,p.feedbackId);
 });}

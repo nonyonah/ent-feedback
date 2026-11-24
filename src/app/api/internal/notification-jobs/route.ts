@@ -9,6 +9,8 @@ import { processNotificationJobs } from "@/server/notification-worker";
 import {enqueueLifecycleEmails,processLifecycleEmails} from "@/server/lifecycle-email-worker";
 import {cleanExpiredAttachments} from "@/server/attachment-cleanup";
 import {processTrialEmails,enqueuePrepaidReminders} from '@/server/billing/trial-emails';
+import {processWeeklySummaries} from '@/server/ai/weekly-jobs';
+import {processClassificationJob} from '@/server/ai/classification-jobs';
 
 export const maxDuration = 60;
 
@@ -32,10 +34,12 @@ export async function POST(request: Request) {
     const integrations=Date.now()-started<25_000?await processIntegrationJobs(1):{skipped:true};
     const roadmap=Date.now()-started<35_000?await processRoadmapJobs(1):{configured:notifications.configured,skipped:true};
     const changelog=Date.now()-started<40_000?await processChangelogJobs():{skipped:true};
+    const weekly=Date.now()-started<45_000?await processWeeklySummaries():{skipped:true};
+    const classification=Date.now()-started<45_000?await processClassificationJob():{skipped:true};
     // Expired uploads and spent rate-limit windows are only reclaimed here.
     const cleanup=await cleanExpiredAttachments(3);if(Date.now()-started<45000)await cleanChatUploads();
     const ready=notifications.configured&&(!lifecycleQueue.enabled||lifecycle.configured);
-    return Response.json({integrations,roadmap,changelog,chat,notifications,prepaidQueue,lifecycleQueue,lifecycle,trial,cleanup},{status:ready&&trial.configured?200:503,headers:{"Cache-Control":"no-store"}});
+    return Response.json({integrations,roadmap,changelog,weekly,classification,chat,notifications,prepaidQueue,lifecycleQueue,lifecycle,trial,cleanup},{status:ready&&trial.configured?200:503,headers:{"Cache-Control":"no-store"}});
   } catch {
     return Response.json({error:"Notification maintenance could not complete."},{status:503,headers:{"Cache-Control":"no-store"}});
   }

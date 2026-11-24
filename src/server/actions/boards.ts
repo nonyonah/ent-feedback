@@ -115,7 +115,7 @@ export async function deleteBoardAction(workspaceId:string,boardId:string){
    const replies=tx.select({id:comments.id}).from(comments).where(and(eq(comments.workspaceId,wid),sql`${comments.feedbackId} in (${posts})`));
    // Retain object keys for the existing retryable storage cleanup worker.
    await tx.update(attachments).set({feedbackId:null,commentId:null,status:'pending',attachedAt:null,expiresAt:new Date(Date.now()-1000),updatedAt:new Date()}).where(and(eq(attachments.workspaceId,wid),or(sql`${attachments.feedbackId} in (${posts})`,sql`${attachments.commentId} in (${replies})`)));
-   await tx.update(feedback).set({mergedIntoId:null}).where(and(eq(feedback.workspaceId,wid),sql`${feedback.mergedIntoId} in (${posts})`));
+   await tx.update(feedback).set({mergedIntoId:null,deletedAt:new Date(),updatedAt:new Date()}).where(and(eq(feedback.workspaceId,wid),sql`${feedback.mergedIntoId} in (${posts})`));
    await tx.delete(boards).where(and(eq(boards.workspaceId,wid),eq(boards.id,bid)));
    return {deletedId:bid,boards:await tx.select(selection).from(boards).where(eq(boards.workspaceId,wid)).orderBy(asc(boards.position),asc(boards.id))};
   });

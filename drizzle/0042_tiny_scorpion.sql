@@ -1,0 +1,2 @@
+ALTER TABLE "workspace_weekly_summaries" DROP CONSTRAINT "weekly_summary_count_check";--> statement-breakpoint
+ALTER TABLE "workspace_weekly_summaries" ADD CONSTRAINT "weekly_summary_count_check" CHECK ("workspace_weekly_summaries"."count" >= 0);

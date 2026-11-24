@@ -1,4 +1,4 @@
-export const FEEDBACK_CATEGORIES = {feedback: "Feedback", bug: "Bug report", feature_request: "Feature request"} as const;
+export const FEEDBACK_CATEGORIES = {feedback: "Feedback", bug: "Bug report", feature_request: "Feature request", question: "Question"} as const;
 export type FeedbackCategory = keyof typeof FEEDBACK_CATEGORIES;
 export type FeedbackTag = {id:string;name:string};
 

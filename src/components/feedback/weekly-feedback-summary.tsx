@@ -1,0 +1,15 @@
+'use client';
+
+import * as React from 'react';
+import {Button} from '@/components/ui/button';
+import {Dialog,DialogTrigger,DialogPopup,DialogTitle,DialogDescription,DialogHeader,DialogFooter} from '@/components/ui/dialog';
+import {ErrorNotice} from '@/components/ui/error-notice';
+import {loadWeeklyFeedbackSummaryAction,summarizeRecentFeedbackAction} from '@/server/actions/ai-feedback';
+
+type Summary=Extract<Awaited<ReturnType<typeof summarizeRecentFeedbackAction>>,{ok:true}>['data'];
+export function WeeklyFeedbackSummary({workspaceId}:{workspaceId:string}){
+ const [open,setOpen]=React.useState(false),[busy,setBusy]=React.useState(false),[loading,setLoading]=React.useState(false),[error,setError]=React.useState(''),[summary,setSummary]=React.useState<Summary|null>(null);
+ React.useEffect(()=>{if(!open)return;let active=true;void loadWeeklyFeedbackSummaryAction(workspaceId).then(result=>{if(!active)return;if(result.ok)setSummary(result.data);else setError(result.error.message);}).catch(()=>{if(active)setError('The weekly summary could not be loaded.');}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[open,workspaceId]);
+ async function generate(){if(busy)return;setBusy(true);setError('');try{const result=await summarizeRecentFeedbackAction(workspaceId);if(!result.ok)throw Error(result.error.message);setSummary(result.data);}catch(reason){setError(reason instanceof Error?reason.message:'The summary could not be generated.');}finally{setBusy(false);}}
+ return <Dialog open={open} onOpenChange={next=>{if(next){setLoading(true);setError('');}setOpen(next);}}><DialogTrigger render={<Button variant="outline" size="sm"/>}>Weekly summary</DialogTrigger><DialogPopup className="max-w-lg"><DialogHeader><DialogTitle>Weekly feedback summary</DialogTitle><DialogDescription>Automatically prepared each Monday in UTC for the preceding week. Includes new requests, votes cast, and requests marked shipped during that period.</DialogDescription></DialogHeader><div className="px-6 pb-5">{loading&&<p role="status" className="text-sm text-muted-foreground">Loading summary…</p>}{!loading&&summary&&<div aria-live="polite"><p className="mb-2 text-xs text-muted-foreground">{new Date(summary.since).toLocaleDateString(undefined,{timeZone:'UTC'})} – {new Date(summary.until).toLocaleDateString(undefined,{timeZone:'UTC'})} UTC</p>{summary.points.length?<><ul className="list-disc space-y-2 pl-5 text-sm leading-6">{summary.points.map((point,index)=><li key={index}>{point}</li>)}</ul></>:<p className="text-sm text-muted-foreground">No activity in this period.</p>}</div>}{!loading&&!summary&&!error&&<p className="text-sm text-muted-foreground">The next summary will appear after the scheduler runs. You can generate a current summary now.</p>}{error&&<ErrorNotice className="mt-3 text-sm">{error}</ErrorNotice>}</div><DialogFooter><Button type="button" variant="secondary" onClick={()=>setOpen(false)}>Close</Button><Button type="button" loading={busy} disabled={busy||loading} onClick={()=>void generate()}>Summarize last 7 days</Button></DialogFooter></DialogPopup></Dialog>;
+}

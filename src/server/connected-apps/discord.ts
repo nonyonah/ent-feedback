@@ -64,7 +64,7 @@ export async function deliverDiscord(input:unknown,key:string){
  let title='',body='',url='',images:string[]=[];
  if(p.feedbackId){
  const [post]=await db.select().from(feedback).where(and(eq(feedback.id,p.feedbackId),eq(feedback.workspaceId,c.workspaceId),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId)));if(!post)return;
- title=({bug:'Bug',feature_request:'Feature request',feedback:'Feedback'}[post.category])+` · ${post.title}`;body=post.body;
+ title=({bug:'Bug',feature_request:'Feature request',feedback:'Feedback',question:'Question'}[post.category])+` · ${post.title}`;body=post.body;
  if(p.event==='feedback_comment'){const [reply]=await db.select().from(comments).where(and(eq(comments.id,p.eventId),eq(comments.feedbackId,post.id),eq(comments.workspaceId,c.workspaceId),isNull(comments.deletedAt)));if(!reply)return;body=reply.body;}
  body+=`\n\nStatus: ${post.status}`;url=new URL(`/${workspace.handle}/items/${post.id}`,env.NEXT_PUBLIC_APP_URL).href;
  images=(await db.select().from(attachments).where(and(eq(attachments.workspaceId,c.workspaceId),eq(attachments.status,'attached'),p.event==='feedback_comment'?eq(attachments.commentId,p.eventId):eq(attachments.feedbackId,post.id))).limit(3)).map(file=>new URL('/api/attachments/'+file.id,env.NEXT_PUBLIC_APP_URL).href);

@@ -1,0 +1,17 @@
+'use client';
+import * as React from 'react';
+import {SettingGroup,SettingRow} from '@/components/feedback/settings-layout';
+import {Switch} from '@/components/ui/switch';
+import {Button} from '@/components/ui/button';
+import {ErrorNotice} from '@/components/ui/error-notice';
+import {loadAiSettingsAction,saveAiSettingsAction} from '@/server/actions/ai-settings';
+import {toastManager} from '@/components/ui/toast';
+
+type Settings={feedbackEnabled:boolean;githubEnabled:boolean};
+export function AiSettings({workspaceId}:{workspaceId:string}){
+ const [snapshot,setSnapshot]=React.useState<{settings:Settings;configured:boolean;canManage:boolean}|null>(null),[draft,setDraft]=React.useState<Settings|null>(null),[error,setError]=React.useState(''),[pending,setPending]=React.useState(false),[attempt,retry]=React.useReducer(n=>n+1,0);
+ React.useEffect(()=>{let active=true;void loadAiSettingsAction(workspaceId).then(result=>{if(!active)return;if(result.ok){setSnapshot(result.data);setDraft(result.data.settings);setError('');}else setError(result.error.message);}).catch(()=>{if(active)setError('AI settings could not be loaded.');});return()=>{active=false;};},[workspaceId,attempt]);
+ async function save(){if(!draft||pending)return;setPending(true);setError('');try{const result=await saveAiSettingsAction(workspaceId,draft);if(!result.ok){setError(result.error.message);return;}setSnapshot(current=>current?{...current,settings:result.data}:current);toastManager.add({type:'success',title:'AI preferences saved'});}catch{setError('AI preferences could not be saved.');}finally{setPending(false);}}
+ const dirty=Boolean(draft&&snapshot&&(draft.feedbackEnabled!==snapshot.settings.feedbackEnabled||draft.githubEnabled!==snapshot.settings.githubEnabled));
+ return <SettingGroup title="AI features"><div className="px-4 pt-4 text-[13px] leading-5 text-muted-foreground">Choose what this workspace allows Ent to send to its configured AI provider. Both options are off until an admin enables them.</div>{!snapshot&&!error&&<p role="status" className="px-4 py-4 text-sm text-muted-foreground">Loading AI settings…</p>}{snapshot&&draft&&<><SettingRow title="Feedback AI" description="Allow AI to process feedback titles, descriptions, and comments for suggestions and summaries, including automatic classification suggestions and changelog drafts."><Switch aria-label="Allow AI to process feedback" checked={draft.feedbackEnabled} disabled={!snapshot.canManage||pending||(!snapshot.configured&&!draft.feedbackEnabled)} onCheckedChange={value=>setDraft({...draft,feedbackEnabled:value})}/></SettingRow><div className="mx-4 border-t border-border/60"/><SettingRow title="GitHub changelog drafts" description="Coming soon: use pull request details and selected code changes to draft changelogs."><Switch aria-label="Allow AI to process GitHub changes" checked={draft.githubEnabled} disabled={!snapshot.canManage||pending||!draft.githubEnabled} onCheckedChange={value=>setDraft({...draft,githubEnabled:value})}/></SettingRow>{!snapshot.configured&&<p className="px-4 pb-4 text-xs text-muted-foreground">AI is not configured by Ent yet.</p>}{snapshot.canManage&&<div className="flex justify-end px-4 pb-4"><Button size="sm" disabled={!dirty||pending} loading={pending} onClick={()=>void save()}>Save AI preferences</Button></div>}</>}{error&&<div className="px-4 pb-4"><ErrorNotice>{error}{!snapshot&&<Button variant="link" size="sm" onClick={retry}>Try again</Button>}</ErrorNotice></div>}</SettingGroup>;
+}

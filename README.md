@@ -33,6 +33,18 @@ npm run dev
 
 Set `NEXT_PUBLIC_APP_URL` to the origin you develop on. Public boards under `/p/<handle>` work without any wildcard DNS; workspace subdomains need `NEXT_PUBLIC_WORKSPACE_BASE_DOMAIN` plus wildcard DNS and TLS.
 
+### Weekly summaries and AI
+
+In-app AI features are paused. Admins can see a weekly summary of new requests, votes cast, and requests marked shipped, calculated directly from workspace data without a model. The maintenance scheduler prepares the previous Monday-to-Monday period after Monday 00:00 UTC; delivery depends on the scheduler running and its backlog. Admins can also calculate a rolling seven-day summary on demand.
+
+### MCP
+
+The MCP endpoint is disabled until `MCP_RESOURCE_URL` is set to its exact HTTPS URL, such as `https://ent.riftlabs.xyz/mcp` (localhost HTTP is permitted for development). In Clerk, add that same URL under **Agents → MCP servers**, enable the required OAuth client onboarding and audience settings, and require PKCE. The server requests the `profile` scope and validates Clerk OAuth access tokens for the exact resource URL. See [Clerk's MCP setup guide](https://clerk.com/docs/nextjs/guides/ai/mcp/build-mcp-server).
+
+An authenticated coding agent can list its user's workspaces and read feedback in workspaces where the user is an active member. It can use its own repository and GitHub tools to implement a change and write a changelog, then an admin can submit that text with `propose_changelog_draft`. Proposals are reviewed under **Changelog → MCP proposals**; approval creates a private draft, and publication remains a separate action. MCP cannot publish, notify voters, or modify the repository. The app checks workspace roles on each call. Verify Clerk authorization with a test client and test data before enabling this endpoint for customers.
+
+GitHub also creates changelog drafts from merged pull requests; see [GitHub integration](documentation/integrations/github.mdx) for the recommended pull request format. Linear and Discord integrations require their respective credentials and launch flags in `.env.example` before users can connect them.
+
 ## Scripts
 
 | Script | What it does |

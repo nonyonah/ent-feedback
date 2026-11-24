@@ -14,6 +14,7 @@ import {toastManager} from '@/components/ui/toast';
 import {EmptyState} from '@/components/feedback/empty-state';
 import {ChangelogBody} from '@/components/changelog/changelog-body';
 import {GithubChangelogSetup} from '@/components/changelog/github-changelog-setup';
+import {McpDraftProposals} from '@/components/changelog/mcp-draft-proposals';
 import {changelogPlainText} from '@/lib/changelog-markdown';
 import {ChangelogComposer,ChangelogCover} from '@/components/changelog/changelog-composer';
 import {PublishDatePicker} from '@/components/changelog/publish-date-picker';
@@ -22,9 +23,11 @@ import {PlusIcon,PencilSimpleIcon,TrashIcon,EyeIcon,EyeOffIcon,XIcon,ClockIcon,G
 import {useProject} from '@/components/feedback/project-provider';
 import {changelogCategories,changelogCategoryLabels,changelogSlugMaxLength,changelogStatusLabels,changelogTitleMaxLength,formatChangelogDate,slugifyChangelogTitle,type ChangelogCategory,type ChangelogEntry,type ChangelogFeedbackLink,type ChangelogStatus} from '@/lib/changelog';
 import {listChangelogEntriesAction,saveChangelogEntryAction,setChangelogEntryStatusAction,deleteChangelogEntryAction} from '@/server/actions/changelog';
-import {searchChangelogRequestsAction} from '@/server/actions/changelog';
+import {searchChangelogRequestsAction,suggestChangelogFromFeedbackAction} from '@/server/actions/changelog';
 import {Popover,PopoverTrigger,PopoverPopup} from '@/components/ui/popover';
 import {SettingGroup} from '@/components/feedback/settings-layout';
+import {features} from '@/lib/features';
+import {Tooltip,TooltipTrigger,TooltipPopup} from '@/components/ui/tooltip';
 
 type Draft={coverImage:string|null;id:string|null;title:string;slug:string;slugEdited:boolean;summary:string;body:string;category:ChangelogCategory;feedback:ChangelogFeedbackLink[];scheduledFor:string};
 type Filter='all'|ChangelogStatus;
@@ -49,6 +52,8 @@ function toLocalInput(value:string|null){
 
 export function DashboardChangelog(){
   const {project}=useProject();
+  const workspaceRef=React.useRef(project.id);
+  React.useLayoutEffect(()=>{workspaceRef.current=project.id;},[project.id]);
   const editable=project.role==='owner'||project.role==='admin';
   const [snapshot,setSnapshot]=React.useState<{workspaceId:string;entries:ChangelogEntry[];error:string}|null>(null);
   const [attempt,reload]=React.useReducer(value=>value+1,0);
@@ -57,6 +62,7 @@ export function DashboardChangelog(){
   const [draft,setDraft]=React.useState<Draft|null>(null);
   const [formError,setFormError]=React.useState('');
   const [saving,setSaving]=React.useState<'save'|'publish'|'schedule'|null>(null);
+  const [generating,setGenerating]=React.useState(false);
   const [uploads,setUploads]=React.useState({cover:false,content:false});
   const uploading=uploads.cover||uploads.content;
   const [settingsOpen,setSettingsOpen]=React.useState(false);
@@ -95,6 +101,18 @@ export function DashboardChangelog(){
     setDraft({coverImage:entry.coverImage??null,id:entry.id,title:entry.title,slug:entry.slug,slugEdited:true,summary:entry.summary??'',body:entry.body,category:entry.category,feedback:entry.feedback,scheduledFor:toLocalInput(entry.scheduledFor)});
   }
   function create(){setFormError('');setPreview(false);setDraft({...emptyDraft});}
+
+  async function suggestDraft(){
+    if(!draft||generating||draft.title.trim()||draft.body.trim()||!draft.feedback.length)return;
+    const original=draft,workspace=project.id;
+    setGenerating(true);setFormError('');
+    try{
+      const result=await suggestChangelogFromFeedbackAction(workspace,original.feedback.map(item=>item.id));
+      if(!result.ok)throw Error(result.error.message);
+      setDraft(current=>workspaceRef.current===workspace&&current===original?{...current,title:result.data.title,slug:slugifyChangelogTitle(result.data.title),body:result.data.body}:current);
+    }catch(error){if(workspaceRef.current===workspace)setFormError(message(error,'The AI draft could not be generated.'));}
+    finally{setGenerating(false);}
+  }
 
   const formValid=Boolean(draft?.title.trim()&&draft?.body.trim()&&!uploading);
 
@@ -150,7 +168,7 @@ export function DashboardChangelog(){
       <span className="md:hidden"><SidebarTrigger/></span>
       <h1 className="text-[13px] font-medium tracking-[-0.135px]">Changelog</h1>
       {entries&&<span aria-label={entries.length+' entries'} className="text-[13px] tabular-nums text-muted-foreground">{entries.length}</span>}
-      {editable&&<div className="ms-auto flex flex-wrap items-center gap-2"><GithubChangelogSetup workspaceId={project.id} onImported={reload}/><Button size="sm" className="text-[13px]" onClick={create}><PlusIcon className="size-3.5"/>New entry</Button></div>}
+      {editable&&<div className="ms-auto flex flex-wrap items-center gap-2"><McpDraftProposals key={project.id} workspaceId={project.id} onReviewed={reload}/><GithubChangelogSetup workspaceId={project.id} onImported={reload}/><Button size="sm" className="text-[13px]" onClick={create}><PlusIcon className="size-3.5"/>New entry</Button></div>}
     </header>
     <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 pb-3">
       <Select items={[{value:'all',label:'All statuses'},{value:'published',label:'Published'},{value:'scheduled',label:'Scheduled'},{value:'draft',label:'Drafts'}]} value={filter} onValueChange={value=>value&&setFilter(value as Filter)}>
@@ -221,6 +239,7 @@ export function DashboardChangelog(){
           </div> : <fieldset disabled={Boolean(saving)} className={"min-w-0 flex-1 overflow-y-auto"+(settingsOpen?" md:pr-[360px]":"")}>
             <div className="mx-auto w-full max-w-[760px] px-6 py-10 md:px-12 md:py-16">
               <ChangelogCover onBusyChange={busy=>setUploads(current=>({...current,cover:busy}))} workspaceId={project.id} value={draft.coverImage} onChange={coverImage=>setDraft(current=>current?{...current,coverImage}:current)} onError={setFormError}/>
+              {features.feedbackAi&&!draft.title.trim()&&!draft.body.trim()&&<div className="mb-4"><Tooltip><TooltipTrigger render={<Button type="button" variant="outline" size="sm" loading={generating} aria-disabled={generating||!draft.feedback.length} className={!draft.feedback.length?'opacity-50':''} onClick={()=>void suggestDraft()}/>}>Draft from linked requests</TooltipTrigger><TooltipPopup className="max-w-64">Link shipped requests in post settings first. AI suggestions need review before publishing.</TooltipPopup></Tooltip></div>}
               <div className="grid gap-1.5">
                 <label htmlFor={uid+'-title'} className="sr-only">Title</label>
                 <textarea rows={2} id={uid+'-title'} autoFocus required maxLength={changelogTitleMaxLength} placeholder="Untitled update" value={draft?.title??''} onChange={event=>setDraft(current=>current?{...current,title:event.target.value,slug:current.slugEdited?current.slug:slugifyChangelogTitle(event.target.value)}:current)} className="field-sizing-content min-h-[1.5em] w-full resize-none border-0 bg-transparent px-0 py-2 text-[32px] font-semibold leading-tight tracking-tight outline-none placeholder:text-muted-foreground/60 sm:text-[40px]"/>

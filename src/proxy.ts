@@ -52,6 +52,9 @@ const applicationProxy=clerkMiddleware(async (auth, request) => {
 
 export default function proxy(request:NextRequest,event:NextFetchEvent){
   const path=request.nextUrl.pathname;
+  // The MCP routes perform OAuth bearer validation and must return challenges,
+  // not Clerk's browser-session redirects.
+  if(path==='/mcp'||path==='/.well-known/oauth-protected-resource/mcp'||path==='/.well-known/oauth-authorization-server')return NextResponse.next();
   if(documentationPath(path)){
     // Netlify's native docs edge proxy receives the untouched URL, including dpl.
     // The Next adapter normalizes that parameter before invoking this proxy.

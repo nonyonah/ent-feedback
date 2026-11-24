@@ -9,7 +9,7 @@ import {requireWorkspaceRole} from '@/server/services/access';
 import {runService,ServiceError} from '@/server/result';
 import {appEnabled,requireAppEnabled} from '@/server/connected-apps/config';
 import {startAppOAuth,disconnectApp} from '@/server/connected-apps/oauth';
-import {linearGraph,linearToken,createOrLinkIssue} from '@/server/connected-apps/linear';
+import {loadLinearTeams,linearToken,createOrLinkIssue} from '@/server/connected-apps/linear';
 export async function loadConnectedAppsAction(workspaceId:string){return runService(async()=>{
  z.uuid().parse(workspaceId);const user=await requireAppUser(),db=getDb();const membership=await requireWorkspaceRole(db,{workspaceId,userId:user.id,minimumRole:'member'});
  const enabled={linear:appEnabled('linear'),discord:appEnabled('discord')};
@@ -22,7 +22,7 @@ export async function disconnectAppAction(input:unknown){return runService(async
 export async function loadLinearOptionsAction(workspaceId:string){return runService(async()=>{
  requireAppEnabled('linear');z.uuid().parse(workspaceId);const user=await requireAppUser(),db=getDb();await requireWorkspaceRole(db,{workspaceId,userId:user.id,minimumRole:'admin'});
  const [c]=await db.select().from(connectedApps).where(and(eq(connectedApps.workspaceId,workspaceId),eq(connectedApps.provider,'linear'),eq(connectedApps.connected,true)));if(!c)throw new ServiceError('not_found','Connect Linear first.');
- const data=await linearGraph<{teams:{nodes:{id:string;name:string;states:{nodes:{id:string;name:string;type:string}[]}}[]}}>((await linearToken(c.id)).token,'query{teams(first:100){nodes{id name states(first:100){nodes{id name type}}}}}');return data.teams.nodes;
+ return loadLinearTeams((await linearToken(c.id)).token);
 });}
 export async function saveConnectedAppSettingsAction(input:unknown){return runService(async()=>{
  const p=z.object({workspaceId:z.uuid(),provider:connectedProviderSchema,settings:z.unknown()}).parse(input);requireAppEnabled(p.provider);const user=await requireAppUser(),db=getDb();await requireWorkspaceRole(db,{workspaceId:p.workspaceId,userId:user.id,minimumRole:'admin'});

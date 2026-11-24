@@ -1,0 +1,21 @@
+---
+title: Linear
+description: Connect feedback to Linear issues and sync their progress.
+---
+
+Connect Linear to create an issue from feedback or link an existing issue. Updates to the issue's mapped Linear state move the linked feedback to the corresponding Ent status. Linear does not automatically create changelog drafts; use the [GitHub integration](/integrations/github) for those.
+
+## Connect and configure
+
+1. In **Settings → Integrations**, select **Connect Linear** and authorize access to your Linear workspace. An Ent workspace owner or admin can manage the connection.
+2. Select a Linear team. The app can only show teams it can access in Linear.
+3. Map the Ent statuses **Open**, **Planned**, **In progress**, and **Shipped** to four distinct states in that team, then save.
+4. Open a feedback request and select **Send to Linear**. Create a new issue or enter an existing issue identifier from the configured team.
+
+For status synchronization, enable Issue webhooks on the Ent OAuth app. Issue changes flow from Linear to Ent; changing a status in Ent does not update the Linear issue.
+
+## Troubleshooting
+
+If teams fail to load, use **Retry**. If no teams appear, check the app's team access in Linear and reconnect it from Ent. Confirm the Linear workspace has the required teams and workflow states. If the connection cannot be established, an Ent operator should verify the configured OAuth credentials and webhook secret.
+
+Discord is currently paused and is not available to connect.

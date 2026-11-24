@@ -2,7 +2,7 @@ import 'server-only';
 import {getServerEnv} from '@/server/env';
 import {ServiceError} from '@/server/result';
 import type {ConnectedProvider} from '@/lib/connected-apps';
-export function appEnabled(provider:ConnectedProvider){const env=getServerEnv();return provider==='linear'?env.LINEAR_ENABLED==='true':env.DISCORD_ENABLED==='true';}
+export function appEnabled(provider:ConnectedProvider){const env=getServerEnv();return provider==='linear'&&env.LINEAR_ENABLED==='true';}
 export function requireAppEnabled(provider:ConnectedProvider){if(!appEnabled(provider))throw new ServiceError('forbidden','This integration is coming soon.');}
 export function appConfig(provider:ConnectedProvider){
  requireAppEnabled(provider);const e=getServerEnv();const id=provider==='linear'?e.LINEAR_CLIENT_ID:e.DISCORD_CLIENT_ID,secret=provider==='linear'?e.LINEAR_CLIENT_SECRET:e.DISCORD_CLIENT_SECRET,key=e.INTEGRATION_ENCRYPTION_KEY;

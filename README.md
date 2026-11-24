@@ -43,7 +43,7 @@ The MCP endpoint is disabled until `MCP_RESOURCE_URL` is set to its exact HTTPS 
 
 An authenticated coding agent can list its user's workspaces and read feedback in workspaces where the user is an active member. It can use its own repository and GitHub tools to implement a change and write a changelog, then an admin can submit that text with `propose_changelog_draft`. Proposals are reviewed under **Changelog → MCP proposals**; approval creates a private draft, and publication remains a separate action. MCP cannot publish, notify voters, or modify the repository. The app checks workspace roles on each call. Verify Clerk authorization with a test client and test data before enabling this endpoint for customers.
 
-GitHub also creates changelog drafts from merged pull requests; see [GitHub integration](documentation/integrations/github.mdx) for the recommended pull request format. Linear and Discord integrations require their respective credentials and launch flags in `.env.example` before users can connect them.
+GitHub also creates changelog drafts from merged pull requests; see [GitHub integration](documentation/integrations/github.mdx) for the recommended pull request format. Linear requires its credentials and launch flag in `.env.example` before users can connect. Discord is paused.
 
 ## Scripts
 

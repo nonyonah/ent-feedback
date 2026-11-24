@@ -22,6 +22,25 @@ export async function linearToken(connectionId:string){return getDb().transactio
  const config=appConfig('linear'),context=c.workspaceId+':linear';let secret=linearCredentials.parse(unseal(c.encryptedCredentials,config.key,context));
  if(secret.expiresAt<Date.now()+120000){const response=await appFetch('https://api.linear.app/oauth/token',{method:'POST',body:new URLSearchParams({grant_type:'refresh_token',refresh_token:secret.refreshToken,client_id:config.id,client_secret:config.secret})});const token=z.object({access_token:z.string().min(1),refresh_token:z.string().min(1),expires_in:z.number().positive()}).parse(await response.json());secret={accessToken:token.access_token,refreshToken:token.refresh_token,expiresAt:Date.now()+token.expires_in*1000};await tx.update(connectedApps).set({encryptedCredentials:seal(secret,config.key,context)}).where(eq(connectedApps.id,c.id));}return {connection:c,token:secret.accessToken};
  });}
+type LinearState={id:string;name:string;type:string};
+type LinearTeam={id:string;name:string;states:{nodes:LinearState[];pageInfo:{hasNextPage:boolean;endCursor:string|null}}};
+type PageInfo={hasNextPage:boolean;endCursor:string|null};
+/** Small pages keep the nested query below Linear's per-request complexity limit. */
+export async function loadLinearTeams(token:string){
+ const teams:LinearTeam[]=[];let after:string|null=null;
+ for(let page=0;page<100;page++){
+  const result:{teams:{nodes:LinearTeam[];pageInfo:PageInfo}}=await linearGraph<{teams:{nodes:LinearTeam[];pageInfo:PageInfo}}>(token,'query EntTeams($after:String){teams(first:10,after:$after){nodes{id name states(first:50){nodes{id name type} pageInfo{hasNextPage endCursor}}} pageInfo{hasNextPage endCursor}}}',{after});
+  teams.push(...result.teams.nodes);if(!result.teams.pageInfo.hasNextPage)break;
+  const next:string|null=result.teams.pageInfo.endCursor;if(!next||next===after||page===99)throw new ServiceError('retryable','Linear teams could not be loaded. Please try again.');after=next;
+ }
+ for(const team of teams){let info=team.states.pageInfo;for(let page=0;info.hasNextPage;page++){
+  if(!info.endCursor||page>=100)throw new ServiceError('retryable','Linear states could not be loaded. Please try again.');
+  const result=await linearGraph<{team:{states:{nodes:LinearState[];pageInfo:PageInfo}}}>(token,'query EntTeamStates($id:String!,$after:String){team(id:$id){states(first:50,after:$after){nodes{id name type} pageInfo{hasNextPage endCursor}}}}',{id:team.id,after:info.endCursor});
+  if(result.team.states.pageInfo.hasNextPage&&result.team.states.pageInfo.endCursor===info.endCursor)throw new ServiceError('retryable','Linear states could not be loaded. Please try again.');
+  team.states.nodes.push(...result.team.states.nodes);info=result.team.states.pageInfo;
+ }}
+ return teams.map(({id,name,states})=>({id,name,states:{nodes:states.nodes}}));
+}
 const issueFields='id identifier url team { id } state { id } updatedAt';
 export async function createOrLinkIssue(input:{connectionId:string;workspaceId:string;feedbackId:string;existing?:string}){
  const {connection,token}=await linearToken(input.connectionId);if(connection.workspaceId!==input.workspaceId)throw new ServiceError('forbidden','Connection not available.');const settings=linearSettingsSchema.parse(connection.settings),db=getDb();

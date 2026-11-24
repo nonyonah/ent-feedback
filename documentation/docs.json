@@ -54,6 +54,7 @@
         "group": "Integrations",
         "pages": [
           "integrations/slack",
+          "integrations/linear",
           "integrations/github"
         ]
       },

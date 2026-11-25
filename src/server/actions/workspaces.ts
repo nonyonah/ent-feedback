@@ -12,6 +12,7 @@ import { getDb } from "@/server/db/client";
 import { attachments,billingCheckouts,chatUploads,changelogUploads,connectedApps,conversations,githubAppChangelogConnections,githubChangelogConnections,integrationConnections,jobs,workspaceSubscriptions,workspaces } from "@/server/db/schema";
 import { requireWorkspaceRole } from "@/server/services/access";
 import { runService,ServiceError } from "@/server/result";
+import { verifyDeletionCheckouts } from "@/server/billing/deletion";
 import {
   acceptInvitation,
   cancelInvitation,
@@ -199,14 +200,16 @@ export async function removeWorkspaceMemberAction(input:{workspaceId:string;memb
 export async function deleteWorkspaceAction(input:{workspaceId:string;confirmation:string}){return runService(async()=>{
  const {workspaceId:wid,confirmation}=z.object({workspaceId:z.uuid(),confirmation:z.string().max(60)}).strict().parse(input),user=await requireAppUser(),db=getDb();
  await requireWorkspaceRole(db,{workspaceId:wid,userId:user.id,minimumRole:'owner'});await consumeRateLimit('workspace:delete:'+user.id,5,3600);
+ const verifiedCheckouts=await verifyDeletionCheckouts(wid);
  await db.transaction(async tx=>{
   const [workspace]=await tx.select().from(workspaces).where(eq(workspaces.id,wid)).for('update');if(!workspace)throw new ServiceError('not_found','Workspace not found.');
   await requireWorkspaceRole(tx,{workspaceId:wid,userId:user.id,minimumRole:'owner'});
   if(confirmation!==workspace.name)throw new ServiceError('validation','Enter the workspace name exactly.');
   const [billing]=await tx.select().from(workspaceSubscriptions).where(eq(workspaceSubscriptions.workspaceId,wid)).limit(1);
   if(billing&&(['active','trialing','past_due','unpaid','paused'].includes(billing.status)||(billing.prepaidUntil&&billing.prepaidUntil>new Date())))throw new ServiceError('conflict','End your subscription or prepaid access before deleting this workspace.');
-  await tx.update(billingCheckouts).set({status:'expired',checkoutUrl:null,updatedAt:new Date()}).where(and(eq(billingCheckouts.workspaceId,wid),inArray(billingCheckouts.status,['creating','open']),sql`${billingCheckouts.expiresAt}<=now()`));
-  const [checkout]=await tx.select({id:billingCheckouts.id}).from(billingCheckouts).where(and(eq(billingCheckouts.workspaceId,wid),inArray(billingCheckouts.status,['creating','open']),sql`${billingCheckouts.expiresAt}>now()`)).limit(1);if(checkout)throw new ServiceError('conflict','Wait for the pending checkout to expire before deleting this workspace.');
+  const checkouts=await tx.select().from(billingCheckouts).where(and(eq(billingCheckouts.workspaceId,wid),inArray(billingCheckouts.status,['creating','open','expired'])));
+  if(checkouts.length!==verifiedCheckouts.length||checkouts.some(row=>!verifiedCheckouts.some(verified=>verified.id===row.id&&verified.status===row.status&&verified.checkoutId===row.checkoutId&&verified.updatedAt.getTime()===row.updatedAt.getTime()&&verified.expiresAt.getTime()===row.expiresAt.getTime())))throw new ServiceError('conflict','Billing changed while verifying the checkout. Try again.');
+  if(checkouts.length)await tx.update(billingCheckouts).set({status:'expired',checkoutUrl:null,updatedAt:new Date()}).where(and(eq(billingCheckouts.workspaceId,wid),inArray(billingCheckouts.status,['creating','open','expired'])));
   const [connected]=await tx.select({id:connectedApps.id}).from(connectedApps).where(and(eq(connectedApps.workspaceId,wid),eq(connectedApps.connected,true))).limit(1);
   const [integration]=await tx.select({id:integrationConnections.id}).from(integrationConnections).where(and(eq(integrationConnections.workspaceId,wid),eq(integrationConnections.authorizationState,'connected'))).limit(1);
   const [githubApp]=await tx.select({id:githubAppChangelogConnections.id}).from(githubAppChangelogConnections).where(eq(githubAppChangelogConnections.workspaceId,wid)).limit(1);

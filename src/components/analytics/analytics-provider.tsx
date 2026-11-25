@@ -13,8 +13,6 @@ export function AnalyticsProvider(){
  const path=usePathname();
  const {user,isLoaded}=useUser();
   const userId=isLoaded?user?.id??null:undefined;
-  const userEmail=isLoaded?user?.primaryEmailAddress?.emailAddress?.toLowerCase():undefined;
-  const isInternal=false;
   const [visible,setVisible]=React.useState(false);
  const [storageError,setStorageError]=React.useState(false);
  const [blocked,setBlocked]=React.useState(false);
@@ -25,12 +23,12 @@ export function AnalyticsProvider(){
    const consent=readAnalyticsConsent(),restricted=analyticsBlocked();
    setBlocked(restricted);
    setVisible(analyticsConfigured()&&analyticsPage(path)!==null&&(consent===null||(consent==='granted'&&restricted)));
-    void setAnalyticsIdentity(userId,isInternal).then(()=>{if(cancelled)return;return applyAnalyticsConsent(consent==='granted');}).then(()=>{if(cancelled)return;syncAnalyticsSession();if(consent==='granted'&&analyticsPage(path))captureAnalytics('page_viewed',{page:analyticsPage(path)!});});
+    void setAnalyticsIdentity(userId).then(()=>{if(cancelled)return;return applyAnalyticsConsent(consent==='granted');}).then(()=>{if(cancelled)return;syncAnalyticsSession();if(consent==='granted'&&analyticsPage(path))captureAnalytics('$pageview',{page:analyticsPage(path)!});});
   };
   const open=()=>{setBlocked(analyticsBlocked());setVisible(analyticsPage(path)!==null);};
   sync();window.addEventListener('storage',sync);window.addEventListener(ANALYTICS_CHANGE,sync);window.addEventListener(ANALYTICS_SETTINGS,open);
   return()=>{cancelled=true;window.removeEventListener('storage',sync);window.removeEventListener(ANALYTICS_CHANGE,sync);window.removeEventListener(ANALYTICS_SETTINGS,open);};
-  },[path,userId,isInternal]);
+  },[path,userId]);
  function choose(value:'granted'|'denied'){
   setStorageError(false);
   try{saveAnalyticsConsent(value);setVisible(false);}

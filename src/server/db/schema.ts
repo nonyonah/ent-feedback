@@ -977,3 +977,10 @@ export const mcpReplyProposals=pgTable('mcp_reply_proposals',{
  status:text('status').$type<'pending'|'approved'|'rejected'>().notNull().default('pending'),
  ...timestamps(),
 },t=>[foreignKey({columns:[t.feedbackId,t.workspaceId],foreignColumns:[feedback.id,feedback.workspaceId]}).onDelete('cascade'),index('mcp_reply_proposals_target_idx').on(t.workspaceId,t.feedbackId,t.status),check('mcp_reply_proposal_status_check',sql`${t.status} in ('pending','approved','rejected')`),check('mcp_reply_proposal_body_check',sql`length(${t.body}) between 1 and 5000`)]).enableRLS();
+
+/** First consented analytics observation per board; distinct from installation state. */
+export const analyticsWidgetInstalls=pgTable('analytics_widget_installs',{
+ boardId:uuid('board_id').primaryKey(),
+ workspaceId:uuid('workspace_id').notNull(),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[foreignKey({columns:[t.boardId,t.workspaceId],foreignColumns:[boards.id,boards.workspaceId]}).onDelete('cascade')]).enableRLS();

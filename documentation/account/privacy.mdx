@@ -15,7 +15,7 @@ Analytics records named product actions, such as creating a board or submitting 
 
 When you are signed in and have allowed analytics, a hashed account identifier connects activity across devices. Signed-out activity uses a browser identifier. Signing out or switching accounts resets the browser identity. These identifiers are pseudonymous, not a claim that the data is fully anonymous.
 
-Browser privacy signals keep analytics off by default. You can explicitly allow analytics in the card; a newly enabled privacy signal blocks collection again until acknowledged. Embedded widgets do not load Ent’s product analytics on the host website.
+Browser privacy signals keep analytics off by default. You can explicitly allow analytics in the card; a newly enabled privacy signal blocks collection again until acknowledged. Embedded widgets do not load the PostHog browser SDK. A host website can explicitly signal that you have consented to widget analytics; only then does the widget store a random host-side analytics identifier and send bounded activity events. Withdrawing consent stops collection and removes that identifier. Global Privacy Control and Do Not Track block widget analytics.
 
 ## Requests about your information
 

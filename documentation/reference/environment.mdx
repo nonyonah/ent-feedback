@@ -22,3 +22,7 @@ node scripts/materialize-env.mjs
 The script takes its key names from `.env.example` so the two cannot drift. It prefers a value from the process environment, keeps an existing `.env.local` value when the environment has none, and otherwise uses the value in `.env.example`. It preserves the comments in `.env.example`, writes the file with `0600` permissions, and prints only the names of the keys it filled from the environment, never the values.
 
 Proxy, rewrite and hosting notes for a deployment are recorded in the repository’s `docs/deployment/` folder.
+
+## MCP endpoint
+
+Set `MCP_RESOURCE_URL` to the exact externally reachable MCP endpoint, such as `https://ent.riftlabs.xyz/mcp`, and configure that same URL as a Clerk MCP resource. HTTPS is required except for `http://localhost` and `http://127.0.0.1` during local development. The URL must end in `/mcp` and cannot contain credentials, a query string, or a fragment. If it is missing or invalid, the MCP endpoint returns 503. See [the MCP integration guide](/integrations/mcp) for connection and review workflows.

@@ -6,7 +6,7 @@ import { EmbeddedBoard } from "@/components/feedback/embedded-board";
 import { PublicWorkspaceBoundary } from "@/components/feedback/public-workspace-boundary";
 import { getPublicWorkspace } from "@/server/public-workspace";
 import {after} from 'next/server';
-import {analyticsHostFromHeaders,isInternalAnalyticsHost,markWidgetFirstLoaded,trackServerAnalytics} from '@/lib/analytics/server';
+import {analyticsHostFromHeaders,isInternalAnalyticsHost,markWidgetFirstLoaded} from '@/lib/analytics/server';
 
 export const instant = false;
 export const metadata={robots:{index:false,follow:false}};
@@ -24,7 +24,6 @@ export default async function Page({ searchParams }: {
   if(boardId){
    const host=analyticsHostFromHeaders(await headers()),isExternal=!isInternalAnalyticsHost(host);
    after(async()=>{
-    trackServerAnalytics('widget_loaded',{origin_domain:host,is_external:isExternal},{boardId,defer:false});
     if(host)await markWidgetFirstLoaded({workspaceId:workspace.project.id,boardId,originDomain:host,isExternal}).catch(()=>{});
    });
   }

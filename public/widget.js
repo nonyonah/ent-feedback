@@ -13,22 +13,31 @@
     return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
   }
   let visitorId = "";
-  try {
-    visitorId = localStorage.getItem(visitorKey) || "";
-    if (!/^[A-Za-z0-9_-]{16,64}$/.test(visitorId)) {
-      visitorId = randomVisitorId();
-      localStorage.setItem(visitorKey, visitorId);
-    }
-  } catch {
-    visitorId = randomVisitorId();
-  }
+  let frameLoaded = false;
+  let analyticsConsent = false;
+  let reportedLoad = false;
+  function privacyBlocked() { return navigator.doNotTrack === "1" || navigator.globalPrivacyControl === true; }
   function publicEvent(type) {
-    const payload = JSON.stringify({projectKey: project, visitorId: visitorId, type: type, surface: surface});
+    if (!analyticsConsent || privacyBlocked() || !visitorId) return;
+    const payload = JSON.stringify({projectKey:project,boardKey:script.dataset.board || "product",visitorId,type,surface,consent:true});
     if (navigator.sendBeacon) {
-      navigator.sendBeacon(origin + "/api/public/events", new Blob([payload], {type: "application/json"}));
-    } else {
-      void fetch(origin + "/api/public/events", {method: "POST", body: payload, headers: {"Content-Type": "application/json"}, keepalive: true, credentials: "omit"}).catch(() => {});
+      if (navigator.sendBeacon(origin + "/api/public/events", new Blob([payload], {type:"text/plain"}))) return;
     }
+    void fetch(origin + "/api/public/events", {method:"POST",body:payload,headers:{"Content-Type":"text/plain"},mode:"no-cors",keepalive:true,credentials:"omit"}).catch(() => {});
+  }
+  function setAnalyticsConsent(granted) {
+    analyticsConsent = granted === true && !privacyBlocked();
+    if (analyticsConsent) {
+      try {
+        visitorId = localStorage.getItem(visitorKey) || "";
+        if (!/^[A-Za-z0-9_-]{16,64}$/.test(visitorId)) { visitorId = randomVisitorId(); localStorage.setItem(visitorKey, visitorId); }
+      } catch { try { visitorId = randomVisitorId(); } catch { visitorId = ""; analyticsConsent = false; } }
+      if (visitorId && frameLoaded && !reportedLoad) { reportedLoad = true; publicEvent("widget_loaded"); }
+    } else {
+      visitorId = ""; reportedLoad = false;
+      try { localStorage.removeItem(visitorKey); } catch {}
+    }
+    if (frame.contentWindow) frame.contentWindow.postMessage({type:"ent:visibility",open,visitorId,analyticsConsent},origin);
   }
   const root = document.createElement("div");
   root.id = "ent-feedback-widget";
@@ -66,6 +75,10 @@
   frame.id = "ent-feedback-panel";
   frame.title = "Feedback board";
   frame.src = origin + "/embed?project=" + encodeURIComponent(project) + "&board=" + encodeURIComponent(script.dataset.board || "product");
+  frame.addEventListener("load", () => {
+    frameLoaded = true;
+    if (analyticsConsent && visitorId && !reportedLoad) { reportedLoad = true; publicEvent("widget_loaded"); }
+  });
   frame.style.cssText = "display:none;position:fixed;right:16px;bottom:80px;width:min(384px,calc(100vw - 32px));height:min(693px,calc(100vh - 112px));height:min(693px,calc(100dvh - 112px));border:0;outline:0;border-radius:20px;background:white;box-shadow:0 12px 32px #0002;z-index:2147483000";
   button.setAttribute("aria-controls", frame.id);
   frame.style.transformOrigin = "bottom right";
@@ -126,11 +139,12 @@
       activeAnimation = null;
     };
   }
-  button.addEventListener("click", event => {setOpen(!open, event.detail === 0);if(!open)publicEvent("widget_opened");});
+  button.addEventListener("click", event => {if(!open)publicEvent("widget_opened");setOpen(!open, event.detail === 0);});
   button.addEventListener("keydown", event => { if (event.key === "Escape") setOpen(false, true); });
   window.addEventListener("message", event => {
     if (event.source !== frame.contentWindow || event.origin !== origin || !event.data) return;
-    if (event.data.type === "ent:ready") frame.contentWindow.postMessage({type:"ent:visibility",open:open,visitorId:visitorId},new URL(frame.src).origin);
+    if (event.data.type === "ent:ready") frame.contentWindow.postMessage({type:"ent:visibility",open:open,visitorId:visitorId,analyticsConsent:analyticsConsent},new URL(frame.src).origin);
+    if (event.data.type === "ent:analytics-event" && ["roadmap_viewed","feedback_submitted","vote_cast","comment_submitted","chat_started","chat_escalated"].includes(event.data.event)) publicEvent(event.data.event);
     if (event.data.type === "ent:close") setOpen(false, event.data.inputModality === "keyboard");
     if (event.data.type === "ent:appearance" && /^#[0-9a-f]{6}$/i.test(event.data.accent)) {
       followSystem();
@@ -144,6 +158,8 @@
     if (!event.detail.visible) setOpen(false, true, false);
     root.hidden = !event.detail.visible;
   });
+  window.addEventListener("ent:analytics-consent", event => { if (typeof event.detail?.granted === "boolean") setAnalyticsConsent(event.detail.granted); });
+  setAnalyticsConsent(script.dataset.analyticsConsent === "granted");
   root.append(frame, button);
   document.body.append(root);
   followSystem();

@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {randomUUID} from 'node:crypto';
+import {getDb} from '@/server/db/client';
+import {boards,workspaces} from '@/server/db/schema';
+import {POST as publicEvent} from '@/app/api/public/events/route';
+import {trackServerAnalytics,identifyAnalyticsUser,identifyAnalyticsBoard} from '@/lib/analytics/server';
+declare const global:typeof globalThis&{chatEnv:Record<string,string>;integrationCookies:Map<string,{value:string}>;chatAfter:()=>Promise<void>;analyticsCaptures:Record<string,unknown>[];analyticsIdentifies:Record<string,unknown>[];analyticsGroups:Record<string,unknown>[];analyticsHeaders:Record<string,string>;analyticsAfter:Array<()=>Promise<void>>};
+export async function run(){
+ Object.assign(global.chatEnv,{ANALYTICS_ENABLED:'true',NEXT_PUBLIC_POSTHOG_KEY:'fake-project-token'});global.integrationCookies=new Map();global.analyticsCaptures=[];global.analyticsIdentifies=[];global.analyticsGroups=[];
+ const user={id:'internal-db-id',clerkUserId:'user_clerk_test',isInternal:true};
+ await trackServerAnalytics('board_created',{}, {user,defer:false});assert.equal(global.analyticsCaptures.length,0,'no server event before consent');
+ identifyAnalyticsUser(user);await global.chatAfter();assert.equal(global.analyticsIdentifies.length,0,'no identity before consent');
+ global.integrationCookies.set('ent_analytics_consent',{value:'granted'});
+ await trackServerAnalytics('board_created',{}, {user,defer:false});assert.equal(global.analyticsCaptures.length,1);
+ const expected='ent-user-'+createHash('sha256').update('ent-analytics:v1:'+user.clerkUserId).digest('hex');assert.equal(global.analyticsCaptures[0].distinctId,expected,'browser and server use the Clerk ID');
+ identifyAnalyticsUser(user);await global.chatAfter();assert.equal(global.analyticsIdentifies[0].distinctId,expected);
+ identifyAnalyticsBoard({boardId:'fixture',name:'Private workspace',ownerEmail:'private@example.test',plan:'starter',widgetInstalled:false});await global.chatAfter();assert.ok(!JSON.stringify(global.analyticsGroups).includes('private@example.test'));assert.ok(!JSON.stringify(global.analyticsGroups).includes('Private workspace'));
+ global.analyticsHeaders={'sec-gpc':'1'};await trackServerAnalytics('board_created',{}, {user,defer:false});assert.equal(global.analyticsCaptures.length,1,'new privacy signal blocks server events');
+ global.integrationCookies.set('ent_analytics_consent',{value:'granted.gpc'});await trackServerAnalytics('board_created',{}, {user,defer:false});assert.equal(global.analyticsCaptures.length,2,'explicitly acknowledged signal permits events');
+ global.integrationCookies.delete('ent_analytics_consent');await trackServerAnalytics('board_created',{}, {user,defer:false});assert.equal(global.analyticsCaptures.length,2,'withdrawing consent stops server events');
+ const db=getDb();const [workspace]=await db.insert(workspaces).values({name:'Analytics fixture',handle:'analytics-fixture'}).returning();const [board]=await db.insert(boards).values({workspaceId:workspace.id,name:'Board',handle:'product'}).returning();
+ global.chatEnv.ANALYTICS_VISITOR_SALT='fixture-salt-with-32-bytes';global.analyticsHeaders={origin:'https://customer.example'};global.analyticsAfter=[];
+ const payload={projectKey:workspace.handle,boardKey:board.handle,visitorId:randomUUID().replaceAll('-',''),type:'widget_loaded',surface:'widget',consent:true};
+ const request=(body:unknown,extra:Record<string,string>={})=>new Request('https://ent.test/api/public/events',{method:'POST',headers:{origin:'https://customer.example',...extra},body:JSON.stringify(body)});
+ await publicEvent(request({...payload,consent:false}));assert.equal(global.analyticsAfter.length,0,'host consent is mandatory');
+ global.analyticsHeaders={'sec-gpc':'1'};await publicEvent(request(payload,{'sec-gpc':'1'}));assert.equal(global.analyticsAfter.length,0,'privacy signals block widget analytics');
+ global.analyticsHeaders={origin:'https://customer.example'};await publicEvent(request(payload));await Promise.all(global.analyticsAfter.map(fn=>fn()));
+ const first=global.analyticsCaptures.filter(event=>event.event==='widget_first_loaded');assert.equal(first.length,1);assert.ok(global.analyticsCaptures.some(event=>event.event==='widget_loaded'));
+ assert.equal((first[0].properties as Record<string,unknown>).board_id,board.id);
+ assert.equal((first[0].properties as Record<string,unknown>).$process_person_profile,false,'widget visitors do not get person profiles');
+ global.analyticsAfter=[];await publicEvent(request(payload));await Promise.all(global.analyticsAfter.map(fn=>fn()));assert.equal(global.analyticsCaptures.filter(event=>event.event==='widget_first_loaded').length,1,'first load is once per board');
+ console.log('PASS: server analytics requires consent, shares browser identity, and excludes workspace names and emails.');
+}

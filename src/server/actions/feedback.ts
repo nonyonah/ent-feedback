@@ -183,14 +183,14 @@ export async function mutateFeedbackAction(workspaceId:string,boardId:string,inp
  });
  const feedbackId=createdId??('id' in value?value.id:undefined);
   if(feedbackId){
-   const context={boardId:bid,user:who.user?{id:who.user.id}:undefined,visitorId:who.guestId??undefined};
+   const context={boardId:bid,user:who.user?{id:who.user.id,clerkUserId:who.user.clerkUserId}:undefined,visitorId:who.guestId??undefined};
    after(async()=>{
     if(value.type==='create'&&!who.user&&value.email)await requestGuestVerification({kind:'feedback',workspaceId:wid,subjectId:feedbackId,email:value.email},who.guestId!).catch(()=>{});
     if(value.type==='create'&&value.conversation)await processChatJobs(2,{workspaceId:wid,conversationId:value.conversation.id});
     await Promise.allSettled([processNotificationJobs(3,{workspaceId:wid,feedbackId}),processChatJobs(2,{workspaceId:wid,feedbackId}),processIntegrationJobs(2)]);
-    if(value.type==='create')trackServerAnalytics('feedback_submitted',{source:value.source??(value.channel==='widget'?'widget':'board'),feedback_type:value.category,has_screenshot:Boolean(value.images?.length)},context);
-    if(commented)trackServerAnalytics('comment_added',{source:commentSource,is_reply:Boolean(value.type==='comment'&&value.parentCommentId),has_screenshot:Boolean(value.type==='comment'&&value.images?.length)},context);
-    if(voted)trackServerAnalytics('vote_cast',{source:voteSource,active:true},context);
+    if(value.type==='create'&&value.source!=='widget'&&value.channel!=='widget')trackServerAnalytics('feedback_submitted',{source:value.source??'board',feedback_type:value.category,has_screenshot:Boolean(value.images?.length)},context);
+    if(commented&&commentSource!=='widget')trackServerAnalytics('comment_submitted',{source:commentSource,is_reply:Boolean(value.type==='comment'&&value.parentCommentId),has_screenshot:Boolean(value.type==='comment'&&value.images?.length)},context);
+    if(voted&&voteSource!=='widget')trackServerAnalytics('vote_cast',{source:voteSource,active:true},context);
     if(statusFrom&&statusTo){trackServerAnalytics('status_changed',{from:statusFrom,to:statusTo},context);if(statusTo==='shipped')trackServerAnalytics('item_shipped',{},context);}
    });
   }

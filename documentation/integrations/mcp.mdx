@@ -1,0 +1,44 @@
+---
+title: MCP
+description: Connect an MCP client to read feedback and propose replies and changelog drafts.
+---
+
+Ent's Model Context Protocol (MCP) server lets an authorized assistant or coding agent work with your workspaces. It can read feedback, calculate activity summaries, and prepare proposals for an owner or admin to review in Ent.
+
+## Connect a client
+
+1. In an MCP-compatible client that supports OAuth, add the remote server URL `https://ent.riftlabs.xyz/mcp` (or the `/mcp` URL of your Ent deployment).
+2. Sign in to Ent and authorize the client when prompted. The endpoint advertises the `profile` scope through its Bearer challenge and OAuth metadata.
+3. Ask the client to list your workspaces, then select the workspace you want to use. The client only receives access permitted by your Ent account's workspace membership and role.
+
+Client setup screens differ. The deployment must be reachable at the configured URL and have Clerk and `MCP_RESOURCE_URL` configured; see [environment setup](/reference/environment). Never paste OAuth tokens into chat or share them with others.
+
+## Available tools
+
+| Tool | What it does | Minimum workspace role |
+| --- | --- | --- |
+| `list_workspaces` | Lists your active workspace memberships. | Active member |
+| `list_feedback` | Lists or searches recent requests. | Member |
+| `get_feedback` | Reads a request and its recent comments. | Member |
+| `summarize_feedback` | Calculates activity counts for the last 1–30 days; defaults to seven days. | Member |
+| `list_changelogs` | Lists recent published entries and private drafts. | Admin |
+| `propose_feedback_reply` | Saves a reply proposal for review on a request. | Admin |
+| `propose_changelog_draft` | Saves a changelog proposal, optionally linking up to 20 requests. | Admin |
+
+The summary is calculated from activity data; Ent does not use AI to generate it. A connected assistant may still interpret the results according to the client's own settings. Results are bounded: feedback lists contain up to 30 items, feedback details include up to 40 recent comments, and changelog lists contain up to 30 entries.
+
+Try asking: “List my workspaces, find feedback about navigation in my workspace, and suggest a reply.” For changelogs, try: “Review recent shipped feedback and propose a changelog draft linking the relevant requests.” Review the assistant's output and the source requests for accuracy.
+
+## Review a reply
+
+When an admin's client calls `propose_feedback_reply`, Ent saves the text as a pending proposal. Open the request in the dashboard and find **Agent reply proposals**. Choose **Post reply** to publish the exact proposed text, or **Discard** to reject it. The MCP client cannot post the reply directly; approval records the reviewing user as the reply author. To change the wording, discard the proposal and ask for a revised one, or write a reply yourself.
+
+## Review a changelog proposal
+
+Open **Changelog → MCP proposals**, select a proposal, and review its text and linked requests. Choose **Create draft** to create a private changelog draft, or **Reject** to discard the proposal. Creating the draft does not publish it or notify users; edit, preview, and publish it separately in Ent. If a linked request is no longer available, reject the proposal and ask the client to update it.
+
+## Access and troubleshooting
+
+Ent checks workspace membership on each request. Only owners and admins can see private changelogs or submit and review proposals. MCP reads can include customer-submitted feedback and comments, so use clients and providers you trust, and treat that content as untrusted data rather than instructions. Requests are rate limited, and proposal creation has a separate limit.
+
+If the client cannot connect, check that the hostname resolves, the endpoint is reachable over HTTPS, and the deployment's configured resource URL matches the client URL. An unauthenticated request receives a `401` Bearer challenge with OAuth metadata; `503` means the MCP resource URL is missing or invalid. If an operation fails after sign-in, check the chosen workspace, your role, the requested IDs, and whether the client has reached a rate limit. Reconnect or revoke the client's authorization through your identity provider if needed.

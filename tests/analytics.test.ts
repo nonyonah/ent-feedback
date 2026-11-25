@@ -20,5 +20,5 @@ test('analytics rejects content and automatic URL metadata, allowing only bounde
  assert.deepEqual(safeAnalyticsProperties({page:'private',surface:'secret',source:'secret',feedback_type:'private',interval:'secret',active:'yes',origin_domain:'javascript:alert(1)'}),{});
 });
 test('analytics event allowlist covers product and widget events',()=>{
- for(const event of ['signed_up','board_created','integration_enabled','status_changed','item_shipped','roadmap_edited','widget_loaded','widget_opened','widget_first_loaded','feedback_submitted','comment_added','vote_cast','roadmap_viewed','chat_started','chat_escalated','quick_tour_started','quick_tour_completed','quick_tour_skipped','docs_link_clicked'])assert.ok(analyticsEvents.includes(event as typeof analyticsEvents[number]));
+ for(const event of ['$pageview','signed_up','board_created','integration_enabled','status_changed','item_shipped','roadmap_edited','widget_loaded','widget_opened','widget_first_loaded','feedback_submitted','comment_submitted','vote_cast','roadmap_viewed','chat_started','chat_escalated','quick_tour_started','quick_tour_completed','quick_tour_skipped','docs_link_clicked'])assert.ok(analyticsEvents.includes(event as typeof analyticsEvents[number]));
 });

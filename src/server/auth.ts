@@ -21,8 +21,8 @@ function normalizeEmail(value: string | null | undefined): string | null {
 function recordSignup(user:AppUser,method:'google'|'email'){
   const internal=(getServerEnv().INTERNAL_EMAILS??'').split(',').map(value=>value.trim().toLowerCase()).filter(Boolean);
   const isInternal=Boolean(user.email&&internal.includes(user.email.toLowerCase()));
-  identifyAnalyticsUser({id:user.id,email:user.email,isInternal});
-  trackServerAnalytics('signed_up',{method},{user:{id:user.id,email:user.email,isInternal}});
+  identifyAnalyticsUser({id:user.id,clerkUserId:user.clerkUserId,email:user.email,isInternal});
+  trackServerAnalytics('signed_up',{method},{user:{id:user.id,clerkUserId:user.clerkUserId,email:user.email,isInternal}});
 }
 
 async function upsertAppUser(clerkUserId: string): Promise<AppUser> {

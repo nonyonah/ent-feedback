@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {eq} from 'drizzle-orm';
 import {getDb} from '@/server/db/client';
-import {users,workspaces,workspaceMembers,workspaceSubscriptions,jobs,boards,feedback,attachments} from '@/server/db/schema';
+import {users,workspaces,workspaceMembers,workspaceSubscriptions,jobs,boards,feedback,attachments,billingCheckouts} from '@/server/db/schema';
 import {cleanDeletedWorkspaceFiles} from '@/server/workspace-cleanup';
 import {deleteWorkspaceAction} from '@/server/actions/workspaces';
 declare const global:typeof globalThis&{chatUser:typeof users.$inferSelect|null;chatImages:Map<string,Buffer>};
@@ -21,5 +21,17 @@ export async function run(){
  assert.equal((await db.select().from(workspaces).where(eq(workspaces.id,workspace.id))).length,0);
  const cleanup=await db.select().from(jobs).where(eq(jobs.type,'workspace_file_cleanup'));assert.equal(cleanup.length,1);assert.equal(cleanup[0].payload.storageKey,'fixture/test.webp');
  global.chatImages.set('fixture/test.webp',Buffer.from('fixture'));assert.equal((await cleanDeletedWorkspaceFiles()).deleted,1);assert.equal(global.chatImages.has('fixture/test.webp'),false);assert.equal((await db.select().from(jobs).where(eq(jobs.type,'workspace_file_cleanup'))).length,0);
- console.log('PASS: owner authorization, confirmation, billing guard, workspace deletion and durable file cleanup.');
+ for(const status of ['creating','open'] as const){
+  const [checkoutOwner]=await db.insert(users).values({clerkUserId:randomUUID()}).returning();
+  const [checkoutWorkspace]=await db.insert(workspaces).values({name:'Checkout fixture',handle:'checkout-'+randomUUID()}).returning();
+  await db.insert(workspaceMembers).values({workspaceId:checkoutWorkspace.id,userId:checkoutOwner.id,role:'owner'});
+  const [attempt]=await db.insert(billingCheckouts).values({workspaceId:checkoutWorkspace.id,productId:'fixture',interval:'monthly',status,checkoutUrl:'https://checkout.example',expiresAt:new Date(Date.now()+60_000)}).returning();
+  global.chatUser=checkoutOwner;
+  assert.equal((await deleteWorkspaceAction({workspaceId:checkoutWorkspace.id,confirmation:checkoutWorkspace.name})).ok,false,`${status} checkout should block deletion while live`);
+  assert.equal((await db.select().from(billingCheckouts).where(eq(billingCheckouts.id,attempt.id)))[0].status,status);
+  await db.update(billingCheckouts).set({expiresAt:new Date(Date.now()-60_000)}).where(eq(billingCheckouts.id,attempt.id));
+  assert.ok((await deleteWorkspaceAction({workspaceId:checkoutWorkspace.id,confirmation:checkoutWorkspace.name})).ok,`${status} checkout should not block deletion after expiry`);
+  assert.equal((await db.select().from(workspaces).where(eq(workspaces.id,checkoutWorkspace.id))).length,0);
+ }
+ console.log('PASS: owner authorization, confirmation, live and expired checkout guards, workspace deletion and durable file cleanup.');
 }

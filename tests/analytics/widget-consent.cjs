@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- This standalone browser fixture runs as CommonJS. */
 /* Runs against a local fixture; no requests are sent to a real analytics provider. */
 const assert=require('node:assert/strict');const http=require('node:http');const fs=require('node:fs');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');

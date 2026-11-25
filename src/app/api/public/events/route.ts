@@ -20,7 +20,7 @@ export async function POST(request:Request){
   const env=getServerEnv();if(env.ANALYTICS_ENABLED!=='true'||!(env.POSTHOG_SERVER_KEY||env.NEXT_PUBLIC_POSTHOG_KEY))return new Response(null,{status:204});
   const body=bodySchema.parse(JSON.parse(await boundedBody(request,4096)));
   const host=analyticsHostFromHeaders(request.headers);if(!host||isInternalAnalyticsHost(host))return new Response(null,{status:204});
-  const workspace=await getPublicWorkspace(body.projectKey),board=workspace?.boards.find(item=>item.slug===body.boardKey);
+  const workspace=await getPublicWorkspace(body.projectKey),board=workspace?.boards.find(item=>item.slug===body.boardKey||item.id===body.boardKey);
   if(!workspace||!board||!hashAnalyticsVisitor(body.visitorId,board.id))return new Response(null,{status:204});
   if(!allow('board:'+board.id,300)||!allow(board.id+':'+body.visitorId))return new Response(null,{status:204});
   const context={boardId:board.id,visitorId:body.visitorId,hostConsent:true};

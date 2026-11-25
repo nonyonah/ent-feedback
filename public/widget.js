@@ -17,9 +17,10 @@
   let analyticsConsent = false;
   let reportedLoad = false;
   function privacyBlocked() { return navigator.doNotTrack === "1" || navigator.globalPrivacyControl === true; }
-  function publicEvent(type) {
+  function publicEvent(type, board) {
     if (!analyticsConsent || privacyBlocked() || !visitorId) return;
-    const payload = JSON.stringify({projectKey:project,boardKey:script.dataset.board || "product",visitorId,type,surface,consent:true});
+    const boardKey = typeof board === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(board) && board.length <= 40 ? board : script.dataset.board || "product";
+    const payload = JSON.stringify({projectKey:project,boardKey,visitorId,type,surface,consent:true});
     if (navigator.sendBeacon) {
       if (navigator.sendBeacon(origin + "/api/public/events", new Blob([payload], {type:"text/plain"}))) return;
     }
@@ -144,7 +145,7 @@
   window.addEventListener("message", event => {
     if (event.source !== frame.contentWindow || event.origin !== origin || !event.data) return;
     if (event.data.type === "ent:ready") frame.contentWindow.postMessage({type:"ent:visibility",open:open,visitorId:visitorId,analyticsConsent:analyticsConsent},new URL(frame.src).origin);
-    if (event.data.type === "ent:analytics-event" && ["roadmap_viewed","feedback_submitted","vote_cast","comment_submitted","chat_started","chat_escalated"].includes(event.data.event)) publicEvent(event.data.event);
+    if (event.data.type === "ent:analytics-event" && ["roadmap_viewed","feedback_submitted","vote_cast","comment_submitted","chat_started","chat_escalated"].includes(event.data.event)) publicEvent(event.data.event,event.data.board);
     if (event.data.type === "ent:close") setOpen(false, event.data.inputModality === "keyboard");
     if (event.data.type === "ent:appearance" && /^#[0-9a-f]{6}$/i.test(event.data.accent)) {
       followSystem();

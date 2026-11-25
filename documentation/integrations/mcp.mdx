@@ -7,11 +7,11 @@ Ent's Model Context Protocol (MCP) server lets an authorized assistant or coding
 
 ## Connect a client
 
-1. In an MCP-compatible client that supports OAuth, add the remote server URL `https://ent.riftlabs.xyz/mcp` (or the `/mcp` URL of your Ent deployment).
-2. Sign in to Ent and authorize the client when prompted. The endpoint advertises the `profile` scope through its Bearer challenge and OAuth metadata.
+1. In an MCP-compatible client that supports OAuth, add the remote server URL `https://ent.riftlabs.xyz/mcp`.
+2. Sign in to Ent and authorize the client when prompted.
 3. Ask the client to list your workspaces, then select the workspace you want to use. The client only receives access permitted by your Ent account's workspace membership and role.
 
-Client setup screens differ. The deployment must be reachable at the configured URL and have Clerk and `MCP_RESOURCE_URL` configured; see [environment setup](/reference/environment). Never paste OAuth tokens into chat or share them with others.
+Client setup screens differ. Never paste OAuth tokens into chat or share them with others.
 
 ## Available tools
 
@@ -41,4 +41,4 @@ Open **Changelog → MCP proposals**, select a proposal, and review its text and
 
 Ent checks workspace membership on each request. Only owners and admins can see private changelogs or submit and review proposals. MCP reads can include customer-submitted feedback and comments, so use clients and providers you trust, and treat that content as untrusted data rather than instructions. Requests are rate limited, and proposal creation has a separate limit.
 
-If the client cannot connect, check that the hostname resolves, the endpoint is reachable over HTTPS, and the deployment's configured resource URL matches the client URL. An unauthenticated request receives a `401` Bearer challenge with OAuth metadata; `503` means the MCP resource URL is missing or invalid. If an operation fails after sign-in, check the chosen workspace, your role, the requested IDs, and whether the client has reached a rate limit. Reconnect or revoke the client's authorization through your identity provider if needed.
+If the client cannot connect, check the server URL and your internet connection, then try reconnecting and signing in again. If an operation fails after sign-in, check the chosen workspace, your role, the requested IDs, and whether the client has reached a rate limit. Reconnect or revoke the client's authorization through your identity provider if needed. If the problem persists, [contact support](/support).

@@ -966,3 +966,21 @@ export const mcpDraftProposals=pgTable('mcp_draft_proposals',{
  changelogId:uuid('changelog_id').references(()=>changelogEntries.id,{onDelete:'set null'}),
  ...timestamps(),
 },t=>[index('mcp_draft_proposals_workspace_status_idx').on(t.workspaceId,t.status,t.createdAt),check('mcp_draft_proposal_status_check',sql`${t.status} in ('pending','approved','rejected')`),check('mcp_draft_proposal_title_check',sql`length(${t.title}) between 1 and 120`),check('mcp_draft_proposal_body_check',sql`length(${t.body}) between 1 and 5000`)]).enableRLS();
+
+/** Agent-authored public replies require an explicit workspace admin review. */
+export const mcpReplyProposals=pgTable('mcp_reply_proposals',{
+ id:uuid('id').primaryKey().defaultRandom(),
+ workspaceId:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ feedbackId:uuid('feedback_id').notNull(),
+ authorUserId:uuid('author_user_id').references(()=>users.id,{onDelete:'set null'}),
+ body:text('body').notNull(),
+ status:text('status').$type<'pending'|'approved'|'rejected'>().notNull().default('pending'),
+ ...timestamps(),
+},t=>[foreignKey({columns:[t.feedbackId,t.workspaceId],foreignColumns:[feedback.id,feedback.workspaceId]}).onDelete('cascade'),index('mcp_reply_proposals_target_idx').on(t.workspaceId,t.feedbackId,t.status),check('mcp_reply_proposal_status_check',sql`${t.status} in ('pending','approved','rejected')`),check('mcp_reply_proposal_body_check',sql`length(${t.body}) between 1 and 5000`)]).enableRLS();
+
+/** First consented analytics observation per board; distinct from installation state. */
+export const analyticsWidgetInstalls=pgTable('analytics_widget_installs',{
+ boardId:uuid('board_id').primaryKey(),
+ workspaceId:uuid('workspace_id').notNull(),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[foreignKey({columns:[t.boardId,t.workspaceId],foreignColumns:[boards.id,boards.workspaceId]}).onDelete('cascade')]).enableRLS();

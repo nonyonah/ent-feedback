@@ -2,6 +2,8 @@
 import type {PostHog} from 'posthog-js';
 import {analyticsEvents,analyticsPage,safeAnalyticsProperties,type AnalyticsEvent,type AnalyticsProperties} from './analytics-events';
 export const ANALYTICS_CONSENT_KEY='ent-analytics-consent:v1';
+const SERVER_CONSENT_COOKIE='ent_analytics_consent';
+function syncServerConsent(allowed:boolean){try{document.cookie=SERVER_CONSENT_COOKIE+'='+(allowed?['granted',...analyticsPrivacySignals()].join('.'):'')+'; Path=/; SameSite=Lax; Max-Age='+(allowed?'31536000':'0')+(location.protocol==='https:'?'; Secure':'');}catch{}}
 export const ANALYTICS_PRIVACY_OVERRIDE_KEY='ent-analytics-privacy-override:v1';
 export const ANALYTICS_CHANGE='ent-analytics-change';
 export const ANALYTICS_SETTINGS='ent-analytics-settings';
@@ -9,14 +11,13 @@ let client:PostHog|undefined;
 let permitted=false;
 let generation=0;
 let accountId:string|null|undefined;
-let accountInternal=false;
 let identityGeneration=0;
 const ACCOUNT_PREFIX='ent-user-';
 function syncClientIdentity(){
   if(!client||!permitted||accountId===undefined)return;
   const previous=client.get_distinct_id();
   if(previous.startsWith(ACCOUNT_PREFIX)&&previous!==accountId){client.reset(true);client.opt_in_capturing({captureEventName:false});}
-  if(accountId&&client.get_distinct_id()!==accountId)client.identify(accountId,{$set:{is_internal:accountInternal}});
+  if(accountId&&client.get_distinct_id()!==accountId)client.identify(accountId);
   syncSessionRecording();
 }
 function syncSessionRecording(){
@@ -27,14 +28,13 @@ function syncSessionRecording(){
     else if(analyticsPage(location.pathname)!=='dashboard'&&recording)client.stopSessionRecording();
   }catch{}
 }
-export async function setAnalyticsIdentity(userId:string|null|undefined,isInternal=false){
+export async function setAnalyticsIdentity(userId:string|null|undefined){
   const version=++identityGeneration;
   accountId=undefined;
   try{
    const digest=userId?await crypto.subtle.digest('SHA-256',new TextEncoder().encode('ent-analytics:v1:'+userId)):null;
    if(version!==identityGeneration)return;
    accountId=userId===undefined?undefined:digest?ACCOUNT_PREFIX+Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join(''):null;
-   accountInternal=Boolean(userId&&isInternal);
    syncClientIdentity();
   }catch{accountId=undefined;}
 }
@@ -58,6 +58,7 @@ export function readAnalyticsConsent(): 'granted'|'denied'|null {try{const value
 export async function applyAnalyticsConsent(allowed:boolean){
   const version=++generation;
   permitted=allowed&&!analyticsBlocked()&&analyticsConfigured()&&analyticsPage(location.pathname)!==null;
+  syncServerConsent(permitted);
   if(!permitted){try{client?.stopSessionRecording();client?.opt_out_capturing();client?.reset();}catch{}return;}
   try{
    if(!client){
@@ -75,7 +76,7 @@ export async function applyAnalyticsConsent(allowed:boolean){
      advanced_disable_flags:true,disable_external_dependency_loading:true,
      opt_out_capturing_by_default:true,opt_out_persistence_by_default:true,
      persistence:'localStorage',cross_subdomain_cookie:false,
-     person_profiles:'identified_only',respect_dnt:true,
+     person_profiles:'identified_only',respect_dnt:false, // Consent and privacy signals are enforced by analyticsBlocked().
      before_send:event=>{
       if(!event||!permitted||analyticsBlocked()||accountId===undefined||(!analyticsEvents.includes(event.event as AnalyticsEvent)&&event.event!=='$identify'&&event.event!=='$set'&&event.event!=='$pageview'))return null;
       const safe=safeAnalyticsProperties(event.properties);

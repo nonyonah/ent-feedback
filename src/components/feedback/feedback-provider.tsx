@@ -1,4 +1,5 @@
 "use client";
+import {emitWidgetAnalytics} from '@/lib/widget-analytics';
 import {mergeFeedbackItem} from '@/lib/merge-feedback';
 
 import * as React from 'react';
@@ -115,6 +116,7 @@ export function FeedbackProvider({children}:{children:React.ReactNode}){
    if(scope.current===key)setSnapshot(previous=>({key,items:[...previous.items.filter(item=>item.id!==result.data.deletedId&&!result.data.items.some(next=>next.id===item.id)),...result.data.items.map(next=>{const old=previous.items.find(item=>item.id===next.id);const merged=mergeFeedbackItem(old,next);if(reaction&&!next.comments.some(c=>c.id===reaction.commentId))merged.comments=merged.comments.map(comment=>comment.id===reaction.commentId?{...comment,liked:reaction.active,likes:Math.max(0,(comment.likes??0)+(comment.liked===reaction.active?0:reaction.active?1:-1))}:comment);return merged;})]}));
    try{localStorage.setItem('ent-feedback-updated:'+wid,crypto.randomUUID());}catch{}
    window.dispatchEvent(new CustomEvent('ent-feedback-updated',{detail:wid}));
+   if(interactionSource==='widget'){if(command.type==='create')emitWidgetAnalytics('feedback_submitted',targetBoard);else if(command.type==='vote'&&command.active)emitWidgetAnalytics('vote_cast',targetBoard);else if(command.type==='comment')emitWidgetAnalytics('comment_submitted',targetBoard);}
    return result.data;
   }finally{busy.current=false;}
  }

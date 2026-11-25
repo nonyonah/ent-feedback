@@ -61,6 +61,21 @@ window.dispatchEvent(new CustomEvent("ent:host-visibility", {
 
 This controls visibility only; it does not identify a user. The widget does not currently offer host-user SSO. A visitor can continue a chat after a refresh in the same browser, but clearing storage or changing browsers can start a new session.
 
+
+## Analytics consent
+
+Widget analytics is off by default. After the widget script has initialized, connect your site’s consent manager to Ent only after the visitor has granted analytics consent:
+
+```js
+window.dispatchEvent(new CustomEvent("ent:analytics-consent", {
+  detail: { granted: true },
+}));
+```
+
+Send the same event with `granted: false` when consent is withdrawn. Wire this event to your consent manager, not unconditionally to page load. For an already-consented visitor, an alternative is `data-analytics-consent="granted"` on the widget script. Without an explicit grant, Ent does not create an analytics visitor ID or send widget analytics events. Browser Global Privacy Control and Do Not Track signals also keep widget analytics off.
+
+Consented events include widget loads, feedback, votes, comments, roadmap views, and chat start or escalation. They do not include feedback or message content. Events use a random visitor ID stored on the host, then a board-scoped salted hash in Ent. Withdrawing consent removes the host’s ID and stops new events; it does not erase data already sent. The Ent operator must configure `ANALYTICS_ENABLED`, the PostHog project token and region, and `ANALYTICS_VISITOR_SALT`. The salt must remain stable; rotating it resets visitor continuity.
+
 ## Appearance
 
 By default, the launcher follows the host page’s light/dark theme and falls back to the device theme. It recognizes `html.dark`, `html.light`, `data-theme` and `data-color-scheme`.
@@ -79,7 +94,7 @@ To lock the launcher, add `data-theme="light"` or `data-theme="dark"` to the ins
 A deployed website needs a publicly reachable HTTPS Ent application URL. A localhost URL points to the visitor’s computer and is suitable only for local testing. The documentation domain is not the widget script’s application origin.
 </Warning>
 
-The widget does not provide host-user sign-in or SSO through script attributes. Visitor details are self-declared. Ent’s optional product analytics is not loaded inside the embedded widget.
+The widget does not provide host-user sign-in or SSO through script attributes. Visitor details are self-declared. Ent does not load the PostHog browser SDK inside the widget.
 
 ## Widget Home
 

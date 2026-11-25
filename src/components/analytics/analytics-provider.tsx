@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {useUser} from '@clerk/nextjs';
 import {usePathname} from 'next/navigation';
 import {Button} from '@/components/ui/button';
-import {ANALYTICS_CHANGE,ANALYTICS_CONSENT_KEY,ANALYTICS_SETTINGS,ANALYTICS_PRIVACY_OVERRIDE_KEY,analyticsBlocked,analyticsConfigured,applyAnalyticsConsent,captureAnalytics,capturePageview,openAnalyticsSettings,readAnalyticsConsent,saveAnalyticsConsent,setAnalyticsIdentity,syncAnalyticsSession} from '@/lib/analytics';
+import {ANALYTICS_CHANGE,ANALYTICS_CONSENT_KEY,ANALYTICS_SETTINGS,ANALYTICS_PRIVACY_OVERRIDE_KEY,analyticsBlocked,analyticsConfigured,applyAnalyticsConsent,captureAnalytics,openAnalyticsSettings,readAnalyticsConsent,saveAnalyticsConsent,setAnalyticsIdentity,syncAnalyticsSession} from '@/lib/analytics';
 import {analyticsPage} from '@/lib/analytics-events';
 export function AnalyticsPreferencesButton({className}:{className?:string}){
  return <button type="button" className={className??'rounded-lg text-[13px] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring'} onClick={openAnalyticsSettings}>Analytics preferences</button>;
@@ -13,8 +13,6 @@ export function AnalyticsProvider(){
  const path=usePathname();
  const {user,isLoaded}=useUser();
   const userId=isLoaded?user?.id??null:undefined;
-  const userEmail=isLoaded?user?.primaryEmailAddress?.emailAddress?.toLowerCase():undefined;
-  const isInternal=false;
   const [visible,setVisible]=React.useState(false);
  const [storageError,setStorageError]=React.useState(false);
  const [blocked,setBlocked]=React.useState(false);
@@ -25,12 +23,12 @@ export function AnalyticsProvider(){
    const consent=readAnalyticsConsent(),restricted=analyticsBlocked();
    setBlocked(restricted);
    setVisible(analyticsConfigured()&&analyticsPage(path)!==null&&(consent===null||(consent==='granted'&&restricted)));
-    void setAnalyticsIdentity(userId,isInternal).then(()=>{if(cancelled)return;return applyAnalyticsConsent(consent==='granted');}).then(()=>{if(cancelled)return;syncAnalyticsSession();if(consent==='granted'&&analyticsPage(path)){captureAnalytics('page_viewed',{page:analyticsPage(path)!});capturePageview();}});
+    void setAnalyticsIdentity(userId).then(()=>{if(cancelled)return;return applyAnalyticsConsent(consent==='granted');}).then(()=>{if(cancelled)return;syncAnalyticsSession();if(consent==='granted'&&analyticsPage(path))captureAnalytics('$pageview',{page:analyticsPage(path)!});});
   };
   const open=()=>{setBlocked(analyticsBlocked());setVisible(analyticsPage(path)!==null);};
   sync();window.addEventListener('storage',sync);window.addEventListener(ANALYTICS_CHANGE,sync);window.addEventListener(ANALYTICS_SETTINGS,open);
   return()=>{cancelled=true;window.removeEventListener('storage',sync);window.removeEventListener(ANALYTICS_CHANGE,sync);window.removeEventListener(ANALYTICS_SETTINGS,open);};
-  },[path,userId,isInternal]);
+  },[path,userId]);
  function choose(value:'granted'|'denied'){
   setStorageError(false);
   try{saveAnalyticsConsent(value);setVisible(false);}

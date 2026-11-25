@@ -77,7 +77,7 @@ export async function updateRoadmap(id:string,input:unknown){
   });
   after(async()=>{
    if(statusFrom&&statusTo)await processIntegrationJobs(2);
-   const context={boardId,user:{id:user.id}};
+   const context={boardId,user:{id:user.id,clerkUserId:user.clerkUserId}};
    if(statusFrom&&statusTo){trackServerAnalytics('status_changed',{from:statusFrom,to:statusTo},context);if(statusTo==='shipped')trackServerAnalytics('item_shipped',{},context);}
    if(editAction)trackServerAnalytics('roadmap_edited',{action:editAction},context);
   });

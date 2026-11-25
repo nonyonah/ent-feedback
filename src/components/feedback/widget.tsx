@@ -27,6 +27,7 @@ import {FeedbackTypeSelect} from "@/components/feedback/feedback-type-select";
 import { XIcon } from "@/components/icons";
 import { PlusIcon } from "@/components/icons";
 import { CaretLeftIcon } from "@/components/icons";
+import {emitWidgetAnalytics} from '@/lib/widget-analytics';
 import { ArrowUpIcon } from "@/components/icons";
 import { MagnifyingGlassIcon } from "@/components/icons";
 import { FilterIcon } from "@/components/icons";
@@ -52,9 +53,8 @@ export function WidgetPanel({onClose,initialView="board",embedded=false}:{onClos
  const configPoll=useChatPolling(async signal=>{const data=await chatRequest<ChatWidgetConfiguration>('/api/chat/'+project.id,{},signal);if(signal.aborted)return;setAvailability({...data,workspaceId:project.id});setChatConfigWorkspace(project.id);if(!data.enabled)setSelectedTab(current=>current.workspaceId===project.id&&current.tab==='chat'?{workspaceId:project.id,tab:'home'}:current);},hostOpen,15000,project.id);
  const chatConfigError=Boolean(configPoll.error);const tab=selectedTab.workspaceId===project.id?(selectedTab.tab==='chat'&&!chatEnabled&&!chatConfigError&&chatKnown?'home':selectedTab.tab):'home';
 
-  const visitorRef=React.useRef('');
-  const reportEmbeddedRoadmap=()=>{const visitorId=visitorRef.current;if(!embedded||!/^[A-Za-z0-9_-]{16,64}$/.test(visitorId))return;void fetch('/api/public/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({projectKey:project.slug,visitorId,type:'roadmap_viewed'}),keepalive:true,credentials:'omit'}).catch(()=>{});};
-  React.useEffect(()=>{if(!embedded)return;function message(event:MessageEvent){try{if(event.source!==window.parent||!document.referrer||event.origin!==new URL(document.referrer).origin)return;if(event.data?.type==='ent:visibility'){setHostOpen(event.data.open===true);if(typeof event.data.visitorId==='string'&&/^[A-Za-z0-9_-]{16,64}$/.test(event.data.visitorId))visitorRef.current=event.data.visitorId;}}catch{}}window.addEventListener('message',message);window.parent.postMessage({type:'ent:ready'},document.referrer?new URL(document.referrer).origin:'*');return()=>window.removeEventListener('message',message);},[embedded]);
+  const reportEmbeddedRoadmap=()=>{if(embedded)emitWidgetAnalytics('roadmap_viewed',activeBoard?.slug);};
+  React.useEffect(()=>{if(!embedded)return;function message(event:MessageEvent){try{if(event.source!==window.parent||!document.referrer||event.origin!==new URL(document.referrer).origin)return;if(event.data?.type==='ent:visibility'){setHostOpen(event.data.open===true);}}catch{}}window.addEventListener('message',message);window.parent.postMessage({type:'ent:ready'},document.referrer?new URL(document.referrer).origin:'*');return()=>window.removeEventListener('message',message);},[embedded]);
  const [submitNoticeOpen,setSubmitNoticeOpen]=React.useState(false);const [searchFocus,setSearchFocus]=React.useState(0);const searchField=React.useRef<HTMLInputElement>(null);
  const [category,setCategory]=React.useState<FeedbackCategory>("feedback");
  const [view,setView]=React.useState<"board"|"submit"|"detail"|"posted">(initialView);

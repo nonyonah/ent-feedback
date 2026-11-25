@@ -55,7 +55,8 @@
         "pages": [
           "integrations/slack",
           "integrations/linear",
-          "integrations/github"
+          "integrations/github",
+          "integrations/mcp"
         ]
       },
       {

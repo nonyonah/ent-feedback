@@ -49,7 +49,7 @@ export async function appOAuthCallback(provider:ConnectedProvider,request:Reques
  const [existing]=await tx.select().from(connectedApps).where(and(eq(connectedApps.workspaceId,s.workspaceId),eq(connectedApps.provider,provider))).for('update');
  if(existing&&existing.externalId!==externalId)await tx.delete(connectedApps).where(eq(connectedApps.id,existing.id));
  await tx.insert(connectedApps).values({workspaceId:s.workspaceId,provider,externalId,label,encryptedCredentials:seal(credentials,c.key,s.workspaceId+':'+provider),createdByUserId:user.id}).onConflictDoUpdate({target:[connectedApps.workspaceId,connectedApps.provider],set:{externalId,label,encryptedCredentials:seal(credentials,c.key,s.workspaceId+':'+provider),connected:true,updatedAt:new Date()}});
-  });const boardId=await resolveAnalyticsBoard(s.workspaceId);trackServerAnalytics('integration_enabled',{type:provider},{boardId,user:{id:user.id}});destination.searchParams.set('result','connected');
+  });const boardId=await resolveAnalyticsBoard(s.workspaceId);trackServerAnalytics('integration_enabled',{type:provider},{boardId,user:{id:user.id,clerkUserId:user.clerkUserId}});destination.searchParams.set('result','connected');
   }catch{/* Never put OAuth codes, tokens or provider error bodies in redirects/logs. */}
  return NextResponse.redirect(destination);
 }

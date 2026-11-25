@@ -7,7 +7,11 @@ import { z } from "zod";
 
 import {validNewWorkspaceDomain,normalizeWorkspaceName} from "@/lib/workspace-domain";
 import { requireAppUser } from "@/server/auth";
-import { runService } from "@/server/result";
+import { and,eq,inArray,sql } from "drizzle-orm";
+import { getDb } from "@/server/db/client";
+import { attachments,billingCheckouts,chatUploads,changelogUploads,connectedApps,conversations,githubAppChangelogConnections,githubChangelogConnections,integrationConnections,jobs,workspaceSubscriptions,workspaces } from "@/server/db/schema";
+import { requireWorkspaceRole } from "@/server/services/access";
+import { runService,ServiceError } from "@/server/result";
 import {
   acceptInvitation,
   cancelInvitation,
@@ -191,3 +195,31 @@ export async function removeWorkspaceMemberAction(input:{workspaceId:string;memb
   revalidatePath('/dashboard/settings/team');return {removed:true};
  });
 }
+
+export async function deleteWorkspaceAction(input:{workspaceId:string;confirmation:string}){return runService(async()=>{
+ const {workspaceId:wid,confirmation}=z.object({workspaceId:z.uuid(),confirmation:z.string().max(60)}).strict().parse(input),user=await requireAppUser(),db=getDb();
+ await requireWorkspaceRole(db,{workspaceId:wid,userId:user.id,minimumRole:'owner'});await consumeRateLimit('workspace:delete:'+user.id,5,3600);
+ await db.transaction(async tx=>{
+  const [workspace]=await tx.select().from(workspaces).where(eq(workspaces.id,wid)).for('update');if(!workspace)throw new ServiceError('not_found','Workspace not found.');
+  await requireWorkspaceRole(tx,{workspaceId:wid,userId:user.id,minimumRole:'owner'});
+  if(confirmation!==workspace.name)throw new ServiceError('validation','Enter the workspace name exactly.');
+  const [billing]=await tx.select().from(workspaceSubscriptions).where(eq(workspaceSubscriptions.workspaceId,wid)).limit(1);
+  if(billing&&(['active','trialing','past_due','unpaid','paused'].includes(billing.status)||(billing.prepaidUntil&&billing.prepaidUntil>new Date())))throw new ServiceError('conflict','End your subscription or prepaid access before deleting this workspace.');
+  const [checkout]=await tx.select({id:billingCheckouts.id}).from(billingCheckouts).where(and(eq(billingCheckouts.workspaceId,wid),inArray(billingCheckouts.status,['creating','open']))).limit(1);if(checkout)throw new ServiceError('conflict','Wait for the pending checkout to expire before deleting this workspace.');
+  const [connected]=await tx.select({id:connectedApps.id}).from(connectedApps).where(and(eq(connectedApps.workspaceId,wid),eq(connectedApps.connected,true))).limit(1);
+  const [integration]=await tx.select({id:integrationConnections.id}).from(integrationConnections).where(and(eq(integrationConnections.workspaceId,wid),eq(integrationConnections.authorizationState,'connected'))).limit(1);
+  const [githubApp]=await tx.select({id:githubAppChangelogConnections.id}).from(githubAppChangelogConnections).where(eq(githubAppChangelogConnections.workspaceId,wid)).limit(1);
+  const [githubHook]=await tx.select({id:githubChangelogConnections.id}).from(githubChangelogConnections).where(eq(githubChangelogConnections.workspaceId,wid)).limit(1);
+  if(connected||integration||githubApp||githubHook)throw new ServiceError('conflict','Disconnect workspace integrations before deleting the workspace.');
+  // Chat uploads reference conversations rather than the workspace directly.
+  // Lock existing conversations before collecting keys so new uploads cannot race deletion.
+  await tx.select({id:conversations.id}).from(conversations).where(eq(conversations.workspaceId,wid)).for('update');
+  const files=await tx.select({key:attachments.storageKey}).from(attachments).where(eq(attachments.workspaceId,wid));
+  const chatFiles=await tx.select({key:chatUploads.storageKey}).from(chatUploads).where(eq(chatUploads.workspaceId,wid));
+  const changes=await tx.select({key:changelogUploads.storageKey}).from(changelogUploads).where(eq(changelogUploads.workspaceId,wid));
+  const keys=[...new Set([...files,...chatFiles,...changes].map(row=>row.key))];if(keys.length)await tx.insert(jobs).values(keys.map(storageKey=>({type:'workspace_file_cleanup',payload:{storageKey}})));
+  await tx.delete(jobs).where(sql`${jobs.payload}->>'workspaceId' = ${wid}`);
+  await tx.delete(workspaces).where(eq(workspaces.id,wid));
+ });
+ revalidatePath('/dashboard','layout');return {deleted:true};
+});}

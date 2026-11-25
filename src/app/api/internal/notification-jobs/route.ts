@@ -1,3 +1,4 @@
+import {cleanDeletedWorkspaceFiles} from '@/server/workspace-cleanup';
 import {processIntegrationJobs} from '@/server/connected-apps/worker';
 import {processRoadmapJobs} from '@/server/roadmap/emails';
 import {processChangelogJobs} from '@/server/changelog/worker';
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
     const weekly=Date.now()-started<45_000?await processWeeklySummaries():{skipped:true};
     const classification=Date.now()-started<45_000?await processClassificationJob():{skipped:true};
     // Expired uploads and spent rate-limit windows are only reclaimed here.
-    const cleanup=await cleanExpiredAttachments(3);if(Date.now()-started<45000)await cleanChatUploads();
+    const cleanup=await cleanExpiredAttachments(3);if(Date.now()-started<45000)await cleanDeletedWorkspaceFiles(3);if(Date.now()-started<45000)await cleanChatUploads();
     const ready=notifications.configured&&(!lifecycleQueue.enabled||lifecycle.configured);
     return Response.json({integrations,roadmap,changelog,weekly,classification,chat,notifications,prepaidQueue,lifecycleQueue,lifecycle,trial,cleanup},{status:ready&&trial.configured?200:503,headers:{"Cache-Control":"no-store"}});
   } catch {

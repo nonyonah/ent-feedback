@@ -1,9 +1,10 @@
 import 'server-only';
 import {and,desc,eq,inArray,isNull,sql} from 'drizzle-orm';
 import {getDb} from '@/server/db/client';
-import {comments,feedback,mcpDraftProposals,users,workspaceMembers,workspaces} from '@/server/db/schema';
+import {changelogEntries,comments,feedback,mcpDraftProposals,mcpReplyProposals,users,workspaceMembers,workspaces} from '@/server/db/schema';
 import {requireWorkspaceRole} from '@/server/services/access';
 import {consumeRateLimit} from '@/server/rate-limit';
+import {generateWeeklySummary} from '@/server/ai/weekly-summary';
 import {displayedVotes} from '@/server/services/displayed-votes';
 
 async function actor(clerkId:string){
@@ -30,10 +31,26 @@ export async function mcpFeedbackDetail(clerkId:string,workspaceId:string,feedba
  return {...post,comments:replies};
 }
 export async function mcpProposeChangelogDraft(clerkId:string,workspaceId:string,input:{title:string;body:string;feedbackIds:string[]}){
- const userId=await authorize(clerkId,workspaceId,'admin'),db=getDb(),ids=[...new Set(input.feedbackIds)];
+ const userId=await authorize(clerkId,workspaceId,'admin'),db=getDb(),ids=[...new Set(input.feedbackIds)];await consumeRateLimit('mcp:proposal:'+workspaceId+':'+userId,20,3600);
  return db.transaction(async tx=>{
   if(ids.length){const rows=await tx.select({id:feedback.id}).from(feedback).where(and(eq(feedback.workspaceId,workspaceId),inArray(feedback.id,ids),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId)));if(rows.length!==ids.length)throw Error('Some requests are unavailable in this workspace.');}
   const [proposal]=await tx.insert(mcpDraftProposals).values({workspaceId,title:input.title,body:input.body,feedbackIds:ids,authorUserId:userId}).returning({id:mcpDraftProposals.id,status:mcpDraftProposals.status});
   return proposal;
  });
+}
+
+export async function mcpFeedbackSummary(clerkId:string,workspaceId:string,days:number){
+ await authorize(clerkId,workspaceId,'member');const until=new Date(),since=new Date(until.getTime()-days*86400000);
+ return {...await generateWeeklySummary(workspaceId,since,until),since:since.toISOString(),until:until.toISOString()};
+}
+export async function mcpProposeReply(clerkId:string,workspaceId:string,feedbackId:string,body:string){
+ const userId=await authorize(clerkId,workspaceId,'admin'),db=getDb();await consumeRateLimit('mcp:proposal:'+workspaceId+':'+userId,20,3600);
+ return db.transaction(async tx=>{
+  const [post]=await tx.select({id:feedback.id}).from(feedback).where(and(eq(feedback.workspaceId,workspaceId),eq(feedback.id,feedbackId),isNull(feedback.deletedAt),isNull(feedback.mergedIntoId))).for('update');if(!post)throw Error('Feedback unavailable.');
+  const [proposal]=await tx.insert(mcpReplyProposals).values({workspaceId,feedbackId,authorUserId:userId,body}).returning({id:mcpReplyProposals.id,status:mcpReplyProposals.status});return proposal;
+ });
+}
+
+export async function mcpChangelogs(clerkId:string,workspaceId:string){
+ await authorize(clerkId,workspaceId,'admin');return getDb().select({id:changelogEntries.id,title:changelogEntries.title,status:changelogEntries.status,body:sql<string>`left(${changelogEntries.body},5000)`,createdAt:changelogEntries.createdAt}).from(changelogEntries).where(eq(changelogEntries.workspaceId,workspaceId)).orderBy(desc(changelogEntries.createdAt),desc(changelogEntries.id)).limit(30);
 }

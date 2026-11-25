@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {eq} from 'drizzle-orm';
 import {getDb} from '@/server/db/client';
-import {boards,changelogEntries,feedback,users,workspaceMembers,workspaces} from '@/server/db/schema';
-import {mcpFeedback,mcpFeedbackDetail,mcpProposeChangelogDraft,mcpWorkspaces} from '@/server/mcp/tools';
+import {boards,changelogEntries,comments,feedback,users,workspaceMembers,workspaces} from '@/server/db/schema';
+import {mcpFeedback,mcpFeedbackDetail,mcpProposeChangelogDraft,mcpWorkspaces,mcpFeedbackSummary,mcpProposeReply,mcpChangelogs} from '@/server/mcp/tools';
+import {listMcpRepliesAction,reviewMcpReplyAction} from '@/server/actions/mcp-replies';
 import {listMcpDraftProposalsAction,reviewMcpDraftProposalAction} from '@/server/actions/mcp-proposals';
 declare const global:typeof globalThis&{chatUser:typeof users.$inferSelect|null};
 export async function run(){
@@ -18,6 +19,16 @@ export async function run(){
  await assert.rejects(mcpProposeChangelogDraft(memberClerk,workspace.id,{title:'Test',body:'Details',feedbackIds:[]}));
  assert.equal((await mcpFeedbackDetail(memberClerk,workspace.id,post.id)).title,'Shipped export');
  await assert.rejects(mcpFeedbackDetail(outsiderClerk,workspace.id,post.id));
+ await assert.rejects(mcpChangelogs(memberClerk,workspace.id));await assert.rejects(mcpFeedbackSummary(outsiderClerk,workspace.id,7));
+ const summary=await mcpFeedbackSummary(memberClerk,workspace.id,7);assert.equal(summary.count,1);
+ await assert.rejects(mcpProposeReply(memberClerk,workspace.id,post.id,'Not allowed'));
+ await assert.rejects(mcpProposeReply(ownerClerk,other.id,post.id,'Other workspace'));
+ const reply=await mcpProposeReply(ownerClerk,workspace.id,post.id,'Thanks for your request.');
+ assert.equal((await db.select().from(comments)).length,0,'proposal does not post a reply');
+ global.chatUser=member;assert.equal((await reviewMcpReplyAction(workspace.id,post.id,reply.id,'approve')).ok,false);
+ global.chatUser=owner;const pendingReplies=await listMcpRepliesAction(workspace.id,post.id);assert.ok(pendingReplies.ok&&pendingReplies.data.length===1);
+ assert.ok((await reviewMcpReplyAction(workspace.id,post.id,reply.id,'approve')).ok);assert.equal((await db.select().from(comments)).length,1);
+ assert.equal((await reviewMcpReplyAction(workspace.id,post.id,reply.id,'approve')).ok,false,'reply approval cannot be replayed');
  const proposal=await mcpProposeChangelogDraft(ownerClerk,workspace.id,{title:'Exports',body:'Export files.',feedbackIds:[post.id]});
  assert.equal((await db.select().from(changelogEntries)).length,0,'MCP cannot create a draft without review');
  global.chatUser=member;assert.equal((await reviewMcpDraftProposalAction(workspace.id,proposal.id,'approve')).ok,false);

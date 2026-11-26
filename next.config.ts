@@ -1,13 +1,18 @@
 import type { NextConfig } from "next";
 
 const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST?.replace(/\/+$/, "");
+const posthogAssetsHost = posthogHost?.replace(".i.posthog.com", "-assets.i.posthog.com");
 
 const nextConfig: NextConfig = {
   // Bake this routing flag in: Netlify build variables aren't all runtime envs.
   env: { ENT_NATIVE_DOCS_PROXY: process.env.NETLIFY === "true" ? "true" : "false" },
   /* config options here */
   async rewrites() {
-    return posthogHost ? [{ source: "/ingest/:path*", destination: `${posthogHost}/:path*` }] : [];
+    return posthogHost && posthogAssetsHost ? [
+      { source: "/ingest/static/:path*", destination: `${posthogAssetsHost}/static/:path*` },
+      { source: "/ingest/array/:path*", destination: `${posthogAssetsHost}/array/:path*` },
+      { source: "/ingest/:path*", destination: `${posthogHost}/:path*` },
+    ] : [];
   },
   async headers() {
     const headers = [

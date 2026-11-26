@@ -10,6 +10,7 @@ import { boards, workspaces, feedback, comments, attachments } from "@/server/db
 import { requireWorkspaceRole } from "@/server/services/access";
 import { runService, ServiceError } from "@/server/result";
 import { trackServerAnalytics } from "@/lib/analytics/server";
+import { logPostHogOperation } from "@/lib/analytics/logs";
 import { uniqueBoardHandle } from "@/lib/board-slug";
 import { boardTemplateIds } from "@/lib/board-templates";
 import { seedBoardSamples } from "@/server/services/sample-items";
@@ -55,6 +56,7 @@ export async function createBoardAction(workspaceId: string, input: z.input<type
     });
     trackServerAnalytics('board_created',{},{boardId:created.id,user:actor});
     trackServerAnalytics('template_selected',{type:value.template},{boardId:created.id,user:actor});
+    logPostHogOperation('board_created');
     return created;
   });
 }
@@ -70,6 +72,8 @@ export async function renameBoardAction(workspaceId: string, boardId: string, na
     const [updated] = await db.update(boards).set({ name: nextName, updatedAt: new Date() })
       .where(and(eq(boards.workspaceId, wid), eq(boards.id, bid))).returning(selection);
     if (!updated) throw new ServiceError("not_found", "Board not found in this workspace. Refresh and try again.");
+    trackServerAnalytics('board_renamed',{},{boardId:bid,user:actor});
+    logPostHogOperation('board_renamed');
     return { ...updated, emoji: updated.emoji ?? undefined };
   });
 }
@@ -105,7 +109,7 @@ export async function deleteBoardAction(workspaceId:string,boardId:string){
  return runService(async()=>{
   const actor=await requireAppUser();const wid=uuid.parse(workspaceId),bid=uuid.parse(boardId);const db=getDb();
   await requireWorkspaceRole(db,{workspaceId:wid,userId:actor.id,minimumRole:"admin"});
-  return db.transaction(async tx=>{
+  const result=await db.transaction(async tx=>{
    // Share the creation lock so deleting a board releases its plan slot atomically.
    const [workspace]=await tx.select({id:workspaces.id}).from(workspaces).where(eq(workspaces.id,wid)).for("update");
    if(!workspace)throw new ServiceError("not_found","Workspace not found. Refresh and try again.");
@@ -119,5 +123,8 @@ export async function deleteBoardAction(workspaceId:string,boardId:string){
    await tx.delete(boards).where(and(eq(boards.workspaceId,wid),eq(boards.id,bid)));
    return {deletedId:bid,boards:await tx.select(selection).from(boards).where(eq(boards.workspaceId,wid)).orderBy(asc(boards.position),asc(boards.id))};
   });
+  trackServerAnalytics('board_deleted',{},{boardId:bid,user:actor});
+  logPostHogOperation('board_deleted');
+  return result;
  });
 }

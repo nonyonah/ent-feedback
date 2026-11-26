@@ -10,7 +10,7 @@ import {getDb} from '@/server/db/client';
 import {boards,workspaces} from '@/server/db/schema';
 import {safeAnalyticsProperties,type AnalyticsEvent,type AnalyticsProperties} from '@/lib/analytics-events';
 
-export type AnalyticsUser={id:string;clerkUserId:string;email?:string|null;isInternal?:boolean};
+export type AnalyticsUser={id:string;clerkUserId:string;email?:string|null;name?:string|null;isInternal?:boolean};
 export type AnalyticsBoardContext={boardId?:string|null;user?:AnalyticsUser|null;visitorId?:string|null;defer?:boolean;hostConsent?:boolean};
 type BoardAnalyticsInput={workspaceId:string;boardId:string;originDomain:string;isExternal:boolean};
 let client:PostHog|undefined;
@@ -19,7 +19,7 @@ function hash(value:string){return createHash('sha256').update(value).digest('he
 function analyticsConfigured(){const env=getServerEnv();return env.ANALYTICS_ENABLED==='true'&&Boolean(env.POSTHOG_SERVER_KEY||env.NEXT_PUBLIC_POSTHOG_KEY);}
 function getClient(){
   if(!analyticsConfigured())return undefined;
-  if(!client){const env=getServerEnv();client=new PostHog((env.POSTHOG_SERVER_KEY||env.NEXT_PUBLIC_POSTHOG_KEY)!,{host:env.POSTHOG_SERVER_HOST??env.NEXT_PUBLIC_POSTHOG_HOST??'https://eu.i.posthog.com',flushAt:1,flushInterval:10000,disableGeoip:true});}
+  if(!client){const env=getServerEnv();client=new PostHog((env.POSTHOG_SERVER_KEY||env.NEXT_PUBLIC_POSTHOG_KEY)!,{host:env.POSTHOG_SERVER_HOST??env.NEXT_PUBLIC_POSTHOG_HOST,flushAt:1,flushInterval:10000,requestTimeout:1500,fetchRetryCount:0,disableGeoip:true,privacyMode:false,enableExceptionAutocapture:process.env.NEXT_RUNTIME==='nodejs'});}
   return client;
 }
 export function hashAnalyticsUser(userId:string){return 'ent-user-'+hash('ent-analytics:v1:'+userId);}
@@ -55,6 +55,12 @@ function flushWithTimeout(){
   });
 }
 export async function flushAnalytics(){if(analyticsConfigured())await flushWithTimeout();}
+/** AI Observability captures use anonymous session IDs and never create person profiles. */
+export async function captureAiGeneration(distinctId:string,properties:Record<string,unknown>){
+  const posthog=getClient();
+  if(!posthog)return;
+  try{posthog.capture({distinctId,event:'$ai_generation',properties,options:{process_person_profile:false},disableGeoip:true});await flushWithTimeout();}catch{}
+}
 export function trackServerAnalytics(event:AnalyticsEvent,properties:AnalyticsProperties={},context:AnalyticsBoardContext={}){
   const posthog=getClient();
   if(!posthog)return;
@@ -88,7 +94,7 @@ export function identifyAnalyticsUser(user:AnalyticsUser){
   after(async()=>{
    try{
     if(!await consent)return;
-    posthog.identify({distinctId,properties:{is_internal:Boolean(user.isInternal)},options:{process_person_profile:true},disableGeoip:true});
+    posthog.identify({distinctId,properties:{email:user.email??undefined,name:user.name??undefined,is_internal:Boolean(user.isInternal)},options:{process_person_profile:true},disableGeoip:true});
     await flushWithTimeout();
    }catch{}
   });

@@ -13,6 +13,7 @@ import { attachments,billingCheckouts,chatUploads,changelogUploads,connectedApps
 import { requireWorkspaceRole } from "@/server/services/access";
 import { runService,ServiceError } from "@/server/result";
 import { verifyDeletionCheckouts } from "@/server/billing/deletion";
+import { trackServerAnalytics } from "@/lib/analytics/server";
 import {
   acceptInvitation,
   cancelInvitation,
@@ -131,6 +132,7 @@ export async function inviteMembersAction(input: {
       role: parsed.data.role,
     });
 
+    trackServerAnalytics('team_invitation_sent',{}, {user});
     revalidatePath("/dashboard/settings/team");
     return invitations;
   });
@@ -193,6 +195,7 @@ export async function removeWorkspaceMemberAction(input:{workspaceId:string;memb
   await consumeRateLimit('team:remove:'+actor.id,30,3600);
   const {removeWorkspaceMember}=await import('@/server/services/team');
   await removeWorkspaceMember({...value,userId:actor.id});
+  trackServerAnalytics('team_member_removed',{}, {user:actor});
   revalidatePath('/dashboard/settings/team');return {removed:true};
  });
 }

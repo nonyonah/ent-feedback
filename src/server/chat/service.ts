@@ -87,7 +87,7 @@ export async function sendVisitor(workspaceId:string,id:string,token:string,inpu
  });
  if(decision){
   const history=await getDb().select({role:chatMessages.role,body:chatMessages.body}).from(chatMessages).where(and(eq(chatMessages.workspaceId,workspaceId),eq(chatMessages.conversationId,id))).orderBy(desc(chatMessages.sequence)).limit(10);
-  let answer;try{answer=await answerChat(workspaceId,history.reverse());}catch{answer={answer:HANDOFF,needs_human:true,source_ids:[],suggest_idea:null};}
+  let answer;try{answer=await answerChat(workspaceId,id,history.reverse());}catch{answer={answer:HANDOFF,needs_human:true,source_ids:[],suggest_idea:null};}
   await getDb().transaction(async tx=>{
    const row=await authenticateConversation(tx,workspaceId,id,token,true);
    if(row.generationId!==lease||row.mode!=='ai')return;

@@ -1,6 +1,6 @@
 'use client';
 import type {PostHog} from 'posthog-js';
-import {analyticsEvents,analyticsPage,safeAnalyticsProperties,type AnalyticsEvent,type AnalyticsProperties} from './analytics-events';
+import {analyticsPage,safeAnalyticsProperties,type AnalyticsEvent,type AnalyticsProperties} from './analytics-events';
 export const ANALYTICS_CONSENT_KEY='ent-analytics-consent:v1';
 const SERVER_CONSENT_COOKIE='ent_analytics_consent';
 function syncServerConsent(allowed:boolean){try{document.cookie=SERVER_CONSENT_COOKIE+'='+(allowed?['granted',...analyticsPrivacySignals()].join('.'):'')+'; Path=/; SameSite=Lax; Max-Age='+(allowed?'31536000':'0')+(location.protocol==='https:'?'; Secure':'');}catch{}}
@@ -12,25 +12,20 @@ let permitted=false;
 let generation=0;
 let accountId:string|null|undefined;
 let identityGeneration=0;
+let identifiedAccountId:string|null|undefined;
+let accountProperties:{email?:string;name?:string}={};
 const ACCOUNT_PREFIX='ent-user-';
 function syncClientIdentity(){
   if(!client||!permitted||accountId===undefined)return;
   const previous=client.get_distinct_id();
-  if(previous.startsWith(ACCOUNT_PREFIX)&&previous!==accountId){client.reset(true);client.opt_in_capturing({captureEventName:false});}
-  if(accountId&&client.get_distinct_id()!==accountId)client.identify(accountId);
-  syncSessionRecording();
+  if(previous.startsWith(ACCOUNT_PREFIX)&&previous!==accountId){client.reset(true);client.opt_in_capturing({captureEventName:false});identifiedAccountId=undefined;}
+  if(accountId&&identifiedAccountId!==accountId){client.identify(accountId,accountProperties);identifiedAccountId=accountId;}
+  if(!accountId)identifiedAccountId=null;
 }
-function syncSessionRecording(){
-  if(!client||!permitted)return;
-  try{
-    const recording=client.sessionRecordingStarted();
-    if(analyticsPage(location.pathname)==='dashboard'&&!recording)client.startSessionRecording();
-    else if(analyticsPage(location.pathname)!=='dashboard'&&recording)client.stopSessionRecording();
-  }catch{}
-}
-export async function setAnalyticsIdentity(userId:string|null|undefined){
+export async function setAnalyticsIdentity(userId:string|null|undefined,properties:{email?:string|null;name?:string|null}={}){
   const version=++identityGeneration;
   accountId=undefined;
+  accountProperties={email:properties.email?.trim()||undefined,name:properties.name?.trim()||undefined};
   try{
    const digest=userId?await crypto.subtle.digest('SHA-256',new TextEncoder().encode('ent-analytics:v1:'+userId)):null;
    if(version!==identityGeneration)return;
@@ -67,26 +62,25 @@ export async function applyAnalyticsConsent(allowed:boolean){
     client=posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!,{
      api_host:'/ingest',
      ui_host:process.env.NEXT_PUBLIC_POSTHOG_HOST,
-     autocapture:false,capture_pageview:false,capture_pageleave:false,
-     disable_session_recording:true,
+     defaults:'2026-08-30',
+     capture_exceptions:true,
      session_recording:{maskAllInputs:true},
-     disable_surveys:true,
-     disable_compression:true,
-     capture_performance:false,capture_exceptions:false,
-     advanced_disable_flags:true,disable_external_dependency_loading:true,
-     opt_out_capturing_by_default:true,opt_out_persistence_by_default:true,
      persistence:'localStorage',cross_subdomain_cookie:false,
      person_profiles:'identified_only',respect_dnt:false, // Consent and privacy signals are enforced by analyticsBlocked().
      before_send:event=>{
-      if(!event||!permitted||analyticsBlocked()||accountId===undefined||(!analyticsEvents.includes(event.event as AnalyticsEvent)&&event.event!=='$identify'&&event.event!=='$set'&&event.event!=='$pageview'))return null;
+      if(!event||!permitted||analyticsBlocked()||accountId===undefined)return null;
+      if(event.event==='$exception'){
+       event.properties={...event.properties,auth_state:accountId?'signed_in':'guest',$is_identified:Boolean(accountId),$process_person_profile:Boolean(accountId)};
+       return event;
+      }
       const safe=safeAnalyticsProperties(event.properties);
       for(const key of ['token','distinct_id','$device_id','$session_id','$window_id','$lib','$lib_version','$anon_distinct_id']){
        const value=event.properties[key];if(typeof value==='string')safe[key]=value;
       }
       if(event.event==='$pageview')for(const key of ['$current_url','$pathname','$host','$referrer'])if(typeof event.properties[key]==='string')safe[key]=event.properties[key];
       const set=event.properties.$set;
-      const internalOnly=set&&typeof set==='object'&&!Array.isArray(set)&&Object.keys(set).every(key=>key==='is_internal');
-      event.properties={...safe,...(internalOnly?{$set:set}:{}),auth_state:accountId?'signed_in':'guest',$is_identified:Boolean(accountId),$process_person_profile:Boolean(accountId)};delete event.$set;delete event.$set_once;return event;
+      const personProperties=event.event==='$identify'&&set&&typeof set==='object'&&!Array.isArray(set)?Object.fromEntries(Object.entries(set).filter(([key,value])=>(key==='email'||key==='name'||key==='is_internal')&&(typeof value==='string'||typeof value==='boolean'))):undefined;
+      event.properties={...safe,...(personProperties?{$set:personProperties}:{}),auth_state:accountId?'signed_in':'guest',$is_identified:Boolean(accountId),$process_person_profile:Boolean(accountId)};delete event.$set_once;return event;
      },
     });
    }
@@ -95,7 +89,10 @@ export async function applyAnalyticsConsent(allowed:boolean){
    syncClientIdentity();
   }catch{permitted=false;}
 }
-export function syncAnalyticsSession(){syncSessionRecording();}
+export function captureAnalyticsException(error:Error){
+  if(!permitted||!client||analyticsBlocked())return;
+  try{client.captureException(error);}catch{}
+}
 export function captureAnalytics(event:AnalyticsEvent,properties:AnalyticsProperties={}){
   if(!permitted||!client||accountId===undefined||analyticsBlocked()||analyticsPage(location.pathname)===null)return;
   try{client.capture(event,safeAnalyticsProperties({...properties,auth_state:accountId?'signed_in':'guest',environment:process.env.NODE_ENV==='production'?'production':'development'}));}catch{}
